@@ -3,6 +3,7 @@ import RegisterPage from './pages/auth/RegisterPage'
 import LoginPage from './pages/auth/LoginPage'
 import HomePage from './pages/HomePage'
 import DailyRosterPage from './pages/EditRosterPage'
+import LeagueStandingsPage from './pages/LeaguePage'
 
 function App() {
   return (
@@ -12,6 +13,7 @@ function App() {
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/" element={<HomePage />} />
         <Route path="/daily-roster" element={<DailyRosterPage />} />
+        <Route path="/league" element={<LeagueStandingsPage />} />
       </Routes>
     </BrowserRouter>
   )

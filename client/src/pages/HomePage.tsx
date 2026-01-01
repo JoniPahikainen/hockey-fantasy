@@ -4,7 +4,7 @@ import Sidebar from "../components/Sidebar";
 import Calender from "../components/Calender";
 import RosterList from "../components/RosterList";
 import UpcomingMatches from "../components/UpcomingMatches";
-import { GM_PLANNER_DATA, TEAM_DATA, MATCH_DATA, allTeams } from "../data/mockData";
+import { GM_PLANNER_DATA, TEAM_DATA, MATCH_DATA, PERIOD_DATA } from "../data/mockData";
 import MiniStandings from "../components/MiniStandings"
 
 export default function HomePage() {
@@ -56,7 +56,7 @@ export default function HomePage() {
           {/* RIGHT */}
           <div className="lg:col-span-5 flex flex-col gap-6"> 
             <UpcomingMatches match_data={MATCH_DATA} />
-            <MiniStandings team_data={allTeams} />
+            <MiniStandings team_data={PERIOD_DATA[3]} />
           </div>
         </div>
       </div>
