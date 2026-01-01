@@ -1,4 +1,7 @@
+import { useNavigate } from "react-router-dom";
+
 export default function MiniStandings({ team_data }: { team_data: any[] }) {
+  const navigate = useNavigate();
   const userIndex = team_data.findIndex((t) => t.isUser);
   const leader = team_data[0];
   const neighbors = team_data.slice(
@@ -71,7 +74,7 @@ export default function MiniStandings({ team_data }: { team_data: any[] }) {
       </div>
 
       <div className="bg-slate-50 px-4 py-2 border-t border-slate-200">
-        <button className="w-full text-[9px] font-black text-slate-500 uppercase hover:text-slate-900">
+        <button onClick={() => navigate("/league")} className="w-full text-[9px] font-black text-slate-500 uppercase hover:text-slate-900">
           Show Full Rankings
         </button>
       </div>
