@@ -1,4 +1,8 @@
+import { useNavigate } from "react-router-dom";
+
 export default function RosterList({ team }: { team: any[] }) {
+  const navigate = useNavigate();
+
     return (
       <div className="bg-white border border-slate-300 shadow-sm overflow-hidden">
         <div className="px-4 py-3 bg-slate-900 flex justify-between items-center">
@@ -19,7 +23,7 @@ export default function RosterList({ team }: { team: any[] }) {
           ))}
         </div>
         <div className="bg-slate-50 px-4 py-2 border-t border-slate-200">
-        <button className="w-full text-[9px] font-black text-slate-500 uppercase hover:text-slate-900">
+        <button onClick={() => navigate("/daily-roster")} className="w-full text-[9px] font-black text-slate-500 uppercase hover:text-slate-900">
           Edit Roster
         </button>
       </div>
