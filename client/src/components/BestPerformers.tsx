@@ -22,8 +22,6 @@ export default function BestPerformers({ team }: { team: any[] }) {
           </span>
         </div>
       </div>
-
-      {/* FORMATION CONTAINER - Stays 3-2-1 regardless of width */}
       <div className="p-6 flex flex-col gap-4 bg-slate-50/30">
         
         {/* ROW 1: FORWARDS (3) */}
@@ -70,7 +68,7 @@ function FormationCard({ player, isGoalie }: { player: any; isGoalie?: boolean }
       <div style={{ backgroundColor: player.color }} className="h-1.5 w-full" />
       
       <div className="p-4 lg:p-6 flex flex-col items-center text-center gap-1">
-        <span className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">
+        <span style={{ color: player.color}} className="font-bold text-[10px] uppercase tracking-tighter">
           {player.abbrev}
         </span>
         
