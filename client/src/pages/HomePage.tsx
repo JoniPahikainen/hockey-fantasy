@@ -6,6 +6,8 @@ import RosterList from "../components/RosterList";
 import UpcomingMatches from "../components/UpcomingMatches";
 import { GM_PLANNER_DATA, TEAM_DATA, MATCH_DATA, PERIOD_DATA } from "../data/mockData";
 import MiniStandings from "../components/MiniStandings"
+import BestPerformers from "../components/BestPerformers";
+
 
 export default function HomePage() {
   const navigate = useNavigate();
@@ -49,14 +51,15 @@ export default function HomePage() {
         <div className="grid grid-cols-1 lg:grid-cols-9 gap-8">
           {/* LEFT */}
           <div className="lg:col-span-4 flex flex-col gap-8">
+            <BestPerformers team={TEAM_DATA} />
             <Calender data={GM_PLANNER_DATA} today={todayNum} />
-            <RosterList team={TEAM_DATA} />
           </div>
 
           {/* RIGHT */}
           <div className="lg:col-span-5 flex flex-col gap-6"> 
             <UpcomingMatches match_data={MATCH_DATA} />
             <MiniStandings team_data={PERIOD_DATA[3]} />
+            <RosterList team={TEAM_DATA} />
           </div>
         </div>
       </div>
