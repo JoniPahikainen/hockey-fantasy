@@ -52,11 +52,11 @@ export const PLAYER_POOL = [
 ];
 
 export const TEAM_DATA = [
-  { name: "Connor McDavid", abbrev: "EDM", color: "#FF4C00", pos: "F", points: 4.5, salary: 300000 },
+  { name: "Connor McDavid", abbrev: "EDM", color: "#FF4C00", pos: "F", points: 14.5, salary: 300000 },
   { name: "Auston Matthews", abbrev: "TOR", color: "#00205B", pos: "F", points: 2.0, salary: 400000 },
-  { name: "Kirill Kaprizov", abbrev: "MIN", color: "#154734", pos: "F", points: 3.5, salary: 350000 },
-  { name: "Cale Makar", abbrev: "COL", color: "#6F263D", pos: "D", points: 2.5, salary: 450000 },
-  { name: "Erik Karlsson", abbrev: "PIT", color: "#FCB514", pos: "D", points: 1.0, salary: 300000 },
+  { name: "Kirill Kaprizov", abbrev: "MIN", color: "#154734", pos: "F", points: -3.5, salary: 350000 },
+  { name: "Cale Makar", abbrev: "COL", color: "#6F263D", pos: "D", points: 0, salary: 450000 },
+  { name: "Erik Karlsson", abbrev: "PIT", color: "#FCB514", pos: "D", points: 31.0, salary: 300000 },
   { name: "Connor Hellebuyck", abbrev: "WPG", color: "#041E42", pos: "G", points: 6.0, salary: 500000 },
 ];
 
