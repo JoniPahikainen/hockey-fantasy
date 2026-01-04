@@ -30,10 +30,10 @@ export default function LeagueStandingsPage() {
   };
 
   return (
-    <div className="flex h-screen bg-slate-50 text-slate-900 font-sans">
+    <div className="flex bg-slate-50 text-slate-900 font-sans">
       <Sidebar onLogout={() => {}} />
 
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden ml-16">
         <header className="p-8 bg-white border-b border-slate-200">
           <h1 className="text-4xl font-black uppercase italic tracking-tighter">
             League Standings

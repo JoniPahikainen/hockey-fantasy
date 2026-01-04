@@ -27,7 +27,7 @@ export default function HomePage() {
     <div className="flex h-screen bg-slate-50 text-slate-900">
       <Sidebar onLogout={() => navigate("/login")} />
 
-      <div className="flex-1 overflow-auto px-6 py-8">
+      <div className="flex-1 overflow-auto px-6 py-8 ml-16">
         {/* HEADER SECTION */}
         <header className="flex flex-col lg:flex-row lg:justify-between mb-8 gap-4">
           <div>

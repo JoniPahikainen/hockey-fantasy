@@ -1,3 +1,4 @@
+import { NonBinaryIcon } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 
 interface SidebarProps {
@@ -20,7 +21,7 @@ export default function Sidebar({ onLogout }: SidebarProps) {
   const isActive = (path: string) => location.pathname === path;
 
   return (
-    <aside className="w-16 h-screen bg-slate-900 border-r border-white/10 flex flex-col items-center">
+    <aside className="fixed left-0 top-0 w-16 h-screen bg-slate-900 border-r border-white/10 flex flex-col items-center z-40">
       <div className="flex-[0.4]" />
       <nav className="flex flex-col items-center">
         <button
@@ -46,7 +47,7 @@ export default function Sidebar({ onLogout }: SidebarProps) {
           <span className={tooltip}>Dashboard</span>
         </button>
 
-        <button className={iconBtn}>
+        <button onClick={() => navigate("/roster")} className={iconBtn}>
           <svg
             className="w-5 h-5"
             fill="none"
@@ -80,7 +81,7 @@ export default function Sidebar({ onLogout }: SidebarProps) {
           <span className={tooltip}>Market</span>
         </button>
 
-        <button className={iconBtn}>
+        <button onClick={() => navigate("/league")} className={iconBtn}>
           <svg
             className="w-5 h-5"
             fill="none"
@@ -100,7 +101,7 @@ export default function Sidebar({ onLogout }: SidebarProps) {
 
       <div className="flex-1" />
       <div className="flex flex-col items-center gap-2 pb-8">
-        <button className={iconBtn}>
+        <button onClick={() => navigate("/settings")} className={iconBtn}>
           <svg
             className="w-5 h-5"
             fill="none"
