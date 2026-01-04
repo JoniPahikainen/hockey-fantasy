@@ -4,6 +4,7 @@ import LoginPage from './pages/auth/LoginPage'
 import HomePage from './pages/HomePage'
 import DailyRosterPage from './pages/EditRosterPage'
 import LeagueStandingsPage from './pages/LeaguePage'
+import SettingsPage from './pages/SettingsPage'
 
 function App() {
   return (
@@ -12,8 +13,10 @@ function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/" element={<HomePage />} />
-        <Route path="/daily-roster" element={<DailyRosterPage />} />
+        <Route path="/roster" element={<DailyRosterPage />} />
         <Route path="/league" element={<LeagueStandingsPage />} />
+        <Route path="/settings" element={<SettingsPage />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
   )
