@@ -1,7 +1,4 @@
-export const GM_PLANNER_DATA: Record<
-  number,
-  { active: number; points: number; budgetChange: string; status: string }
-> = {
+export const GM_PLANNER_DATA: Record<number, { active: number; points: number; budgetChange: string; status: string }> = {
   27: { active: 6, points: 42, budgetChange: "+$150k", status: "peak" },
   28: { active: 3, points: 12, budgetChange: "+$40k", status: "mid" },
   29: { active: 1, points: 0, budgetChange: "$0", status: "low" },
