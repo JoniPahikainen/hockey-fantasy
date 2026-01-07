@@ -1,9 +1,9 @@
 -- 1. Real Teams (Created first so others can reference it)
 CREATE TABLE IF NOT EXISTS real_teams (
-    abbreviation VARCHAR(10) PRIMARY KEY, -- 'EDM', 'TOR'
+    abbreviation VARCHAR(10) PRIMARY KEY,
     team_id INT UNIQUE,
     full_name VARCHAR(100),
-    primary_color VARCHAR(7), -- e.g. '#FF4C00'
+    primary_color VARCHAR(7),
     logo_url TEXT
 );
 
@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS players (
     last_name VARCHAR(50),
     position VARCHAR(2) CHECK (position IN ('G', 'D', 'F')),
     team_abbrev VARCHAR(10) REFERENCES real_teams(abbreviation),
-    current_price INT NOT NULL, -- The current "Salary" cost
+    current_price INT NOT NULL,
     is_injured BOOLEAN DEFAULT false
 );
 
@@ -35,18 +35,20 @@ CREATE TABLE IF NOT EXISTS teams (
     team_name VARCHAR(50) NOT NULL,
     budget_remaining INT DEFAULT 2000000,
     trades_remaining INT DEFAULT 16,
-    total_points NUMERIC(10, 2) DEFAULT 0, -- Numeric for decimals
+    total_points NUMERIC(10, 2) DEFAULT 0,
     is_paid BOOLEAN DEFAULT false
 );
 
 -- 5. Matches (Real NHL Schedule)
 CREATE TABLE IF NOT EXISTS matches (
+    api_id INT UNIQUE,
     match_id SERIAL PRIMARY KEY,
-    match_date TIMESTAMP NOT NULL,
-    home_team VARCHAR(10) REFERENCES real_teams(abbreviation),
-    away_team VARCHAR(10) REFERENCES real_teams(abbreviation),
+    scheduled_at TIMESTAMP,
+    home_team_abbrev VARCHAR(10) REFERENCES real_teams(abbreviation),
+    away_team_abbrev VARCHAR(10) REFERENCES real_teams(abbreviation),
     home_score INT DEFAULT 0,
-    away_score INT DEFAULT 0
+    away_score INT DEFAULT 0,
+    is_processed BOOLEAN DEFAULT false
 );
 
 -- 6. Player Performance (Stats per Match)
@@ -57,8 +59,11 @@ CREATE TABLE IF NOT EXISTS player_game_stats (
     goals INT DEFAULT 0,
     assists INT DEFAULT 0,
     saves INT DEFAULT 0,
-    points_earned NUMERIC(6, 2) DEFAULT 0, -- Fantasy points for this specific game
-    price_change INT DEFAULT 0 -- How much the player's value changed after this game
+    points_earned NUMERIC(6, 2) DEFAULT 0,
+    price_change INT DEFAULT 0
+
+    CONSTRAINT unique_player_match UNIQUE (player_id, match_id)
+
 );
 
 -- 7. Current Active Roster
