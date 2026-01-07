@@ -1,17 +1,14 @@
-import { useState, useMemo } from "react";
-import Sidebar from "../components/Sidebar";
-import { PLAYER_POOL, TEAM_DATA } from "../data/mockData";
+import { useState, useMemo, useEffect } from "react";
+import Sidebar from "../components/common/Sidebar";
+import api from "../lib/api";
 
 type SortKey = "name" | "pos" | "team" | "points" | "salary";
 
 export default function DailyRosterPage() {
-  const initialLineup = useMemo(() => {
-    return TEAM_DATA.map((oldPlayer) =>
-      PLAYER_POOL.find((p) => p.name === oldPlayer.name)
-    ).filter(Boolean);
-  }, []);
+  const [playerPool, setPlayerPool] = useState<any[]>([]);
+  const [lineup, setLineup] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const [lineup, setLineup] = useState<any[]>(initialLineup);
   const [searchTerm, setSearchTerm] = useState("");
   const [posFilter, setPosFilter] = useState("ALL");
   const [teamFilter, setTeamFilter] = useState("ALL");
@@ -23,18 +20,49 @@ export default function DailyRosterPage() {
     direction: "desc",
   });
 
+  useEffect(() => {
+    const fetchPool = async () => {
+      try {
+        setLoading(true);
+        const res = await api.get("/players");
+        if (res.data.ok) {
+          setPlayerPool(res.data.players);
+          //TODO: Later get lineup from user's saved data
+        }
+      } catch (err) {
+        console.error("Pool fetch failed", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchPool();
+  }, []);
+
   const formatSalary = (num: number) =>
     new Intl.NumberFormat("en-US").format(num);
 
   const totalSalary = useMemo(
-    () => lineup.reduce((sum, p) => sum + (p?.salary || 0), 0),
+    () => lineup.reduce((sum, p) => sum + (Number(p?.salary) || 0), 0),
     [lineup]
   );
 
   const teamsList = useMemo(
-    () => ["ALL", ...new Set(PLAYER_POOL.map((p) => p.team))].sort(),
-    []
+    () => ["ALL", ...new Set(playerPool.map((p) => p.team))].sort(),
+    [playerPool]
   );
+
+  const saveLineup = async () => {
+    try {
+      const playerIds = lineup.map((p) => p.id);
+      const res = await api.post("/user/lineup", { playerIds });
+      if (res.data.ok) {
+        alert("Lineup saved successfully!");
+      }
+    } catch (err) {
+      console.error("Save failed", err);
+      alert("Failed to save lineup.");
+    }
+  };
 
   const requestSort = (key: SortKey) => {
     setSortConfig((prev) => ({
@@ -59,20 +87,26 @@ export default function DailyRosterPage() {
     setLineup(lineup.filter((p) => p.id !== id));
 
   const processedPool = useMemo(() => {
-    let result = PLAYER_POOL.filter((p) => {
-      const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesPos = posFilter === "ALL" || (posFilter === "FORWARDS" ? p.pos === "F" : p.pos === posFilter);
+    let result = playerPool.filter((p) => {
+      const matchesSearch = p.name
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase());
+      const matchesPos =
+        posFilter === "ALL" ||
+        (posFilter === "FORWARDS" ? p.pos === "F" : p.pos === posFilter);
       const matchesTeam = teamFilter === "ALL" || p.team === teamFilter;
       return matchesSearch && matchesPos && matchesTeam;
     });
 
     result.sort((a: any, b: any) => {
-      if (a[sortConfig.key] < b[sortConfig.key]) return sortConfig.direction === "asc" ? -1 : 1;
-      if (a[sortConfig.key] > b[sortConfig.key]) return sortConfig.direction === "asc" ? 1 : -1;
+      if (a[sortConfig.key] < b[sortConfig.key])
+        return sortConfig.direction === "asc" ? -1 : 1;
+      if (a[sortConfig.key] > b[sortConfig.key])
+        return sortConfig.direction === "asc" ? 1 : -1;
       return 0;
     });
     return result;
-  }, [searchTerm, posFilter, teamFilter, sortConfig]);
+  }, [playerPool, searchTerm, posFilter, teamFilter, sortConfig]);
 
   return (
     <div className="flex bg-slate-50 text-slate-900">
@@ -88,16 +122,27 @@ export default function DailyRosterPage() {
               </h1>
               <div className="mt-2 flex gap-4">
                 <div>
-                  <p className="text-[8px] font-black uppercase text-slate-500">Total Salary</p>
-                  <p className="text-sm font-mono font-bold text-emerald-400">${formatSalary(totalSalary)}</p>
+                  <p className="text-[8px] font-black uppercase text-slate-500">
+                    Total Salary
+                  </p>
+                  <p className="text-sm font-mono font-bold text-emerald-400">
+                    ${formatSalary(totalSalary)}
+                  </p>
                 </div>
                 <div>
-                  <p className="text-[8px] font-black uppercase text-slate-500">Remaining Slots</p>
-                  <p className="text-sm font-mono font-bold text-white">{6 - lineup.length} / 6</p>
+                  <p className="text-[8px] font-black uppercase text-slate-500">
+                    Remaining Slots
+                  </p>
+                  <p className="text-sm font-mono font-bold text-white">
+                    {6 - lineup.length} / 6
+                  </p>
                 </div>
               </div>
             </div>
-            <button className="bg-white text-black px-8 py-3 text-[10px] font-black uppercase tracking-widest hover:bg-emerald-400 transition-all shadow-[4px_4px_0px_0px_rgba(255,255,255,0.2)]">
+            <button
+              onClick={saveLineup}
+              className="bg-white text-black px-8 py-3 text-[10px] font-black uppercase tracking-widest hover:bg-emerald-400 transition-all shadow-[4px_4px_0px_0px_rgba(255,255,255,0.2)]"
+            >
               Save Lineup
             </button>
           </div>
@@ -106,11 +151,11 @@ export default function DailyRosterPage() {
             {/* ROW 1: FORWARDS */}
             <div className="grid grid-cols-3 gap-4 w-full max-w-4xl mx-auto">
               {[...Array(3)].map((_, i) => (
-                <FormationCard 
-                  key={`f-${i}`} 
-                  player={lineup.filter(p => p.pos === "F")[i]} 
-                  label="FWD" 
-                  onRemove={removeFromLineup} 
+                <FormationCard
+                  key={`f-${i}`}
+                  player={lineup.filter((p) => p.pos === "F")[i]}
+                  label="FWD"
+                  onRemove={removeFromLineup}
                 />
               ))}
             </div>
@@ -118,22 +163,22 @@ export default function DailyRosterPage() {
             {/* ROW 2: DEFENSE */}
             <div className="grid grid-cols-2 gap-4 w-full max-w-2xl mx-auto">
               {[...Array(2)].map((_, i) => (
-                <FormationCard 
-                  key={`d-${i}`} 
-                  player={lineup.filter(p => p.pos === "D")[i]} 
-                  label="DEF" 
-                  onRemove={removeFromLineup} 
+                <FormationCard
+                  key={`d-${i}`}
+                  player={lineup.filter((p) => p.pos === "D")[i]}
+                  label="DEF"
+                  onRemove={removeFromLineup}
                 />
               ))}
             </div>
 
             {/* ROW 3: GOALIE */}
             <div className="grid grid-cols-1 gap-4 w-full max-w-xs mx-auto">
-              <FormationCard 
-                player={lineup.find(p => p.pos === "G")} 
-                label="GOALIE" 
-                onRemove={removeFromLineup} 
-                isGoalie 
+              <FormationCard
+                player={lineup.find((p) => p.pos === "G")}
+                label="GOALIE"
+                onRemove={removeFromLineup}
+                isGoalie
               />
             </div>
           </div>
@@ -143,7 +188,9 @@ export default function DailyRosterPage() {
         <section className="flex-1 overflow-hidden flex flex-col p-8 bg-white">
           <div className="flex flex-wrap gap-4 mb-6 items-end">
             <div className="flex flex-col gap-1">
-              <span className="text-[9px] font-black text-slate-400 uppercase">Search</span>
+              <span className="text-[9px] font-black text-slate-400 uppercase">
+                Search
+              </span>
               <input
                 type="text"
                 placeholder="PLAYER NAME..."
@@ -152,7 +199,9 @@ export default function DailyRosterPage() {
               />
             </div>
             <div className="flex flex-col gap-1">
-              <span className="text-[9px] font-black text-slate-400 uppercase">Position</span>
+              <span className="text-[9px] font-black text-slate-400 uppercase">
+                Position
+              </span>
               <select
                 className="bg-slate-50 border border-slate-200 text-[10px] py-2.5 px-4 font-bold uppercase outline-none min-w-[120px]"
                 onChange={(e) => setPosFilter(e.target.value)}
@@ -164,27 +213,47 @@ export default function DailyRosterPage() {
               </select>
             </div>
             <div className="flex flex-col gap-1">
-              <span className="text-[9px] font-black text-slate-400 uppercase">Team</span>
+              <span className="text-[9px] font-black text-slate-400 uppercase">
+                Team
+              </span>
               <select
                 className="bg-slate-50 border border-slate-200 text-[10px] py-2.5 px-4 font-bold uppercase outline-none min-w-[120px]"
                 onChange={(e) => setTeamFilter(e.target.value)}
               >
                 {teamsList.map((team) => (
-                  <option key={team} value={team}>{team}</option>
+                  <option key={team} value={team}>
+                    {team}
+                  </option>
                 ))}
               </select>
-              </div>
             </div>
+          </div>
 
           <div className="flex-1 overflow-auto border border-slate-200">
             <table className="w-full text-left border-collapse">
               <thead className="sticky top-0 bg-slate-900 text-white z-20">
                 <tr className="text-[9px] font-black uppercase tracking-widest cursor-pointer">
-                  <th className="px-6 py-4" onClick={() => requestSort("name")}>Player</th>
-                  <th className="px-6 py-4" onClick={() => requestSort("pos")}>Pos</th>
-                  <th className="px-6 py-4" onClick={() => requestSort("team")}>Team</th>
-                  <th className="px-6 py-4 text-right" onClick={() => requestSort("points")}>Pts</th>
-                  <th className="px-6 py-4 text-right" onClick={() => requestSort("salary")}>Salary</th>
+                  <th className="px-6 py-4" onClick={() => requestSort("name")}>
+                    Player
+                  </th>
+                  <th className="px-6 py-4" onClick={() => requestSort("pos")}>
+                    Pos
+                  </th>
+                  <th className="px-6 py-4" onClick={() => requestSort("team")}>
+                    Team
+                  </th>
+                  <th
+                    className="px-6 py-4 text-right"
+                    onClick={() => requestSort("points")}
+                  >
+                    Pts
+                  </th>
+                  <th
+                    className="px-6 py-4 text-right"
+                    onClick={() => requestSort("salary")}
+                  >
+                    Salary
+                  </th>
                   <th className="px-6 py-4 text-center">Action</th>
                 </tr>
               </thead>
@@ -192,12 +261,30 @@ export default function DailyRosterPage() {
                 {processedPool.map((player) => {
                   const isSelected = lineup.find((p) => p.id === player.id);
                   return (
-                    <tr key={player.id} className={`hover:bg-slate-50 transition-colors ${isSelected ? "opacity-30" : ""}`}>
-                      <td className="px-6 py-4 font-black text-xs uppercase">{player.name}</td>
-                      <td className="px-6 py-4 text-[10px] font-bold text-slate-400">{player.pos}</td>
-                      <td style={{ color: player.color }} className="px-6 py-4 text-[10px] font-bold text-slate-400">{player.team}</td>
-                      <td className="px-6 py-4 text-right font-mono text-xs font-bold">{player.points.toFixed(1)}</td>
-                      <td className="px-6 py-4 text-right font-mono text-xs font-bold text-slate-900">${formatSalary(player.salary)}</td>
+                    <tr
+                      key={player.id}
+                      className={`hover:bg-slate-50 transition-colors ${
+                        isSelected ? "opacity-30" : ""
+                      }`}
+                    >
+                      <td className="px-6 py-4 font-black text-xs uppercase">
+                        {player.name}
+                      </td>
+                      <td className="px-6 py-4 text-[10px] font-bold text-slate-400">
+                        {player.pos}
+                      </td>
+                      <td
+                        style={{ color: player.color }}
+                        className="px-6 py-4 text-[10px] font-bold text-slate-400"
+                      >
+                        {player.team}
+                      </td>
+                      <td className="px-6 py-4 text-right font-mono text-xs font-bold">
+                        {Number(player.points).toFixed(1)}
+                      </td>
+                      <td className="px-6 py-4 text-right font-mono text-xs font-bold text-slate-900">
+                        ${formatSalary(player.salary)}
+                      </td>
                       <td className="px-6 py-4 text-center">
                         <button
                           onClick={() => addToLineup(player)}
@@ -219,11 +306,23 @@ export default function DailyRosterPage() {
   );
 }
 
-function FormationCard({ player, label, onRemove, isGoalie }: { player?: any; label: string; onRemove: any; isGoalie?: boolean }) {
+function FormationCard({
+  player,
+  label,
+  onRemove,
+  isGoalie,
+}: {
+  player?: any;
+  label: string;
+  onRemove: any;
+  isGoalie?: boolean;
+}) {
   if (!player) {
     return (
       <div className="border-2 border-dashed border-slate-200 bg-slate-50/50 flex flex-col items-center justify-center p-6 min-h-[120px]">
-        <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">{label}</span>
+        <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">
+          {label}
+        </span>
       </div>
     );
   }
@@ -248,22 +347,33 @@ function FormationCard({ player, label, onRemove, isGoalie }: { player?: any; la
         ×
       </button>
       <div className="p-4 flex flex-col items-center text-center gap-1">
-        <span style={{ color: playerColor }} className="font-bold text-[9px] uppercase tracking-tighter">
+        <span
+          style={{ color: playerColor }}
+          className="font-bold text-[9px] uppercase tracking-tighter"
+        >
           {player.team || player.abbrev}
         </span>
-        
-        <h3 className={`font-black text-slate-800 uppercase leading-tight ${isGoalie ? 'text-base' : 'text-[12px]'}`}>
-          {player.name.split(' ').pop()}
+        <h3
+          className={`font-black text-slate-800 uppercase leading-tight ${
+            isGoalie ? "text-base" : "text-[12px]"
+          }`}
+        >
+          {player.name.split(" ").pop()}
         </h3>
 
-        <div className={`font-mono mt-1 ${pointColor} ${isGoalie ? 'text-lg' : 'text-xs'}`}>
-          {pts > 0 ? `+${pts.toFixed(1)}` : pts.toFixed(1)}
+        <div
+          className={`font-mono mt-1 ${pointColor} ${
+            isGoalie ? "text-lg" : "text-xs"
+          }`}
+        >
+          {Number(player.points) > 0
+            ? `+${Number(player.points).toFixed(1)}`
+            : Number(player.points).toFixed(1)}
         </div>
-
         {/* Salary Integration */}
         <div className="mt-2 pt-2 border-t border-slate-300 w-full">
-          <span className=" text-[9px] font-mono text-slate-600 uppercase tracking-tighter">
-            ${(player.salary).toLocaleString()}
+          <span className="text-[9px] font-mono text-slate-600 uppercase tracking-tighter">
+            ${Number(player.salary).toLocaleString()}
           </span>
         </div>
       </div>
