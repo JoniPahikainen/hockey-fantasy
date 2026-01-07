@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import * as dotenv from 'dotenv';
 import userRouter from './routes/userRoutes';
+import matchRouter from './routes/matchRoutes';
 
 dotenv.config();
 
@@ -14,6 +15,8 @@ app.get('/api/health', (_req, res) => {
 });
 
 app.use('/api/users', userRouter);
+app.use('/api', matchRouter);
+
 
 const port = process.env.PORT ? Number(process.env.PORT) : 4000;
 

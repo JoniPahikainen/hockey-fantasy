@@ -17,11 +17,11 @@ export default function UpcomingMatches({ match_data }: { match_data: any[] }) {
               {/* Teams */}
               <div className="flex items-center gap-2">
                 <span className="text-sm font-black text-slate-900 w-8">
-                  {match.away}
+                  {match.away_team_abbrev}
                 </span>
                 <span className="text-[10px] font-bold text-slate-300">@</span>
                 <span className="text-sm font-black text-slate-900 w-8">
-                  {match.home}
+                  {match.home_team_abbrev}
                 </span>
               </div>
             </div>

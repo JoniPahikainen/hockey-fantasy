@@ -4,23 +4,49 @@ import Sidebar from "../components/Sidebar";
 import Calender from "../components/Calender";
 import RosterList from "../components/RosterList";
 import UpcomingMatches from "../components/UpcomingMatches";
-import { GM_PLANNER_DATA, TEAM_DATA, MATCH_DATA, PERIOD_DATA } from "../data/mockData";
-import MiniStandings from "../components/MiniStandings"
+import {
+  GM_PLANNER_DATA,
+  TEAM_DATA,
+  PERIOD_DATA,
+} from "../data/mockData";
+import MiniStandings from "../components/MiniStandings";
 import BestPerformers from "../components/BestPerformers";
-
+import api from "../lib/api";
 
 export default function HomePage() {
   const navigate = useNavigate();
   const [userName, setUserName] = useState("Team Manager");
   const todayNum = new Date().getDate();
 
+  const [matches, setMatches] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchDailyMatches = async (dateStr: string) => {
+    try {
+        setLoading(true);
+        const response = await api.get(`/matches/${dateStr}`);
+
+      if (response.data.ok) {
+            setMatches(response.data.matches);
+        }
+    } catch (err) {
+      console.error("Failed to fetch matches:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     const userStr = localStorage.getItem("user");
-    if (!userStr) return;
-    try {
-      const user = JSON.parse(userStr);
-      setUserName(user.username || user.email || "Team Manager");
-    } catch (e) {}
+    if (userStr) {
+      try {
+        const user = JSON.parse(userStr);
+        setUserName(user.username || user.email || "Team Manager");
+      } catch (e) {}
+    }
+
+    const today = new Date().toISOString().split("T")[0];
+    fetchDailyMatches(today);
   }, []);
 
   return (
@@ -56,8 +82,14 @@ export default function HomePage() {
           </div>
 
           {/* RIGHT */}
-          <div className="lg:col-span-5 flex flex-col gap-6"> 
-            <UpcomingMatches match_data={MATCH_DATA} />
+          <div className="lg:col-span-5 flex flex-col gap-6">
+            {loading ? (
+              <div className="p-4 bg-white border border-slate-900 italic">
+                Loading tonight's action...
+              </div>
+            ) : (
+              <UpcomingMatches match_data={matches} />
+            )}
             <MiniStandings team_data={PERIOD_DATA[3]} />
             <RosterList team={TEAM_DATA} />
           </div>
