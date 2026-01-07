@@ -1,16 +1,16 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import Sidebar from "../components/Sidebar";
-import Calender from "../components/Calender";
-import RosterList from "../components/RosterList";
-import UpcomingMatches from "../components/UpcomingMatches";
+import Sidebar from "../components/common/Sidebar";
+import Calender from "../components/home/Calender";
+import RosterList from "../components/home/RosterList";
+import UpcomingMatches from "../components/home/UpcomingMatches";
 import {
   GM_PLANNER_DATA,
   TEAM_DATA,
   PERIOD_DATA,
 } from "../data/mockData";
-import MiniStandings from "../components/MiniStandings";
-import BestPerformers from "../components/BestPerformers";
+import MiniStandings from "../components/home/MiniStandings";
+import BestPerformers from "../components/home/BestPerformers";
 import api from "../lib/api";
 
 export default function HomePage() {
