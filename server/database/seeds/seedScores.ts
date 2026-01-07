@@ -1,6 +1,8 @@
 import pool from "../../src/db";
 
 async function updatePlayerScores() {
+  const isDailyRun = process.argv.includes("--daily-run");
+
   console.log("Checking for matches that need scores...");
 
   try {
@@ -21,10 +23,15 @@ async function updatePlayerScores() {
     for (const match of matches) {
       current++;
 
-      process.stdout.write(
-        `\rProgress: ${current}/${total} matches processed...`
-      );
-
+      if (isDailyRun) {
+        console.log(
+          `📡 Game ${current}/${total}: ${match.away_team_abbrev} @ ${match.home_team_abbrev}`
+        );
+      } else {
+        process.stdout.write(
+          `\rProgress: ${current}/${total} matches processed...`
+        );
+      }
       const response = await fetch(
         `https://api-web.nhle.com/v1/gamecenter/${match.api_id}/boxscore`
       );
