@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getPlayerPool } from '../controllers/playerController';
+import { getPlayerPool } from '../controllers/nhlPlayerController';
 const router = Router();
 
 router.get('/players', getPlayerPool);

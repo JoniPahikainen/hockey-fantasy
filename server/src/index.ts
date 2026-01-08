@@ -3,7 +3,7 @@ import cors from 'cors';
 import * as dotenv from 'dotenv';
 import userRouter from './routes/userRoutes';
 import matchRouter from './routes/matchRoutes';
-import playerRouter from './routes/playerRoutes';
+import playerRouter from './routes/nhlPlayerRoutes';
 
 dotenv.config();
 
