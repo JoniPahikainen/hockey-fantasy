@@ -86,12 +86,12 @@ async function updatePlayerScores() {
 
     console.log("Updating User Team totals...");
     await pool.query(`
-      UPDATE teams
+      UPDATE fantasy_teams
       SET total_points = (
         SELECT COALESCE(SUM(pgs.points_earned), 0)
-        FROM rosters r
+        FROM fantasy_team_players r
         JOIN player_game_stats pgs ON r.player_id = pgs.player_id
-        WHERE r.team_id = teams.team_id
+        WHERE r.team_id = fantasy_teams.team_id
       )
     `);
     console.log("User Leaderboards updated.");
