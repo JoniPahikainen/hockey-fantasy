@@ -4,6 +4,7 @@ import * as dotenv from 'dotenv';
 import userRouter from './routes/userRoutes';
 import matchRouter from './routes/matchRoutes';
 import playerRouter from './routes/nhlPlayerRoutes';
+import fantasyTeamRouter from './routes/fantasyTeamRoutes';
 
 dotenv.config();
 
@@ -18,6 +19,8 @@ app.get('/api/health', (_req, res) => {
 app.use('/api/users', userRouter);
 app.use('/api', matchRouter);
 app.use('/api', playerRouter);
+app.use('/api', fantasyTeamRouter);
+
 
 
 const port = process.env.PORT ? Number(process.env.PORT) : 4000;
