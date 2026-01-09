@@ -1,7 +1,6 @@
 import { Request, Response } from "express";
 import pool from "../db";
 
-// matchController.ts tai vastaava
 export const getPlayerPool = async (req: Request, res: Response) => {
   try {
     const result = await pool.query(`
