@@ -1,4 +1,4 @@
--- 1. Real Teams (Created first so others can reference it)
+-- 1. Real fantasy_teams (Created first so others can reference it)
 CREATE TABLE IF NOT EXISTS real_teams (
     abbreviation VARCHAR(10) PRIMARY KEY,
     team_id INT UNIQUE,
@@ -28,15 +28,16 @@ CREATE TABLE IF NOT EXISTS players (
     is_injured BOOLEAN DEFAULT false
 );
 
--- 4. User Teams
-CREATE TABLE IF NOT EXISTS teams (
+-- 4. User fantasy_teams
+CREATE TABLE IF NOT EXISTS fantasy_teams (
     team_id SERIAL PRIMARY KEY,
     user_id INT REFERENCES users(user_id) ON DELETE CASCADE,
     team_name VARCHAR(50) NOT NULL,
     budget_remaining INT DEFAULT 2000000,
     trades_remaining INT DEFAULT 16,
     total_points NUMERIC(10, 2) DEFAULT 0,
-    is_paid BOOLEAN DEFAULT false
+    is_paid BOOLEAN DEFAULT false,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 -- 5. Matches (Real NHL Schedule)
@@ -60,24 +61,24 @@ CREATE TABLE IF NOT EXISTS player_game_stats (
     assists INT DEFAULT 0,
     saves INT DEFAULT 0,
     points_earned NUMERIC(6, 2) DEFAULT 0,
-    price_change INT DEFAULT 0
-
+    price_change INT DEFAULT 0,
     CONSTRAINT unique_player_match UNIQUE (player_id, match_id)
-
 );
 
 -- 7. Current Active Roster
-CREATE TABLE IF NOT EXISTS rosters (
-    team_id INT REFERENCES teams(team_id) ON DELETE CASCADE,
+CREATE TABLE IF NOT EXISTS fantasy_team_players (
+    team_id INT REFERENCES fantasy_teams(team_id) ON DELETE CASCADE,
     player_id INT REFERENCES players(player_id) ON DELETE CASCADE,
     is_captain BOOLEAN DEFAULT false,
-    PRIMARY KEY (team_id, player_id)
+    PRIMARY KEY (team_id, player_id),
+    added_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    is_active BOOLEAN DEFAULT true
 );
 
 -- 8. Roster History (For calculating points on specific dates)
 CREATE TABLE IF NOT EXISTS roster_history (
     history_id SERIAL PRIMARY KEY,
-    team_id INT REFERENCES teams(team_id) ON DELETE CASCADE,
+    team_id INT REFERENCES fantasy_teams(team_id) ON DELETE CASCADE,
     player_id INT REFERENCES players(player_id) ON DELETE CASCADE,
     game_date DATE NOT NULL,
     is_captain BOOLEAN DEFAULT false,
@@ -87,7 +88,7 @@ CREATE TABLE IF NOT EXISTS roster_history (
 -- 9. Trade Log
 CREATE TABLE IF NOT EXISTS trade_history (
     trade_id SERIAL PRIMARY KEY,
-    team_id INT REFERENCES teams(team_id) ON DELETE CASCADE,
+    team_id INT REFERENCES fantasy_teams(team_id) ON DELETE CASCADE,
     player_out_id INT REFERENCES players(player_id) ON DELETE CASCADE,
     player_in_id INT REFERENCES players(player_id) ON DELETE CASCADE,
     trade_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -104,7 +105,7 @@ CREATE TABLE IF NOT EXISTS leagues (
 
 CREATE TABLE IF NOT EXISTS league_members (
     league_id INT REFERENCES leagues(league_id) ON DELETE CASCADE,
-    team_id INT REFERENCES teams(team_id) ON DELETE CASCADE,
+    team_id INT REFERENCES fantasy_teams(team_id) ON DELETE CASCADE,
     PRIMARY KEY (league_id, team_id)
 );
 
