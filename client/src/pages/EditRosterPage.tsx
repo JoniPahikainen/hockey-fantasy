@@ -1,17 +1,108 @@
 import { useState, useMemo, useEffect } from "react";
 import Sidebar from "../components/common/Sidebar";
+import RosterHeader from "../components/roster/RosterHeader";
+import FormationCard from "../components/roster/FormationCard";
 import api from "../lib/api";
 
 type SortKey = "name" | "pos" | "team" | "points" | "salary";
 
 export default function DailyRosterPage() {
   const [playerPool, setPlayerPool] = useState<any[]>([]);
+  const [userTeams, setUserTeams] = useState<any[]>([]);
+  const [selectedTeamId, setSelectedTeamId] = useState<number | null>(null);
   const [lineup, setLineup] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [savedLineupIds, setSavedLineupIds] = useState<number[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [posFilter, setPosFilter] = useState("ALL");
   const [teamFilter, setTeamFilter] = useState("ALL");
+
+  useEffect(() => {
+    const initPage = async () => {
+      try {
+        const userId = 1;
+        const [poolRes, teamsRes] = await Promise.all([
+          api.get("/players"),
+          api.get(`/fantasy-teams/owner/${userId}`),
+        ]);
+        if (poolRes.data.ok) setPlayerPool(poolRes.data.players);
+        if (teamsRes.data.ok && teamsRes.data.teams.length > 0) {
+          setUserTeams(teamsRes.data.teams);
+          setSelectedTeamId(teamsRes.data.teams[0].team_id);
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    initPage();
+  }, []);
+
+  useEffect(() => {
+    if (!selectedTeamId) return;
+    const fetchLineup = async () => {
+      const res = await api.get(`/fantasy-teams/${selectedTeamId}/players`);
+      if (res.data.ok) {
+        const p = res.data.players.map((x: any) => ({ ...x, id: x.player_id }));
+        setLineup(p);
+        setSavedLineupIds(p.map((x: any) => x.id));
+      }
+    };
+    fetchLineup();
+  }, [selectedTeamId]);
+
+  const isDirty = useMemo(() => {
+    if (lineup.length !== savedLineupIds.length) return true;
+    return (
+      lineup
+        .map((p) => p.id)
+        .sort()
+        .join() !== [...savedLineupIds].sort().join()
+    );
+  }, [lineup, savedLineupIds]);
+
+  const totalSalary = useMemo(
+    () => lineup.reduce((s, p) => s + (Number(p.salary) || 0), 0),
+    [lineup]
+  );
+
+  const saveLineup = async () => {
+    setIsSaving(true);
+    try {
+      const res = await api.post("/fantasy-teams/save-lineup", {
+        team_id: selectedTeamId,
+        playerIds: lineup.map((p) => p.id),
+      });
+      if (res.data.ok) {
+        setSavedLineupIds(lineup.map((p) => p.id));
+        setUserTeams((prev) =>
+          prev.map((t) =>
+            t.team_id === selectedTeamId
+              ? { ...t, budget_remaining: res.data.budget_remaining }
+              : t
+          )
+        );
+      }
+    } catch (err) {
+      console.error(err);
+    }
+    setIsSaving(false);
+  };
+
+  const removeFromLineup = (id: number) =>
+    setLineup((prev) => prev.filter((p) => p.id !== id));
+
+  const addToLineup = (player: any) => {
+    if (lineup.find((p) => p.id === player.id)) return;
+    const limits = { F: 3, D: 2, G: 1 };
+    if (
+      lineup.filter((p) => p.pos === player.pos).length <
+      limits[player.pos as keyof typeof limits]
+    ) {
+      setLineup([...lineup, player]);
+    }
+  };
+
   const [sortConfig, setSortConfig] = useState<{
     key: SortKey;
     direction: "asc" | "desc";
@@ -20,49 +111,13 @@ export default function DailyRosterPage() {
     direction: "desc",
   });
 
-  useEffect(() => {
-    const fetchPool = async () => {
-      try {
-        setLoading(true);
-        const res = await api.get("/players");
-        if (res.data.ok) {
-          setPlayerPool(res.data.players);
-          //TODO: Later get lineup from user's saved data
-        }
-      } catch (err) {
-        console.error("Pool fetch failed", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchPool();
-  }, []);
-
   const formatSalary = (num: number) =>
     new Intl.NumberFormat("en-US").format(num);
-
-  const totalSalary = useMemo(
-    () => lineup.reduce((sum, p) => sum + (Number(p?.salary) || 0), 0),
-    [lineup]
-  );
 
   const teamsList = useMemo(
     () => ["ALL", ...new Set(playerPool.map((p) => p.team))].sort(),
     [playerPool]
   );
-
-  const saveLineup = async () => {
-    try {
-      const playerIds = lineup.map((p) => p.id);
-      const res = await api.post("/user/lineup", { playerIds });
-      if (res.data.ok) {
-        alert("Lineup saved successfully!");
-      }
-    } catch (err) {
-      console.error("Save failed", err);
-      alert("Failed to save lineup.");
-    }
-  };
 
   const requestSort = (key: SortKey) => {
     setSortConfig((prev) => ({
@@ -70,21 +125,6 @@ export default function DailyRosterPage() {
       direction: prev.key === key && prev.direction === "desc" ? "asc" : "desc",
     }));
   };
-
-  const addToLineup = (player: any) => {
-    if (lineup.find((p) => p.id === player.id)) return;
-    const limits = { F: 3, D: 2, G: 1 };
-    const currentCount = lineup.filter((p) => p.pos === player.pos).length;
-
-    if (currentCount < limits[player.pos as keyof typeof limits]) {
-      setLineup([...lineup, player]);
-    } else {
-      alert(`${player.pos} slots are full!`);
-    }
-  };
-
-  const removeFromLineup = (id: number) =>
-    setLineup(lineup.filter((p) => p.id !== id));
 
   const processedPool = useMemo(() => {
     let result = playerPool.filter((p) => {
@@ -109,80 +149,55 @@ export default function DailyRosterPage() {
   }, [playerPool, searchTerm, posFilter, teamFilter, sortConfig]);
 
   return (
-    <div className="flex bg-slate-50 text-slate-900">
+    <div className="flex bg-slate-50 text-slate-900 h-screen overflow-hidden">
       <Sidebar onLogout={() => {}} />
 
-      <div className="flex-1 flex flex-col overflow-hidden ml-16">
-        {/* TACTICAL FORMATION VIEW */}
-        <section className="flex flex-col bg-white border-b border-slate-300 shadow-sm z-10 overflow-y-auto max-h-[60%]">
-          <div className="px-8 py-6 bg-slate-900 flex justify-between items-center sticky top-0 z-20">
-            <div>
-              <h1 className="text-2xl font-black text-white uppercase italic tracking-tighter leading-none">
-                Roster <span className="text-slate-500">Editor</span>
-              </h1>
-              <div className="mt-2 flex gap-4">
-                <div>
-                  <p className="text-[8px] font-black uppercase text-slate-500">
-                    Total Salary
-                  </p>
-                  <p className="text-sm font-mono font-bold text-emerald-400">
-                    ${formatSalary(totalSalary)}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-[8px] font-black uppercase text-slate-500">
-                    Remaining Slots
-                  </p>
-                  <p className="text-sm font-mono font-bold text-white">
-                    {6 - lineup.length} / 6
-                  </p>
-                </div>
-              </div>
-            </div>
-            <button
-              onClick={saveLineup}
-              className="bg-white text-black px-8 py-3 text-[10px] font-black uppercase tracking-widest hover:bg-emerald-400 transition-all shadow-[4px_4px_0px_0px_rgba(255,255,255,0.2)]"
-            >
-              Save Lineup
-            </button>
-          </div>
+      <div className="flex-1 flex flex-col ml-16">
+        {/* HEADER */}
+        <RosterHeader
+          userTeams={userTeams}
+          selectedTeamId={selectedTeamId}
+          setSelectedTeamId={setSelectedTeamId}
+          lineupCount={lineup.length}
+          totalSalary={totalSalary}
+          isDirty={isDirty}
+          isSaving={isSaving}
+          onSave={saveLineup}
+        />
 
-          <div className="p-8 flex flex-col gap-6 bg-slate-50/50">
-            {/* ROW 1: FORWARDS */}
-            <div className="grid grid-cols-3 gap-4 w-full max-w-4xl mx-auto">
+        {/* FORMATION AREA */}
+        <div className="overflow-y-auto p-8 bg-slate-50/50 border-b border-slate-300">
+          <div className="flex flex-col gap-6 max-w-4xl mx-auto">
+            <div className="grid grid-cols-3 gap-4">
               {[...Array(3)].map((_, i) => (
                 <FormationCard
                   key={`f-${i}`}
-                  player={lineup.filter((p) => p.pos === "F")[i]}
                   label="FWD"
                   onRemove={removeFromLineup}
+                  player={lineup.filter((p) => p.pos === "F")[i]}
                 />
               ))}
             </div>
-
-            {/* ROW 2: DEFENSE */}
-            <div className="grid grid-cols-2 gap-4 w-full max-w-2xl mx-auto">
+            <div className="grid grid-cols-2 gap-4 max-w-2xl mx-auto w-full">
               {[...Array(2)].map((_, i) => (
                 <FormationCard
                   key={`d-${i}`}
-                  player={lineup.filter((p) => p.pos === "D")[i]}
                   label="DEF"
                   onRemove={removeFromLineup}
+                  player={lineup.filter((p) => p.pos === "D")[i]}
                 />
               ))}
             </div>
-
-            {/* ROW 3: GOALIE */}
-            <div className="grid grid-cols-1 gap-4 w-full max-w-xs mx-auto">
+            <div className="max-w-xs mx-auto w-full">
               <FormationCard
-                player={lineup.find((p) => p.pos === "G")}
                 label="GOALIE"
-                onRemove={removeFromLineup}
                 isGoalie
+                onRemove={removeFromLineup}
+                player={lineup.find((p) => p.pos === "G")}
               />
             </div>
           </div>
-        </section>
+        </div>
 
         {/* PLAYER POOL TABLE */}
         <section className="flex-1 overflow-hidden flex flex-col p-8 bg-white">
@@ -301,81 +316,6 @@ export default function DailyRosterPage() {
             </table>
           </div>
         </section>
-      </div>
-    </div>
-  );
-}
-
-function FormationCard({
-  player,
-  label,
-  onRemove,
-  isGoalie,
-}: {
-  player?: any;
-  label: string;
-  onRemove: any;
-  isGoalie?: boolean;
-}) {
-  if (!player) {
-    return (
-      <div className="border-2 border-dashed border-slate-200 bg-slate-50/50 flex flex-col items-center justify-center p-6 min-h-[120px]">
-        <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">
-          {label}
-        </span>
-      </div>
-    );
-  }
-
-  const pts = player.points;
-  let pointColor = "text-slate-400";
-  if (pts > 0) pointColor = "text-emerald-600 font-bold";
-  if (pts < 0) pointColor = "text-rose-600 font-bold";
-
-  console.log(player);
-
-  const playerColor = player.color || "#000000ff";
-
-  return (
-    <div className="bg-white border border-slate-200 flex flex-col shadow-sm transition-all hover:border-slate-400 group relative">
-      <div style={{ backgroundColor: playerColor }} className="h-1.5 w-full" />
-
-      <button
-        onClick={() => onRemove(player.id)}
-        className="absolute -top-2 -right-2 bg-black text-white w-6 h-6 text-[10px] flex items-center justify-center hover:bg-rose-600 transition-colors z-30 shadow-md"
-      >
-        ×
-      </button>
-      <div className="p-4 flex flex-col items-center text-center gap-1">
-        <span
-          style={{ color: playerColor }}
-          className="font-bold text-[9px] uppercase tracking-tighter"
-        >
-          {player.team || player.abbrev}
-        </span>
-        <h3
-          className={`font-black text-slate-800 uppercase leading-tight ${
-            isGoalie ? "text-base" : "text-[12px]"
-          }`}
-        >
-          {player.name.split(" ").pop()}
-        </h3>
-
-        <div
-          className={`font-mono mt-1 ${pointColor} ${
-            isGoalie ? "text-lg" : "text-xs"
-          }`}
-        >
-          {Number(player.points) > 0
-            ? `+${Number(player.points).toFixed(1)}`
-            : Number(player.points).toFixed(1)}
-        </div>
-        {/* Salary Integration */}
-        <div className="mt-2 pt-2 border-t border-slate-300 w-full">
-          <span className="text-[9px] font-mono text-slate-600 uppercase tracking-tighter">
-            ${Number(player.salary).toLocaleString()}
-          </span>
-        </div>
       </div>
     </div>
   );
