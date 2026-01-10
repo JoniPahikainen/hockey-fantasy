@@ -1,10 +1,12 @@
 import { Router } from 'express';
-import { createTeam } from '../controllers/fantasyTeamController';
+import { createTeam, addPlayerToTeam, removePlayerFromTeam, getTeamPlayers, getTeamsByOwner, saveLineup } from '../controllers/fantasyTeamController';
 const router = Router();
 
-
 router.post('/fantasy-teams', createTeam);
-// TODO: Make adding/removing players
-
+router.post('/fantasy-teams/add-player', addPlayerToTeam);
+router.post('/fantasy-teams/remove-player', removePlayerFromTeam);
+router.get('/fantasy-teams/:team_id/players', getTeamPlayers);
+router.get('/fantasy-teams/owner/:user_id', getTeamsByOwner);
+router.post('/fantasy-teams/save-lineup', saveLineup);
 
 export default router;
