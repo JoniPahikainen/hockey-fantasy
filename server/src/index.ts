@@ -5,6 +5,7 @@ import userRouter from './routes/userRoutes';
 import matchRouter from './routes/matchRoutes';
 import playerRouter from './routes/nhlPlayerRoutes';
 import fantasyTeamRouter from './routes/fantasyTeamRoutes';
+import leagueRouter from './routes/leagueRoutes';
 
 dotenv.config();
 
@@ -20,6 +21,7 @@ app.use('/api/users', userRouter);
 app.use('/api', matchRouter);
 app.use('/api', playerRouter);
 app.use('/api', fantasyTeamRouter);
+app.use('/api', leagueRouter);
 
 
 
