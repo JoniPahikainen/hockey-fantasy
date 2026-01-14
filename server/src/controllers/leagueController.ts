@@ -61,13 +61,18 @@ export const getLeagueStandings = async (req: Request, res: Response) => {
         t.team_id, 
         t.team_name, 
         u.username as owner_name, 
-        t.total_points,
-        RANK() OVER (ORDER BY t.total_points DESC) as rank
+        COALESCE(SUM(pgs.points_earned * CASE WHEN rh.is_captain THEN 1.3 ELSE 1 END), 0) as total_points,
+        RANK() OVER (ORDER BY SUM(pgs.points_earned * CASE WHEN rh.is_captain THEN 1.3 ELSE 1 END) DESC) as rank
       FROM league_members lm
       JOIN fantasy_teams t ON lm.team_id = t.team_id
       JOIN users u ON t.user_id = u.user_id
+      JOIN roster_history rh ON rh.team_id = t.team_id
+      JOIN player_game_stats pgs ON pgs.player_id = rh.player_id
+      JOIN matches m ON m.match_id = pgs.match_id 
+        AND m.scheduled_at::date = rh.game_date 
       WHERE lm.league_id = $1
-      ORDER BY t.total_points DESC
+      GROUP BY t.team_id, t.team_name, u.username
+      ORDER BY total_points DESC;
       `,
       [league_id]
     );
@@ -100,12 +105,9 @@ export const getLeagueStandingsByPeriod = async (
       FROM league_members lm
       JOIN fantasy_teams t ON lm.team_id = t.team_id
       JOIN users u ON t.user_id = u.user_id
-      -- 1. Get the scoring period dates
       CROSS JOIN scoring_periods sp
-      -- 2. Join roster history to see who was on the team during that period
       JOIN roster_history rh ON rh.team_id = t.team_id 
         AND rh.game_date BETWEEN sp.start_date AND sp.end_date
-      -- 3. Join stats for matches that happened on the SAME day the player was on the roster
       JOIN player_game_stats pgs ON pgs.player_id = rh.player_id
       JOIN matches m ON m.match_id = pgs.match_id 
         AND m.scheduled_at::date = rh.game_date
