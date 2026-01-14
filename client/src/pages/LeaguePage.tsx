@@ -1,27 +1,52 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Sidebar from "../components/common/Sidebar";
+import api from "../lib/api"; // Your custom axios instance
 import {
   LEAGUE_RECORDS,
   LEAGUE_PERIODS,
-  FULL_SEASON_DATA,
-  PERIOD_DATA,
 } from "../data/mockData";
 
 const CURRENT_PERIOD = 3;
+const LEAGUE_ID = 1; // You can later get this from useParams()
 
 export default function LeagueStandingsPage() {
   const [activePeriod, setActivePeriod] = useState(CURRENT_PERIOD);
+  const [standings, setStandings] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const isFullSeason = activePeriod === 6;
 
-  const getActiveData = () => {
-    const data = isFullSeason
-      ? FULL_SEASON_DATA
-      : PERIOD_DATA[activePeriod] || [];
-    return [...data].sort((a, b) => a.rank - b.rank);
-  };
+  useEffect(() => {
+    const fetchStandings = async () => {
+      setLoading(true);
+      try {
+        const endpoint = isFullSeason
+          ? `/leagues/${LEAGUE_ID}/standings`
+          : `/leagues/${LEAGUE_ID}/standings/period/${activePeriod}`;
+        
+        const { data } = await api.get(endpoint);
 
-  const displayTeams = getActiveData();
+        if (data.ok) {
+          const mappedData = data.standings.map((s: any) => ({
+            rank: parseInt(s.rank),
+            previousRank: parseInt(s.rank),
+            name: s.team_name,
+            manager: s.owner_name,
+            points: isFullSeason ? s.total_points : s.period_points,
+            lastDayPoints: 0, 
+            isUser: false
+          }));
+          setStandings(mappedData);
+        }
+      } catch (err) {
+        console.error("Failed to fetch standings:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStandings();
+  }, [activePeriod, isFullSeason]);
 
   const getMovement = (curr: number, prev: number) => {
     if (curr < prev) return <span className="text-emerald-500">▲</span>;
@@ -30,7 +55,7 @@ export default function LeagueStandingsPage() {
   };
 
   return (
-    <div className="flex bg-slate-50 text-slate-900 font-sans">
+    <div className="flex bg-slate-50 text-slate-900 font-sans min-h-screen">
       <Sidebar onLogout={() => {}} />
 
       <div className="flex-1 flex flex-col overflow-hidden ml-16">
@@ -54,21 +79,9 @@ export default function LeagueStandingsPage() {
                     disabled={isLocked}
                     onClick={() => setActivePeriod(p.id)}
                     className={`px-6 py-2 text-[10px] font-black uppercase tracking-widest transition-all border-2
-                      ${
-                        isLocked
-                          ? "bg-slate-50 border-slate-100 text-slate-300 cursor-not-allowed opacity-60"
-                          : ""
-                      }
-                      ${
-                        isActive
-                          ? "bg-slate-900 border-slate-900 text-white shadow-[4px_4px_0px_0px_rgba(0,0,0,0.2)]"
-                          : ""
-                      }
-                      ${
-                        !isActive && !isLocked
-                          ? "bg-white border-slate-900 text-slate-900 hover:bg-slate-50"
-                          : ""
-                      }
+                      ${isLocked ? "bg-slate-50 border-slate-100 text-slate-300 cursor-not-allowed opacity-60" : ""}
+                      ${isActive ? "bg-slate-900 border-slate-900 text-white shadow-[4px_4px_0px_0px_rgba(0,0,0,0.2)]" : ""}
+                      ${!isActive && !isLocked ? "bg-white border-slate-900 text-slate-900 hover:bg-slate-50" : ""}
                     `}
                   >
                     {p.label}
@@ -78,7 +91,13 @@ export default function LeagueStandingsPage() {
             </div>
 
             {/* RANKINGS TABLE */}
-            <div className="bg-white border-2 border-slate-900 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+            <div className="bg-white border-2 border-slate-900 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] relative">
+              {loading && (
+                <div className="absolute inset-0 bg-white/50 flex items-center justify-center z-10 font-black uppercase italic">
+                  Loading Stats...
+                </div>
+              )}
+              
               <table className="w-full border-collapse">
                 <thead>
                   <tr className="bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest text-left">
@@ -86,32 +105,22 @@ export default function LeagueStandingsPage() {
                     <th className="px-6 py-4">Team</th>
                     <th className="px-6 py-4">Manager</th>
                     <th className="px-6 py-4 text-right">
-                      {isFullSeason ? "Total Points" : "Points (Last Night)"}
+                      {isFullSeason ? "Total Points" : `Period ${activePeriod} Points`}
                     </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200">
-                  {displayTeams.map((team) => (
+                  {standings.map((team, idx) => (
                     <tr
-                      key={team.name}
-                      className={`${
-                        team.isUser ? "bg-indigo-50/50" : "hover:bg-slate-50"
-                      }`}
+                      key={idx}
+                      className={`${team.isUser ? "bg-indigo-50/50" : "hover:bg-slate-50"}`}
                     >
                       <td className="px-6 py-5 flex items-center gap-4">
-                        <span className="font-mono font-black text-xl">
-                          {team.rank}
-                        </span>
-                        <span className="text-[10px]">
-                          {getMovement(team.rank, team.previousRank)}
-                        </span>
+                        <span className="font-mono font-black text-xl">{team.rank}</span>
+                        <span className="text-[10px]">{getMovement(team.rank, team.previousRank)}</span>
                       </td>
                       <td className="px-6 py-5">
-                        <span
-                          className={`text-sm font-black uppercase tracking-tight ${
-                            team.isUser ? "text-indigo-600" : "text-slate-900"
-                          }`}
-                        >
+                        <span className={`text-sm font-black uppercase tracking-tight ${team.isUser ? "text-indigo-600" : "text-slate-900"}`}>
                           {team.name}
                         </span>
                       </td>
@@ -119,22 +128,22 @@ export default function LeagueStandingsPage() {
                         {team.manager}
                       </td>
                       <td className="px-6 py-5 text-right font-mono font-black">
-                        <div className="flex items-center justify-end gap-1">
-                          <span className="text-2xl">{team.points}</span>
-                          {!isFullSeason && (
-                            <span className="text-sm text-slate-400">
-                              ({team.lastDayPoints})
-                            </span>
-                          )}
-                        </div>
+                        <span className="text-2xl">{team.points}</span>
                       </td>
                     </tr>
                   ))}
+                  {standings.length === 0 && !loading && (
+                    <tr>
+                      <td colSpan={4} className="px-6 py-10 text-center text-slate-400 font-bold uppercase italic">
+                        No data available for this period
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
 
-            {/* LOWER STATS SECTION */}
+            {/* KEEPING MOCK DATA FOR RECORDS FOR NOW */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 pt-8">
               <RecordTable
                 title="Latest Matchday Bests"
@@ -159,26 +168,15 @@ export default function LeagueStandingsPage() {
 function RecordTable({ title, data, color, accent }: any) {
   return (
     <div>
-      <h3
-        className={`text-lg font-black uppercase italic mb-4 border-b-4 ${color} pb-2`}
-      >
+      <h3 className={`text-lg font-black uppercase italic mb-4 border-b-4 ${color} pb-2`}>
         {title}
       </h3>
       <div className="flex flex-col border-2 border-slate-900 bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)]">
         {data.map((row: any, i: number) => (
-          <div
-            key={i}
-            className="flex justify-between items-center px-4 py-3 border-b border-slate-100 last:border-0 hover:bg-slate-50"
-          >
-            <span className="text-[10px] font-black uppercase text-slate-400 w-24">
-              {row.label}
-            </span>
-            <span className="text-[11px] font-bold uppercase flex-1 px-4 text-slate-700">
-              {row.team}
-            </span>
-            <span className={`font-mono font-black text-sm ${accent}`}>
-              {row.value}
-            </span>
+          <div key={i} className="flex justify-between items-center px-4 py-3 border-b border-slate-100 last:border-0 hover:bg-slate-50">
+            <span className="text-[10px] font-black uppercase text-slate-400 w-24">{row.label}</span>
+            <span className="text-[11px] font-bold uppercase flex-1 px-4 text-slate-700">{row.team}</span>
+            <span className={`font-mono font-black text-sm ${accent}`}>{row.value}</span>
           </div>
         ))}
       </div>
