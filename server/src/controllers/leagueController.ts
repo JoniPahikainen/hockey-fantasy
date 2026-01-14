@@ -25,7 +25,6 @@ export const joinLeague = async (req: Request, res: Response) => {
   try {
     const { team_id, league_id, passcode } = req.body;
 
-    // 1. Verify league exists and passcode matches
     const leagueCheck = await pool.query(
       "SELECT passcode FROM leagues WHERE league_id = $1",
       [league_id]
@@ -39,7 +38,6 @@ export const joinLeague = async (req: Request, res: Response) => {
       return res.status(401).json({ ok: false, error: "Invalid passcode" });
     }
 
-    // 2. Add team to league
     await pool.query(
       "INSERT INTO league_members (league_id, team_id) VALUES ($1, $2) ON CONFLICT DO NOTHING",
       [league_id, team_id]
@@ -52,29 +50,76 @@ export const joinLeague = async (req: Request, res: Response) => {
   }
 };
 
-// Get League Leaderboard (Standings)
+// Get full season standings for a league
 export const getLeagueStandings = async (req: Request, res: Response) => {
   try {
     const { league_id } = req.params;
 
     const result = await pool.query(
-      `SELECT 
+      `
+      SELECT 
         t.team_id, 
         t.team_name, 
         u.username as owner_name, 
         t.total_points,
         RANK() OVER (ORDER BY t.total_points DESC) as rank
-       FROM league_members lm
-       JOIN fantasy_teams t ON lm.team_id = t.team_id
-       JOIN users u ON t.user_id = u.user_id
-       WHERE lm.league_id = $1
-       ORDER BY t.total_points DESC`,
+      FROM league_members lm
+      JOIN fantasy_teams t ON lm.team_id = t.team_id
+      JOIN users u ON t.user_id = u.user_id
+      WHERE lm.league_id = $1
+      ORDER BY t.total_points DESC
+      `,
       [league_id]
     );
 
     return res.json({ ok: true, standings: result.rows });
   } catch (err) {
-    console.error("Error fetching standings:", err);
+    console.error("Error fetching full season standings:", err);
+    return res.status(500).json({ ok: false, error: "Internal server error" });
+  }
+};
+
+// Get standings for a league filtered by a specific scoring period
+export const getLeagueStandingsByPeriod = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const { league_id, period_id } = req.params;
+
+    const result = await pool.query(
+      `
+      SELECT 
+        t.team_id,
+        t.team_name,
+        u.username AS owner_name,
+        COALESCE(SUM(
+          pgs.points_earned * CASE WHEN rh.is_captain THEN 1.3 ELSE 1 END
+        ), 0) AS period_points,
+        RANK() OVER (ORDER BY COALESCE(SUM(pgs.points_earned * CASE WHEN rh.is_captain THEN 1.3 ELSE 1 END), 0) DESC) AS rank
+      FROM league_members lm
+      JOIN fantasy_teams t ON lm.team_id = t.team_id
+      JOIN users u ON t.user_id = u.user_id
+      -- 1. Get the scoring period dates
+      CROSS JOIN scoring_periods sp
+      -- 2. Join roster history to see who was on the team during that period
+      JOIN roster_history rh ON rh.team_id = t.team_id 
+        AND rh.game_date BETWEEN sp.start_date AND sp.end_date
+      -- 3. Join stats for matches that happened on the SAME day the player was on the roster
+      JOIN player_game_stats pgs ON pgs.player_id = rh.player_id
+      JOIN matches m ON m.match_id = pgs.match_id 
+        AND m.scheduled_at::date = rh.game_date
+      WHERE lm.league_id = $1 
+        AND sp.period_id = $2
+      GROUP BY t.team_id, t.team_name, u.username
+      ORDER BY period_points DESC
+      `,
+      [league_id, period_id]
+    );
+
+    return res.json({ ok: true, standings: result.rows });
+  } catch (err) {
+    console.error("Error fetching period standings:", err);
     return res.status(500).json({ ok: false, error: "Internal server error" });
   }
 };
