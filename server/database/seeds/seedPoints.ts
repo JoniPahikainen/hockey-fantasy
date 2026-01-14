@@ -15,10 +15,8 @@ export async function seedPoints() {
     const { stats_count, team_count } = counts.rows[0];
     const totalRecords = parseInt(stats_count);
 
-    console.log("-----------------------------------------");
     console.log(`Total Stat Records: ${totalRecords}`);
     console.log(`Fantasy Teams: ${team_count}`);
-    console.log("-----------------------------------------");
 
     // Step 0: Reset
     const resetStart = Date.now();
@@ -35,7 +33,6 @@ export async function seedPoints() {
     while (processed < totalRecords) {
       await client.query("BEGIN");
 
-      // We use target_batch to isolate the rows, then join players and matches
       const result = await client.query(`
         WITH target_batch AS (
             SELECT stat_id FROM player_game_stats 
@@ -100,7 +97,6 @@ export async function seedPoints() {
     `);
     console.log(` [DONE] - ${Date.now() - s5Start}ms`);
 
-    console.log("-----------------------------------------");
     console.log(`TOTAL TIME: ${Date.now() - startTime}ms`);
     console.log("SUCCESS.");
 

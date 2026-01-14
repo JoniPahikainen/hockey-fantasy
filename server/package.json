@@ -8,7 +8,8 @@
     "seed:teams": "tsx database/seeds/seedTeams.ts",
     "seed:players": "ts-node database/seeds/seedPlayers.ts",
     "seed:matches": "ts-node database/seeds/seedMatches.ts",
-    "seed:scores": "ts-node database/seeds/seedScores.ts"
+    "seed:scores": "ts-node database/seeds/seedScores.ts",
+    "seed:points": "ts-node database/seeds/seedPoints.ts"
   },
   "keywords": [],
   "author": "",

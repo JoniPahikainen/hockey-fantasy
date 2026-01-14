@@ -62,6 +62,7 @@ CREATE TABLE IF NOT EXISTS player_game_stats (
     saves INT DEFAULT 0,
     points_earned NUMERIC(6, 2) DEFAULT 0,
     price_change INT DEFAULT 0,
+    is_processed BOOLEAN DEFAULT false,
     CONSTRAINT unique_player_match UNIQUE (player_id, match_id)
 );
 
@@ -115,3 +116,68 @@ CREATE TABLE IF NOT EXISTS settings (
     email_notifications BOOLEAN DEFAULT true,
     dark_mode BOOLEAN DEFAULT false
 );
+
+-- 12. Scoring System
+CREATE TABLE IF NOT EXISTS scoring_periods (
+    period_id SERIAL PRIMARY KEY,
+    period_name VARCHAR(50),
+    start_date DATE NOT NULL,
+    end_date DATE NOT NULL
+);
+
+--- 13. Scoring Rules
+CREATE TABLE IF NOT EXISTS scoring_rules (
+    rule_key TEXT PRIMARY KEY,
+    goalie NUMERIC,
+    defense NUMERIC,
+    forward NUMERIC
+);
+
+--- 14. Goalie Specific Scoring
+CREATE TABLE IF NOT EXISTS goalie_save_points (
+    min_saves INT,
+    max_saves INT,
+    points INT
+);
+--- 15. Goalie Goals Against Penalties
+CREATE TABLE IF NOT EXISTS goalie_goals_against_penalty (
+    goals_against INT PRIMARY KEY,
+    points INT
+);
+
+
+-- Initial Data Insertion for Scoring Rules
+INSERT INTO scoring_rules VALUES
+('WIN', 4, 4, 4),
+('LOSS', -2, -2, -2),
+('GOAL', 25, 9, 7),
+('ASSIST', 10, 6, 4),
+('ZEROGOALS', 15, 0, 0),
+('CAPTAIN_MULTIPLIER', 1.3, 1.3, 1.3);
+
+INSERT INTO goalie_save_points VALUES
+(1,4,1),(5,9,3),(10,14,5),(15,19,7),(20,24,9),
+(25,29,11),(30,34,13),(35,39,16),(40,44,19),
+(45,49,22),(50,54,25),(55,59,28),(60,64,31),
+(65,69,34),(70,74,37),(75,79,40),(80,84,43),
+(85,89,46),(90,94,49),(95,99,52),(100,1000,55);
+
+INSERT INTO goalie_goals_against_penalty VALUES
+(1,-1),(2,-2),(3,-3),(4,-4),(5,-6),(6,-8),(7,-10),
+(8,-12),(9,-14),(10,-16),(11,-18),(12,-20),(13,-22),(14,-24),(15,-26),
+(16,-28),(17,-30),(18,-32),(19,-34),(20,-36);
+
+
+
+-- Regular season periods
+INSERT INTO scoring_periods (period_name, start_date, end_date) VALUES
+('Period 1', '2025-10-07', '2025-11-15'),
+('Period 2', '2025-11-16', '2025-12-31'),
+('Period 3', '2026-01-01', '2026-02-15'),
+('Period 4', '2026-02-16', '2026-03-31');
+
+-- Playoffs period (5th)
+INSERT INTO scoring_periods (period_name, start_date, end_date) VALUES
+('Playoffs', '2026-04-01', '2026-05-31');
+
+
