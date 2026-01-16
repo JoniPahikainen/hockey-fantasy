@@ -125,3 +125,44 @@ export const getLeagueStandingsByPeriod = async (
     return res.status(500).json({ ok: false, error: "Internal server error" });
   }
 };
+
+
+// Get current scoring period standings for a league
+export const getCurrentPeriodStandings = async (req: Request, res: Response) => {
+  try {
+    const { league_id } = req.params;
+
+    const result = await pool.query(
+      `
+      WITH current_period AS (
+        SELECT period_id FROM scoring_periods 
+        WHERE CURRENT_DATE BETWEEN start_date AND end_date
+        LIMIT 1
+      )
+      SELECT 
+        t.team_id,
+        t.team_name,
+        u.username AS owner_name,
+        COALESCE(SUM(pgs.points_earned * CASE WHEN rh.is_captain THEN 1.3 ELSE 1 END), 0) AS period_points,
+        RANK() OVER (ORDER BY SUM(pgs.points_earned * CASE WHEN rh.is_captain THEN 1.3 ELSE 1 END) DESC) AS rank
+      FROM league_members lm
+      JOIN fantasy_teams t ON lm.team_id = t.team_id
+      JOIN users u ON t.user_id = u.user_id
+      JOIN scoring_periods sp ON CURRENT_DATE BETWEEN sp.start_date AND sp.end_date
+      JOIN roster_history rh ON rh.team_id = t.team_id 
+        AND rh.game_date BETWEEN sp.start_date AND sp.end_date
+      JOIN player_game_stats pgs ON pgs.player_id = rh.player_id
+      JOIN matches m ON m.match_id = pgs.match_id AND m.scheduled_at::date = rh.game_date
+      WHERE lm.league_id = $1
+      GROUP BY t.team_id, t.team_name, u.username
+      ORDER BY period_points DESC
+      `,
+      [league_id]
+    );
+
+    return res.json({ ok: true, standings: result.rows });
+  } catch (err) {
+    console.error("Error fetching current standings:", err);
+    return res.status(500).json({ ok: false, error: "Internal server error" });
+  }
+};

@@ -7,7 +7,6 @@ import UpcomingMatches from "../components/home/UpcomingMatches";
 import {
   GM_PLANNER_DATA,
   TEAM_DATA,
-  PERIOD_DATA,
 } from "../data/mockData";
 import MiniStandings from "../components/home/MiniStandings";
 import BestPerformers from "../components/home/BestPerformers";
@@ -90,7 +89,7 @@ export default function HomePage() {
             ) : (
               <UpcomingMatches match_data={matches} />
             )}
-            <MiniStandings team_data={PERIOD_DATA[3]} />
+            <MiniStandings />
             <RosterList team={TEAM_DATA} />
           </div>
         </div>
