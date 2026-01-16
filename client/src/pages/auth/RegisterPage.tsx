@@ -1,151 +1,160 @@
-import type { FormEvent } from 'react'
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import api from '../../lib/api'
-import AuthLayout from './AuthLayout'
+import { useState } from "react";
+import { useNavigate, Link, Navigate } from "react-router-dom";
+import api from "../../lib/api";
 
 export default function RegisterPage() {
-  const navigate = useNavigate()
-  const [username, setUsername] = useState('')
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [message, setMessage] = useState<string | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
+  const navigate = useNavigate();
+  const token = localStorage.getItem("token");
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault()
-    setMessage(null)
-    setIsLoading(true)
+  const [formData, setFormData] = useState({
+    username: "",
+    email: "",
+    password: "",
+  });
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-    try {
-      const res = await api.post('/users/register', { username, email, password })
-      setMessage(`User created successfully! ID: ${res.data.user.user_id}`)
-      // Clear form on success
-      setUsername('')
-      setEmail('')
-      setPassword('')
-      setTimeout(() => {
-        navigate('/login')
-      }, 1500)
-    } catch (err: any) {
-      const detail = err?.response?.data?.error ?? 'Failed to register'
-      setMessage(detail)
-    } finally {
-      setIsLoading(false)
-    }
+  if (token) {
+    return <Navigate to="/" replace />;
   }
 
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const res = await api.post("/auth/register", formData);
+
+      if (res.data.token) {
+        localStorage.setItem("token", res.data.token);
+        localStorage.setItem("user", JSON.stringify(res.data.user));
+
+        navigate("/", { replace: true });
+      }
+    } catch (err: any) {
+      console.error("Registration failed:", err);
+      setError(
+        err.response?.data?.error || "Registration failed. Please try again."
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
-    <AuthLayout title="Hockey Fantasy" subtitle="Register a new account">
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-        <label style={{ fontSize: '0.875rem' }}>
-          Username
-          <input
-            type="text"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            required
-            disabled={isLoading}
-            style={{
-              marginTop: '0.25rem',
-              width: '100%',
-              padding: '0.5rem 0.75rem',
-              borderRadius: '0.5rem',
-              border: '1px solid #4b5563',
-              background: '#020617',
-              color: 'inherit',
-              opacity: isLoading ? 0.6 : 1,
-            }}
-          />
-        </label>
-
-        <label style={{ fontSize: '0.875rem' }}>
-          Email
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            disabled={isLoading}
-            style={{
-              marginTop: '0.25rem',
-              width: '100%',
-              padding: '0.5rem 0.75rem',
-              borderRadius: '0.5rem',
-              border: '1px solid #4b5563',
-              background: '#020617',
-              color: 'inherit',
-              opacity: isLoading ? 0.6 : 1,
-            }}
-          />
-        </label>
-
-        <label style={{ fontSize: '0.875rem' }}>
-          Password
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            disabled={isLoading}
-            style={{
-              marginTop: '0.25rem',
-              width: '100%',
-              padding: '0.5rem 0.75rem',
-              borderRadius: '0.5rem',
-              border: '1px solid #4b5563',
-              background: '#020617',
-              color: 'inherit',
-              opacity: isLoading ? 0.6 : 1,
-            }}
-          />
-        </label>
-
-        <button
-          type="submit"
-          disabled={isLoading}
-          style={{
-            marginTop: '0.75rem',
-            padding: '0.6rem 1rem',
-            borderRadius: '999px',
-            border: 'none',
-            background: isLoading ? '#4b5563' : '#0b1120',
-            color: '#e5e7eb',
-            fontWeight: 600,
-            cursor: isLoading ? 'not-allowed' : 'pointer',
-            opacity: isLoading ? 0.7 : 1,
-          }}
-        >
-          {isLoading ? 'Registering...' : 'Register'}
-        </button>
-      </form>
-
-      {message && (
-        <div
-          style={{
-            marginTop: '1rem',
-            fontSize: '0.875rem',
-            color: message.includes('successfully') ? '#10b981' : '#fbbf24',
-          }}
-        >
-          {message}
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
+      <div className="max-w-[400px] w-full">
+        <div className="mb-12 text-center">
+          <h1 className="text-6xl font-black uppercase italic tracking-tighter leading-none text-slate-900">
+            FANTASY <span className="text-slate-400">LEAGUE</span>
+          </h1>
+          <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 mt-2">
+            Competitive Hockey Management
+          </p>
         </div>
-      )}
 
-      <div style={{ marginTop: '1rem', fontSize: '0.875rem', textAlign: 'center', color: '#9ca3af' }}>
-        Already have an account?{' '}
-        <a
-          href="/login"
-          onClick={(e) => {
-            e.preventDefault()
-            navigate('/login')
-          }}
-          style={{ color: '#60a5fa', textDecoration: 'none' }}
-        >
-          Login
-        </a>
+        <div className="bg-white border border-slate-300 shadow-sm overflow-hidden">
+          
+          {/* HEADER SECTION */}
+          <div className="px-8 py-6 bg-slate-900 flex justify-between items-center">
+            <h2 className="text-xs font-black text-white uppercase tracking-[0.2em]">
+              New <span className="text-slate-400">Manager</span>
+            </h2>
+            <div className="text-right">
+              <span className="text-[10px] font-black text-slate-500 uppercase block leading-none mb-1">
+                System
+              </span>
+              <span className="text-sm font-mono font-black text-white leading-none">
+                REG_v1
+              </span>
+            </div>
+          </div>
+
+          {/* FORM SECTION */}
+          <div className="p-8 bg-white">
+            <form onSubmit={handleRegister} className="flex flex-col gap-5">
+              
+              {/* ERROR DISPLAY */}
+              {error && (
+                <div className="bg-rose-50 border border-rose-200 px-4 py-3 text-[10px] font-black text-rose-600 uppercase tracking-widest">
+                  {error}
+                </div>
+              )}
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                  Username
+                </label>
+                <input
+                  type="text"
+                  required
+                  disabled={isLoading}
+                  className="bg-slate-50 border border-slate-200 p-3 text-[12px] font-bold uppercase outline-none focus:border-slate-400 transition-all disabled:opacity-50"
+                  placeholder="Manager_Name"
+                  value={formData.username}
+                  onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                />
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                  Email Address
+                </label>
+                <input
+                  type="email"
+                  required
+                  disabled={isLoading}
+                  className="bg-slate-50 border border-slate-200 p-3 text-[12px] font-bold uppercase outline-none focus:border-slate-400 transition-all disabled:opacity-50"
+                  placeholder="name@league.com"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                />
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                  Password
+                </label>
+                <input
+                  type="password"
+                  required
+                  disabled={isLoading}
+                  className="bg-slate-50 border border-slate-200 p-3 text-[12px] font-bold outline-none focus:border-slate-400 transition-all disabled:opacity-50"
+                  placeholder="••••••••"
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={isLoading}
+                className={`mt-2 py-4 text-[10px] font-black uppercase tracking-[0.2em] transition-all shadow-sm
+                  ${isLoading 
+                    ? "bg-slate-400 text-white cursor-not-allowed" 
+                    : "bg-slate-900 text-white hover:bg-slate-800"
+                  }`}
+              >
+                {isLoading ? "Creating Account..." : "Initialize Profile"}
+              </button>
+            </form>
+          </div>
+
+          {/* FOOTER */}
+          <div className="bg-slate-50 px-8 py-4 border-t border-slate-200 flex justify-between items-center">
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+              Member?
+            </span>
+            <Link 
+              to="/login" 
+              className="text-[10px] font-black text-slate-900 uppercase underline underline-offset-4 hover:text-slate-600"
+            >
+              Sign In
+            </Link>
+          </div>
+        </div>
       </div>
-    </AuthLayout>
-  )
+    </div>
+  );
 }
-

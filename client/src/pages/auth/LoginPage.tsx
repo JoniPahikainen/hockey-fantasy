@@ -1,138 +1,140 @@
-import type { FormEvent } from 'react'
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import api from '../../lib/api'
-import AuthLayout from './AuthLayout'
+import { useState } from "react";
+import { Navigate, Link, useNavigate } from "react-router-dom";
+import api from "../../lib/api";
 
 export default function LoginPage() {
-  const navigate = useNavigate()
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [message, setMessage] = useState<string | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
+  const navigate = useNavigate();
+  const token = localStorage.getItem("token");
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault()
-    setMessage(null)
-    setIsLoading(true)
-
-    try {
-      // TODO: Replace with actual login endpoint when backend is ready
-
-      console.log(email, password);
-
-      
-      const res = await api.post('/users/login', { email: email, password: password })
-      
-      if (res.data.token) {
-        localStorage.setItem('token', res.data.token)
-        localStorage.setItem('user', JSON.stringify(res.data.user))
-      }
-      
-      setMessage('Login successful!')
-      setEmail('')
-      setPassword('')
-      setTimeout(() => {
-        navigate('/')
-      }, 1000)
-    } catch (err: any) {
-      const detail = err?.response?.data?.error ?? 'Failed to login'
-      setMessage(detail)
-    } finally {
-      setIsLoading(false)
-    }
+  if (token) {
+    return <Navigate to="/" replace />;
   }
 
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const res = await api.post("/auth/login", { email, password });
+      
+      if (res.data.token) {
+        localStorage.setItem("token", res.data.token);
+        localStorage.setItem("user", JSON.stringify(res.data.user));
+        
+        navigate("/", { replace: true });
+      }
+    } catch (err: any) {
+      console.error("Login failed:", err);
+      setError("Authentication failed. Check your identity or access key.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
-    <AuthLayout title="Hockey Fantasy" subtitle="Login to your account">
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-        <label style={{ fontSize: '0.875rem' }}>
-          Email
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            disabled={isLoading}
-            style={{
-              marginTop: '0.25rem',
-              width: '100%',
-              padding: '0.5rem 0.75rem',
-              borderRadius: '0.5rem',
-              border: '1px solid #4b5563',
-              background: '#020617',
-              color: 'inherit',
-              opacity: isLoading ? 0.6 : 1,
-            }}
-          />
-        </label>
-
-        <label style={{ fontSize: '0.875rem' }}>
-          Password
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            disabled={isLoading}
-            style={{
-              marginTop: '0.25rem',
-              width: '100%',
-              padding: '0.5rem 0.75rem',
-              borderRadius: '0.5rem',
-              border: '1px solid #4b5563',
-              background: '#020617',
-              color: 'inherit',
-              opacity: isLoading ? 0.6 : 1,
-            }}
-          />
-        </label>
-
-        <button
-          type="submit"
-          disabled={isLoading}
-          style={{
-            marginTop: '0.75rem',
-            padding: '0.6rem 1rem',
-            borderRadius: '999px',
-            border: 'none',
-            background: isLoading ? '#4b5563' : '#0b1120',
-            color: '#e5e7eb',
-            fontWeight: 600,
-            cursor: isLoading ? 'not-allowed' : 'pointer',
-            opacity: isLoading ? 0.7 : 1,
-          }}
-        >
-          {isLoading ? 'Logging in...' : 'Login'}
-        </button>
-      </form>
-
-      {message && (
-        <div
-          style={{
-            marginTop: '1rem',
-            fontSize: '0.875rem',
-            color: message.includes('successful') ? '#10b981' : '#fbbf24',
-          }}
-        >
-          {message}
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
+      <div className="max-w-[400px] w-full">
+        <div className="mb-12 text-center">
+          <h1 className="text-6xl font-black uppercase italic tracking-tighter leading-none text-slate-900">
+            FANTASY <span className="text-slate-400">LEAGUE</span>
+          </h1>
+          <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 mt-2">
+            Competitive Hockey Management
+          </p>
         </div>
-      )}
+        
+        <div className="bg-white border border-slate-300 shadow-sm overflow-hidden">
+          
+          {/* HEADER SECTION */}
+          <div className="px-8 py-6 bg-slate-900 flex justify-between items-center">
+            <h2 className="text-xs font-black text-white uppercase tracking-[0.2em]">
+              Manager <span className="text-slate-400">Access</span>
+            </h2>
+            <div className="text-right">
+              <span className="text-[10px] font-black text-slate-500 uppercase block leading-none mb-1">
+                Security
+              </span>
+              <span className="text-sm font-mono font-black text-white leading-none uppercase">
+                {isLoading ? "Wait..." : "Auth_v2"}
+              </span>
+            </div>
+          </div>
 
-      <div style={{ marginTop: '1rem', fontSize: '0.875rem', textAlign: 'center', color: '#9ca3af' }}>
-        Don't have an account?{' '}
-        <a
-          href="/register"
-          onClick={(e) => {
-            e.preventDefault()
-            navigate('/register')
-          }}
-          style={{ color: '#60a5fa', textDecoration: 'none' }}
-        >
-          Register
-        </a>
+          {/* FORM SECTION */}
+          <div className="p-8 bg-white">
+            <form onSubmit={handleLogin} className="flex flex-col gap-5">
+              
+              {/* ERROR DISPLAY */}
+              {error && (
+                <div className="bg-rose-50 border border-rose-200 px-4 py-3 text-[10px] font-black text-rose-600 uppercase tracking-widest">
+                  {error}
+                </div>
+              )}
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                  Identity (Email)
+                </label>
+                <input
+                  type="email"
+                  required
+                  disabled={isLoading}
+                  className="bg-slate-50 border border-slate-200 p-3 text-[12px] font-bold uppercase outline-none focus:border-slate-400 transition-all disabled:opacity-50"
+                  placeholder="name@league.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                  Access Key
+                </label>
+                <input
+                  type="password"
+                  required
+                  disabled={isLoading}
+                  className="bg-slate-50 border border-slate-200 p-3 text-[12px] font-bold outline-none focus:border-slate-400 transition-all disabled:opacity-50"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={isLoading}
+                className={`mt-2 py-4 text-[10px] font-black uppercase tracking-[0.2em] transition-all shadow-sm
+                  ${isLoading 
+                    ? "bg-slate-400 text-white cursor-not-allowed" 
+                    : "bg-slate-900 text-white hover:bg-slate-800"
+                  }`}
+              >
+                {isLoading ? "Authenticating..." : "Enter Dashboard"}
+              </button>
+            </form>
+          </div>
+
+          {/* FOOTER */}
+          <div className="bg-slate-50 px-8 py-4 border-t border-slate-200 flex justify-between items-center">
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+              No Account?
+            </span>
+            <Link 
+              to="/register" 
+              className="text-[10px] font-black text-slate-900 uppercase underline underline-offset-4 hover:text-slate-600"
+            >
+              Register Team
+            </Link>
+          </div>
+        </div>
       </div>
-    </AuthLayout>
-  )
+    </div>
+  );
 }
-
