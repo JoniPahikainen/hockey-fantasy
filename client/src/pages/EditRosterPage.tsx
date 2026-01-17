@@ -21,18 +21,29 @@ export default function DailyRosterPage() {
   useEffect(() => {
     const initPage = async () => {
       try {
-        const userId = 1;
+        const userStr = localStorage.getItem("user");
+        if (!userStr) {
+          window.location.href = "/login";
+          return null;
+        }
+        
+        const user = JSON.parse(userStr);
+        const userId = user.id;
+
         const [poolRes, teamsRes] = await Promise.all([
           api.get("/players"),
           api.get(`/fantasy-teams/owner/${userId}`),
         ]);
+
         if (poolRes.data.ok) setPlayerPool(poolRes.data.players);
+        
         if (teamsRes.data.ok && teamsRes.data.teams.length > 0) {
           setUserTeams(teamsRes.data.teams);
+          
           setSelectedTeamId(teamsRes.data.teams[0].team_id);
         }
       } catch (err) {
-        console.error(err);
+        console.error("Initialization Error:", err);
       }
     };
     initPage();
@@ -274,7 +285,8 @@ export default function DailyRosterPage() {
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {processedPool.map((player) => {
-                  const isSelected = lineup.find((p) => p.id === player.id);
+                  const playerId = player.player_id || player.id;
+                  const isSelected = lineup.find((p) => (p.player_id || p.id) === playerId);
                   return (
                     <tr
                       key={player.id}
