@@ -17,7 +17,7 @@ app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok' });
 });
 
-app.use('/api/users', userRouter);
+app.use('/api', userRouter);
 app.use('/api', matchRouter);
 app.use('/api', playerRouter);
 app.use('/api', fantasyTeamRouter);

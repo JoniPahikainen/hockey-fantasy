@@ -3,9 +3,9 @@ import { createUser, deleteUser, loginUser } from '../controllers/userController
 
 const router = Router();
 
-router.post('/register', createUser);
-router.delete('/:id', deleteUser);
-router.post('/login', loginUser);
+router.post('/user/register', createUser);
+router.delete('/user/:id', deleteUser);
+router.post('/user/login', loginUser);
 
 export default router;
 
