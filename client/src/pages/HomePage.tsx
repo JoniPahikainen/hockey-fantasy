@@ -4,49 +4,54 @@ import Sidebar from "../components/common/Sidebar";
 import Calender from "../components/home/Calender";
 import RosterList from "../components/home/RosterList";
 import UpcomingMatches from "../components/home/UpcomingMatches";
-import {
-  GM_PLANNER_DATA,
-  TEAM_DATA,
-} from "../data/mockData";
 import MiniStandings from "../components/home/MiniStandings";
 import BestPerformers from "../components/home/BestPerformers";
 import api from "../lib/api";
+import { GM_PLANNER_DATA, TEAM_DATA } from "../data/mockData";
 
 export default function HomePage() {
   const navigate = useNavigate();
   const [userName, setUserName] = useState("Team Manager");
-  const todayNum = new Date().getDate();
-
+  const [userRoster, setUserRoster] = useState<any[]>([]);
   const [matches, setMatches] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  const todayNum = new Date().getDate();
+  const todayStr = new Date().toISOString().split("T")[0];
 
-  const fetchDailyMatches = async (dateStr: string) => {
+  useEffect(() => {
+    const userStr = localStorage.getItem("user");
+    if (!userStr) return;
+
+    const user = JSON.parse(userStr);
+    setUserName(user.username || "Team Manager");
+    const userId = user.id;
+
+    const fetchDashboardData = async () => {
     try {
-        setLoading(true);
-        const response = await api.get(`/matches/${dateStr}`);
+      setLoading(true);
+      
+      const [matchRes, dashRes] = await Promise.all([
+        api.get(`/matches/${todayStr}`),
+        api.get(`/fantasy-teams/user-dashboard/${userId}`)
+      ]);
 
-      if (response.data.ok) {
-            setMatches(response.data.matches);
-        }
+      if (matchRes.data.ok) {
+        setMatches(matchRes.data.matches);
+      }
+
+      if (dashRes.data.ok && dashRes.data.team) {
+        setUserRoster(dashRes.data.team.players);
+      }
     } catch (err) {
-      console.error("Failed to fetch matches:", err);
+      console.error("Dashboard Load Error:", err);
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    const userStr = localStorage.getItem("user");
-    if (userStr) {
-      try {
-        const user = JSON.parse(userStr);
-        setUserName(user.username || user.email || "Team Manager");
-      } catch (e) {}
-    }
-
-    const today = new Date().toISOString().split("T")[0];
-    fetchDailyMatches(today);
-  }, []);
+    fetchDashboardData();
+  }, [todayStr]);
 
   return (
     <div className="flex h-screen bg-slate-50 text-slate-900">
@@ -90,7 +95,7 @@ export default function HomePage() {
               <UpcomingMatches match_data={matches} />
             )}
             <MiniStandings />
-            <RosterList team={TEAM_DATA} />
+            <RosterList team={userRoster} />
           </div>
         </div>
       </div>

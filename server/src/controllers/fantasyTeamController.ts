@@ -181,3 +181,62 @@ export const saveLineup = async (req: Request, res: Response) => {
     client.release();
   }
 };
+
+export const getUserTeamWithPlayers = async (req: Request, res: Response) => {
+  try {
+    const { user_id } = req.params;
+
+    const result = await pool.query(
+      `SELECT 
+        ft.team_id, 
+        ft.team_name, 
+        ft.budget_remaining, 
+        ft.total_points AS team_total_points,
+        p.player_id, 
+        (p.first_name || ' ' || p.last_name) AS name, 
+        p.position AS pos, 
+        p.team_abbrev AS team,
+        rt.abbreviation AS abbrev,
+        rt.primary_color AS color,
+        p.current_price AS salary,
+        COALESCE(SUM(pgs.points_earned), 0) AS points
+       FROM fantasy_teams ft
+       LEFT JOIN fantasy_team_players ftp ON ft.team_id = ftp.team_id
+       LEFT JOIN players p ON ftp.player_id = p.player_id
+       LEFT JOIN real_teams rt ON p.team_abbrev = rt.abbreviation
+       LEFT JOIN player_game_stats pgs ON p.player_id = pgs.player_id
+       WHERE ft.user_id = $1
+       GROUP BY ft.team_id, p.player_id, rt.abbreviation, rt.primary_color
+       ORDER BY ft.created_at DESC`,
+      [user_id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.json({ ok: true, team: null });
+    }
+
+    const teamInfo = {
+      team_id: result.rows[0].team_id,
+      team_name: result.rows[0].team_name,
+      budget_remaining: result.rows[0].budget_remaining,
+      total_points: result.rows[0].team_total_points,
+      players: result.rows
+        .filter((row: { player_id: null; }) => row.player_id !== null)
+        .map((row: { player_id: any; name: any; pos: any; team: any; abbrev: any; color: any; salary: any; points: string; }) => ({
+          id: row.player_id,
+          name: row.name,
+          pos: row.pos,
+          team: row.team,
+          abbrev: row.abbrev,
+          color: row.color,
+          salary: row.salary,
+          points: parseFloat(row.points)
+        }))
+    };
+
+    return res.json({ ok: true, team: teamInfo });
+  } catch (err) {
+    console.error("Dashboard error:", err);
+    return res.status(500).json({ ok: false, error: "Internal server error" });
+  }
+};
