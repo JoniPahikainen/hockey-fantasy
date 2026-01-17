@@ -24,7 +24,7 @@ export default function RegisterPage() {
     setError(null);
 
     try {
-      const res = await api.post("/auth/register", formData);
+      const res = await api.post("/user/register", formData);
 
       if (res.data.token) {
         localStorage.setItem("token", res.data.token);
