@@ -240,3 +240,56 @@ export const getUserTeamWithPlayers = async (req: Request, res: Response) => {
     return res.status(500).json({ ok: false, error: "Internal server error" });
   }
 };
+
+export const getOptimalLineups = async (req: Request, res: Response) => {
+  try {
+    const query = (order: 'DESC' | 'ASC') => `
+      WITH last_match_date AS (
+        SELECT MAX(scheduled_at) as last_date FROM matches WHERE is_processed = true
+      ),
+      ranked_players AS (
+        SELECT 
+          p.player_id,
+          (p.first_name || ' ' || p.last_name) AS name,
+          p.position AS pos,
+          p.team_abbrev AS abbrev,
+          rt.primary_color AS color,
+          pgs.points_earned AS points,
+          pgs.goals, 
+          pgs.assists, 
+          pgs.saves,
+          CASE 
+            WHEN p.team_abbrev = m.home_team_abbrev THEN m.away_score 
+            ELSE m.home_score 
+          END as goals_against,
+          CASE 
+            WHEN (p.team_abbrev = m.home_team_abbrev AND m.home_score > m.away_score) OR 
+                 (p.team_abbrev = m.away_team_abbrev AND m.away_score > m.home_score) 
+            THEN true ELSE false 
+          END as is_win,
+          ROW_NUMBER() OVER(PARTITION BY p.position ORDER BY pgs.points_earned ${order}) as rank
+        FROM players p
+        JOIN real_teams rt ON p.team_abbrev = rt.abbreviation
+        JOIN player_game_stats pgs ON p.player_id = pgs.player_id
+        JOIN matches m ON pgs.match_id = m.match_id
+        WHERE m.scheduled_at >= (SELECT last_date - INTERVAL '24 hours' FROM last_match_date)
+          AND m.is_processed = true
+      )
+      SELECT * FROM ranked_players
+      WHERE (pos = 'F' AND rank <= 3)
+         OR (pos = 'D' AND rank <= 2)
+         OR (pos = 'G' AND rank <= 1)
+      ORDER BY pos DESC, points ${order};
+    `;
+
+    const [best, worst] = await Promise.all([
+      pool.query(query('DESC')),
+      pool.query(query('ASC'))
+    ]);
+
+    return res.json({ ok: true, best: best.rows, worst: worst.rows });
+  } catch (err) {
+    console.error("Error fetching optimal lineups:", err);
+    return res.status(500).json({ ok: false, error: "Internal server error" });
+  }
+};

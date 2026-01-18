@@ -7,16 +7,15 @@ import UpcomingMatches from "../components/home/UpcomingMatches";
 import MiniStandings from "../components/home/MiniStandings";
 import BestPerformers from "../components/home/BestPerformers";
 import api from "../lib/api";
-import { GM_PLANNER_DATA, TEAM_DATA } from "../data/mockData";
 
 export default function HomePage() {
   const navigate = useNavigate();
   const [userName, setUserName] = useState("Team Manager");
   const [userRoster, setUserRoster] = useState<any[]>([]);
   const [matches, setMatches] = useState<any[]>([]);
+  const [optimalLineup, setOptimalLineup] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   
-  const todayNum = new Date().getDate();
   const todayStr = new Date().toISOString().split("T")[0];
 
   useEffect(() => {
@@ -31,9 +30,11 @@ export default function HomePage() {
     try {
       setLoading(true);
       
-      const [matchRes, dashRes] = await Promise.all([
+      const [matchRes, dashRes, optimalRes] = await Promise.all([
         api.get(`/matches/${todayStr}`),
-        api.get(`/fantasy-teams/user-dashboard/${userId}`)
+        api.get(`/fantasy-teams/user-dashboard/${userId}`),
+        api.get(`/fantasy-teams/optimal-lineups`)
+        
       ]);
 
       if (matchRes.data.ok) {
@@ -42,6 +43,10 @@ export default function HomePage() {
 
       if (dashRes.data.ok && dashRes.data.team) {
         setUserRoster(dashRes.data.team.players);
+      }
+
+      if (optimalRes.data.ok) {
+        setOptimalLineup(optimalRes.data.best || []);
       }
     } catch (err) {
       console.error("Dashboard Load Error:", err);
@@ -81,8 +86,8 @@ export default function HomePage() {
         <div className="grid grid-cols-1 lg:grid-cols-9 gap-8">
           {/* LEFT */}
           <div className="lg:col-span-4 flex flex-col gap-8">
-            <BestPerformers team={TEAM_DATA} />
-            <Calender data={GM_PLANNER_DATA} today={todayNum} />
+            <BestPerformers team={optimalLineup} />
+            {/* <Calender data={GM_PLANNER_DATA} today={todayNum} /> */}
           </div>
 
           {/* RIGHT */}
