@@ -1,4 +1,5 @@
 import pool from "../../src/db";
+import { Logger } from "../../src/utils/logger";
 
 export const NHL_TEAMS = [
   { abbreviation: "ANA", team_id: 24, full_name: "Anaheim Ducks", primary_color: "#F47A38" },
@@ -36,11 +37,12 @@ export const NHL_TEAMS = [
 ];
 
 export async function seedTeams() {
-  console.log("⏳ Seeding NHL teams...");
-  
-  try {
-    for (const team of NHL_TEAMS) {
-      await pool.query( // Changed 'db' to 'pool' to match your export
+  const tracker = new Logger("TEAM_SEED", NHL_TEAMS.length);
+  tracker.log('INFO', "Starting database sync for NHL teams.");
+
+  for (const team of NHL_TEAMS) {
+    try {
+      await pool.query(
         `INSERT INTO real_teams (abbreviation, team_id, full_name, primary_color)
          VALUES ($1, $2, $3, $4)
          ON CONFLICT (abbreviation) 
@@ -50,14 +52,25 @@ export async function seedTeams() {
             primary_color = EXCLUDED.primary_color`,
         [team.abbreviation, team.team_id, team.full_name, team.primary_color]
       );
+
+      tracker.progress(team.abbreviation);
+    } catch (error) {
+      tracker.log('ERROR', `Failed to upsert team`, { 
+        team: team.abbreviation, 
+        error: error instanceof Error ? error.message : String(error) 
+      });
+      tracker.progress(team.abbreviation);
     }
-    console.log("✅ Successfully seeded 32 NHL teams.");
-  } catch (error) {
-    console.error("❌ Error seeding teams:", error);
-    throw error;
   }
+
+  tracker.finish();
 }
 
-if (require.main === module) {
-    seedTeams().then(() => process.exit(0)).catch(() => process.exit(1));
+if (require.main === module || (process.argv[1] && process.argv[1].includes('seedTeams'))) {
+  seedTeams()
+    .then(() => process.exit(0))
+    .catch((err) => {
+      console.error("[FATAL] Team seed failed:", err);
+      process.exit(1);
+    });
 }

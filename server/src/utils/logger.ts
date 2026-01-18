@@ -1,0 +1,57 @@
+import fs from 'fs';
+import path from 'path';
+
+export class Logger {
+  private startTime: number;
+  private totalItems: number;
+  private processedItems: number = 0;
+  private logFilePath: string;
+
+  constructor(private context: string, total: number = 0) {
+    this.startTime = Date.now();
+    this.totalItems = total;
+
+    const logDir = path.join(process.cwd(), 'storage', 'logs');
+    if (!fs.existsSync(logDir)) {
+      fs.mkdirSync(logDir, { recursive: true });
+    }
+
+    const dateStr = new Date().toISOString().split('T')[0];
+    this.logFilePath = path.join(logDir, `sync_${dateStr}.log`);
+  }
+
+  log(level: 'INFO' | 'WARN' | 'ERROR', message: string, metadata?: any) {
+    const timestamp = new Date().toISOString();
+    const metaString = metadata ? ` | DATA: ${JSON.stringify(metadata)}` : '';
+    const fullMessage = `[${timestamp}] [${level}] [${this.context}] ${message}${metaString}`;
+
+    console.log(fullMessage);
+
+    fs.appendFileSync(this.logFilePath, fullMessage + '\n');
+  }
+
+  progress(currentItemName: string) {
+    this.processedItems++;
+    const elapsedMs = Date.now() - this.startTime;
+    const itemsPerSecond = (this.processedItems / (elapsedMs / 1000)).toFixed(2);
+    
+    let etr = "CALC...";
+    if (this.totalItems > 0) {
+      const remaining = this.totalItems - this.processedItems;
+      const msRemaining = (elapsedMs / this.processedItems) * remaining;
+      etr = (msRemaining / 1000).toFixed(2) + "s";
+    }
+
+    const percent = ((this.processedItems / this.totalItems) * 100).toFixed(1);
+    
+    this.log('INFO', 
+      `PRG: ${percent}% | ${this.processedItems}/${this.totalItems} | ` +
+      `CUR: ${currentItemName} | SPD: ${itemsPerSecond}/s | ETR: ${etr}`
+    );
+  }
+
+  finish() {
+    const totalTime = ((Date.now() - this.startTime) / 1000).toFixed(2);
+    this.log('INFO', `COMPLETED | TIME: ${totalTime}s | TOTAL: ${this.processedItems}`);
+  }
+}

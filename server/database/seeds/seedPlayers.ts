@@ -1,34 +1,42 @@
 import pool from "../../src/db";
+import { Logger } from "../../src/utils/logger";
 
-function mapPosition(nhlPos: string): 'G' | 'D' | 'F' {
-  if (nhlPos === 'G') return 'G';
-  if (nhlPos === 'D') return 'D';
-  return 'F'; 
+function mapPosition(nhlPos: string): "G" | "D" | "F" {
+  if (nhlPos === "G") return "G";
+  if (nhlPos === "D") return "D";
+  return "F";
 }
 
 export async function seedPlayers() {
-  console.log("Starting NHL Player seed...");
+  const { rows: teams } = await pool.query(
+    "SELECT abbreviation FROM real_teams",
+  );
 
-  try {
-    const { rows: teams } = await pool.query("SELECT abbreviation FROM real_teams");
+  const tracker = new Logger("PLAYER_SEED", teams.length);
+  tracker.log("INFO", "Starting roster synchronization for all teams.");
 
-    for (const team of teams) {
-      const abbrev = team.abbreviation;
-      console.log(`Fetching roster for ${abbrev}...`);
+  for (const team of teams) {
+    const abbrev = team.abbreviation;
 
-      const response = await fetch(`https://api-web.nhle.com/v1/roster/${abbrev}/current`);
-      
+    try {
+      const response = await fetch(
+        `https://api-web.nhle.com/v1/roster/${abbrev}/current`,
+      );
+
       if (!response.ok) {
-        console.error(`Could not fetch roster for ${abbrev}`);
+        tracker.log("ERROR", `Could not fetch roster`, {
+          team: abbrev,
+          status: response.status,
+        });
+        tracker.progress(abbrev);
         continue;
       }
 
       const data = await response.json();
-      
       const allPlayers = [
-        ...data.forwards,
-        ...data.defensemen,
-        ...data.goalies
+        ...(data.forwards || []),
+        ...(data.defensemen || []),
+        ...(data.goalies || []),
       ];
 
       for (const p of allPlayers) {
@@ -36,41 +44,43 @@ export async function seedPlayers() {
         const lastName = p.lastName.default;
         const position = mapPosition(p.positionCode);
         const apiId = p.id;
-        const defaultPrice = 250000; 
+        const defaultPrice = 250000;
 
         await pool.query(
           `INSERT INTO players (api_id, first_name, last_name, position, team_abbrev, current_price)
            VALUES ($1, $2, $3, $4, $5, $6)
            ON CONFLICT (api_id) 
            DO UPDATE SET 
-              first_name = EXCLUDED.first_name,
-              last_name = EXCLUDED.last_name,
-              position = EXCLUDED.position,
-              team_abbrev = EXCLUDED.team_abbrev`,
-          [apiId, firstName, lastName, position, abbrev, defaultPrice]
+             first_name = EXCLUDED.first_name,
+             last_name = EXCLUDED.last_name,
+             position = EXCLUDED.position,
+             team_abbrev = EXCLUDED.team_abbrev`,
+          [apiId, firstName, lastName, position, abbrev, defaultPrice],
         );
       }
 
-      await new Promise(res => setTimeout(res, 200));
+      tracker.progress(abbrev);
+      await new Promise((res) => setTimeout(res, 200));
+    } catch (error) {
+      tracker.log("ERROR", `Exception during team processing`, {
+        team: abbrev,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      tracker.progress(abbrev);
     }
-
-    console.log("All NHL players seeded!");
-  } catch (error) {
-    console.error("Player seeding failed:", error);
   }
+
+  tracker.finish();
 }
 
-const isMainModule = require.main === module;
-const isCalledViaArgv = process.argv[1] && process.argv[1].includes('seedPlayers');
-
-if (isMainModule || isCalledViaArgv) {
+if (
+  require.main === module ||
+  (process.argv[1] && process.argv[1].includes("seedPlayers"))
+) {
   seedPlayers()
-    .then(() => {
-      console.log("Seed process finished.");
-      process.exit(0);
-    })
+    .then(() => process.exit(0))
     .catch((err) => {
-      console.error("Seed process failed:", err);
+      console.error("FATAL ERROR:", err);
       process.exit(1);
     });
 }
