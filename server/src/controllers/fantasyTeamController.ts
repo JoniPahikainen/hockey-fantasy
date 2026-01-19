@@ -244,11 +244,17 @@ export const getUserTeamWithPlayers = async (req: Request, res: Response) => {
 export const getOptimalLineups = async (req: Request, res: Response) => {
   try {
     const query = (order: 'DESC' | 'ASC') => `
-      WITH last_match_date AS (
-        SELECT MAX(scheduled_at) as last_date FROM matches WHERE is_processed = true
+      WITH last_match_info AS (
+        SELECT (MAX(scheduled_at)::date) as last_gameday FROM matches WHERE is_processed = true
       ),
-      ranked_players AS (
+      target_window AS (
         SELECT 
+          (last_gameday + time '12:00:00' - interval '1 day') as window_start,
+          (last_gameday + time '12:00:00') as window_end
+        FROM last_match_info
+      ),
+      best_game_per_player AS (
+        SELECT DISTINCT ON (pgs.player_id)
           p.player_id,
           (p.first_name || ' ' || p.last_name) AS name,
           p.position AS pos,
@@ -257,23 +263,31 @@ export const getOptimalLineups = async (req: Request, res: Response) => {
           pgs.points_earned AS points,
           pgs.goals, 
           pgs.assists, 
+          pgs.sog,
+          pgs.hits,
+          pgs.blocked_shots,
+          pgs.pim,
           pgs.saves,
+          m.scheduled_at,
+          pgs.is_win,
           CASE 
             WHEN p.team_abbrev = m.home_team_abbrev THEN m.away_score 
             ELSE m.home_score 
-          END as goals_against,
-          CASE 
-            WHEN (p.team_abbrev = m.home_team_abbrev AND m.home_score > m.away_score) OR 
-                 (p.team_abbrev = m.away_team_abbrev AND m.away_score > m.home_score) 
-            THEN true ELSE false 
-          END as is_win,
-          ROW_NUMBER() OVER(PARTITION BY p.position ORDER BY pgs.points_earned ${order}) as rank
+          END as goals_against
         FROM players p
         JOIN real_teams rt ON p.team_abbrev = rt.abbreviation
         JOIN player_game_stats pgs ON p.player_id = pgs.player_id
         JOIN matches m ON pgs.match_id = m.match_id
-        WHERE m.scheduled_at >= (SELECT last_date - INTERVAL '24 hours' FROM last_match_date)
+        CROSS JOIN target_window
+        WHERE m.scheduled_at >= target_window.window_start
+          AND m.scheduled_at < target_window.window_end
           AND m.is_processed = true
+        ORDER BY pgs.player_id, pgs.points_earned DESC
+      ),
+      ranked_players AS (
+        SELECT *,
+          ROW_NUMBER() OVER(PARTITION BY pos ORDER BY points ${order}) as rank
+        FROM best_game_per_player
       )
       SELECT * FROM ranked_players
       WHERE (pos = 'F' AND rank <= 3)
