@@ -57,12 +57,37 @@ CREATE TABLE IF NOT EXISTS player_game_stats (
     stat_id SERIAL PRIMARY KEY,
     player_id INT REFERENCES players(player_id) ON DELETE CASCADE,
     match_id INT REFERENCES matches(match_id) ON DELETE CASCADE,
+    
+    -- Core Skater Stats
     goals INT DEFAULT 0,
     assists INT DEFAULT 0,
+    plus_minus INT DEFAULT 0,
+    sog INT DEFAULT 0, -- Shots on Goal
+    
+    -- Advanced Skater Stats
+    pim INT DEFAULT 0, -- Penalty Minutes
+    hits INT DEFAULT 0,
+    blocked_shots INT DEFAULT 0,
+    shifts INT DEFAULT 0,
+    giveaways INT DEFAULT 0,
+    takeaways INT DEFAULT 0,
+    power_play_goals INT DEFAULT 0,
+    
+    -- Goalie Specific
     saves INT DEFAULT 0,
+    goals_against INT DEFAULT 0,
+    shots_against INT DEFAULT 0,
+    is_starter BOOLEAN DEFAULT false,
+    is_shutout BOOLEAN DEFAULT false,
+    
+    -- Time Tracking
+    toi_seconds INT DEFAULT 0, -- Store "10:05" as 605 seconds
+    
+    -- System Columns
     points_earned NUMERIC(6, 2) DEFAULT 0,
-    price_change INT DEFAULT 0,
+    is_win BOOLEAN DEFAULT false,
     is_processed BOOLEAN DEFAULT false,
+    
     CONSTRAINT unique_player_match UNIQUE (player_id, match_id)
 );
 
@@ -148,25 +173,40 @@ CREATE TABLE IF NOT EXISTS goalie_goals_against_penalty (
 
 -- Initial Data Insertion for Scoring Rules
 INSERT INTO scoring_rules VALUES
-('WIN', 4, 4, 4),
-('LOSS', -2, -2, -2),
-('GOAL', 25, 9, 7),
-('ASSIST', 10, 6, 4),
-('ZEROGOALS', 15, 0, 0),
+('WIN', 20, 20, 20),
+('LOSS', -10, -10, -10),
+
+('GOAL', 150, 45, 35),
+('ASSIST', 75, 30, 20),
+
+('SHUTOUT', 75, 0, 0),
+
+('SHOT_ON_GOAL', 0, 3, 2),
+('BLOCKED_SHOT', 0, 4, 3),
+('HIT', 0, 2, 1),
+('TAKEAWAY', 0, 3, 3),
+('GIVEAWAY', 0, -3, -3),
+
+('PIM', -3, -3, -3),
+('MINOR_PENALTY', -5, -5, -5),
+('MAJOR_PENALTY', -15, -15, -15),
+('GAME_MISCONDUCT', -30, -30, -30),
+
 ('CAPTAIN_MULTIPLIER', 1.3, 1.3, 1.3);
 
 INSERT INTO goalie_save_points VALUES
-(1,4,1),(5,9,3),(10,14,5),(15,19,7),(20,24,9),
-(25,29,11),(30,34,13),(35,39,16),(40,44,19),
-(45,49,22),(50,54,25),(55,59,28),(60,64,31),
-(65,69,34),(70,74,37),(75,79,40),(80,84,43),
-(85,89,46),(90,94,49),(95,99,52),(100,1000,55);
+(20,24,45),(25,29,55),(30,34,65),(35,39,80),
+(40,44,95),(45,49,110),(50,54,125),(55,59,140),
+(60,64,155),(65,69,170),(70,74,185),(75,79,200),
+(80,84,215),(85,89,230),(90,94,245),(95,99,260),
+(100,1000,275);
 
 INSERT INTO goalie_goals_against_penalty VALUES
-(1,-1),(2,-2),(3,-3),(4,-4),(5,-6),(6,-8),(7,-10),
-(8,-12),(9,-14),(10,-16),(11,-18),(12,-20),(13,-22),(14,-24),(15,-26),
-(16,-28),(17,-30),(18,-32),(19,-34),(20,-36);
-
+(1,-5),(2,-10),(3,-15),(4,-20),(5,-30),
+(6,-40),(7,-50),(8,-60),(9,-70),(10,-80),
+(11,-90),(12,-100),(13,-110),(14,-120),
+(15,-130),(16,-140),(17,-150),(18,-160),
+(19,-170),(20,-180);
 
 
 -- Regular season periods
