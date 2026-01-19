@@ -30,23 +30,31 @@ export class Logger {
     fs.appendFileSync(this.logFilePath, fullMessage + '\n');
   }
 
-  progress(currentItemName: string) {
-    this.processedItems++;
+  progress(identifier: string | number, increment: number = 1) {
+    if (typeof identifier === 'number') {
+      this.processedItems = identifier;
+    } else {
+      this.processedItems += increment;
+    }
+
     const elapsedMs = Date.now() - this.startTime;
-    const itemsPerSecond = (this.processedItems / (elapsedMs / 1000)).toFixed(2);
+    const safeElapsed = elapsedMs > 0 ? elapsedMs : 1;
+    const itemsPerSecond = (this.processedItems / (safeElapsed / 1000)).toFixed(2);
     
     let etr = "CALC...";
-    if (this.totalItems > 0) {
+    if (this.totalItems > 0 && this.processedItems > 0) {
       const remaining = this.totalItems - this.processedItems;
       const msRemaining = (elapsedMs / this.processedItems) * remaining;
       etr = (msRemaining / 1000).toFixed(2) + "s";
     }
 
-    const percent = ((this.processedItems / this.totalItems) * 100).toFixed(1);
+    const percent = this.totalItems > 0 
+      ? ((this.processedItems / this.totalItems) * 100).toFixed(1) 
+      : "0.0";
     
     this.log('INFO', 
       `PRG: ${percent}% | ${this.processedItems}/${this.totalItems} | ` +
-      `CUR: ${currentItemName} | SPD: ${itemsPerSecond}/s | ETR: ${etr}`
+      `CUR: ${identifier} | SPD: ${itemsPerSecond}/s | ETR: ${etr}`
     );
   }
 
