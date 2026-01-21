@@ -76,20 +76,46 @@ export const getTeamPlayers = async (req: Request, res: Response) => {
     const { team_id } = req.params;
 
     const result = await pool.query(
-      `SELECT 
-        p.player_id, 
-        (p.first_name || ' ' || p.last_name) AS name, 
-        p.position AS pos, 
-        p.team_abbrev AS team,
-        p.current_price AS salary,
-        rt.primary_color AS color,
-        COALESCE(SUM(pgs.points_earned), 0) AS points
+      `WITH last_match_info AS (
+          -- Find the most recent date that has processed games
+          SELECT (MAX(scheduled_at)::date) as last_gameday 
+          FROM matches 
+          WHERE is_processed = true
+       ),
+       target_window AS (
+          -- Define the window (12:00 PM to 12:00 PM)
+          SELECT 
+            (last_gameday + time '12:00:00' - interval '1 day') as window_start,
+            (last_gameday + time '12:00:00') as window_end
+          FROM last_match_info
+       )
+       SELECT 
+         p.player_id, 
+         (p.first_name || ' ' || p.last_name) AS name, 
+         p.position AS pos, 
+         p.team_abbrev AS team,
+         p.current_price AS salary,
+         rt.primary_color AS color,
+         -- Sum only points earned within the last night's window
+         COALESCE(
+           SUM(CASE 
+             WHEN m.scheduled_at >= target_window.window_start 
+              AND m.scheduled_at < target_window.window_end 
+             THEN pgs.points_earned 
+             ELSE 0 
+           END), 0
+         ) AS points
        FROM players p
        JOIN real_teams rt ON p.team_abbrev = rt.abbreviation
        JOIN fantasy_team_players ftp ON p.player_id = ftp.player_id
        LEFT JOIN player_game_stats pgs ON p.player_id = pgs.player_id
+       LEFT JOIN matches m ON pgs.match_id = m.match_id
+       CROSS JOIN target_window
        WHERE ftp.team_id = $1
-       GROUP BY p.player_id, p.first_name, p.last_name, p.position, p.team_abbrev, p.current_price, rt.primary_color;`,
+       GROUP BY 
+         p.player_id, p.first_name, p.last_name, p.position, 
+         p.team_abbrev, p.current_price, rt.primary_color,
+         target_window.window_start, target_window.window_end;`,
       [team_id]
     );
 
@@ -187,11 +213,24 @@ export const getUserTeamWithPlayers = async (req: Request, res: Response) => {
     const { user_id } = req.params;
 
     const result = await pool.query(
-      `SELECT 
+      `WITH last_match_info AS (
+          -- Find the date of the most recent night that has processed games
+          SELECT (MAX(scheduled_at)::date) as last_gameday 
+          FROM matches 
+          WHERE is_processed = true
+      ),
+      target_window AS (
+          -- Define the "Last Day" window (12:00 PM to 12:00 PM)
+          SELECT 
+            (last_gameday + time '12:00:00' - interval '1 day') as window_start,
+            (last_gameday + time '12:00:00') as window_end
+          FROM last_match_info
+      )
+      SELECT 
         ft.team_id, 
         ft.team_name, 
         ft.budget_remaining, 
-        ft.total_points AS team_total_points,
+        ft.total_points AS team_total_points, -- Lifetime total
         p.player_id, 
         (p.first_name || ' ' || p.last_name) AS name, 
         p.position AS pos, 
@@ -199,15 +238,26 @@ export const getUserTeamWithPlayers = async (req: Request, res: Response) => {
         rt.abbreviation AS abbrev,
         rt.primary_color AS color,
         p.current_price AS salary,
-        COALESCE(SUM(pgs.points_earned), 0) AS points
-       FROM fantasy_teams ft
-       LEFT JOIN fantasy_team_players ftp ON ft.team_id = ftp.team_id
-       LEFT JOIN players p ON ftp.player_id = p.player_id
-       LEFT JOIN real_teams rt ON p.team_abbrev = rt.abbreviation
-       LEFT JOIN player_game_stats pgs ON p.player_id = pgs.player_id
-       WHERE ft.user_id = $1
-       GROUP BY ft.team_id, p.player_id, rt.abbreviation, rt.primary_color
-       ORDER BY ft.created_at DESC`,
+        -- SUM points ONLY for matches falling within the 'Last Day' window
+        COALESCE(
+          SUM(CASE 
+            WHEN m.scheduled_at >= target_window.window_start 
+              AND m.scheduled_at < target_window.window_end 
+            THEN pgs.points_earned 
+            ELSE 0 
+          END), 0
+        ) AS points
+      FROM fantasy_teams ft
+      LEFT JOIN fantasy_team_players ftp ON ft.team_id = ftp.team_id
+      LEFT JOIN players p ON ftp.player_id = p.player_id
+      LEFT JOIN real_teams rt ON p.team_abbrev = rt.abbreviation
+      -- Join stats and matches to filter by the window
+      LEFT JOIN player_game_stats pgs ON p.player_id = pgs.player_id
+      LEFT JOIN matches m ON pgs.match_id = m.match_id
+      CROSS JOIN target_window
+      WHERE ft.user_id = $1
+      GROUP BY ft.team_id, p.player_id, rt.abbreviation, rt.primary_color, target_window.window_start, target_window.window_end
+      ORDER BY ft.created_at DESC`,
       [user_id]
     );
 
