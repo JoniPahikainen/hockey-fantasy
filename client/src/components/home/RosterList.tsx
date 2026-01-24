@@ -3,6 +3,18 @@ import { useNavigate } from "react-router-dom";
 export default function RosterList({ team }: { team: any[] }) {
   const navigate = useNavigate();
 
+  const postion: Record<string, number> = {
+    'F': 1,
+    'D': 2,
+    'G': 3
+  };
+  
+  const sortedTeam = [...team].sort((a, b) => {
+    const weightA = postion[a.pos] || 99;
+    const weightB = postion[b.pos] || 99;
+    return weightA - weightB;
+  });
+
   return (
     <div className="bg-white border border-slate-300 shadow-sm overflow-hidden">
       <div className="px-4 py-3 bg-slate-900 flex justify-between items-center">
@@ -11,7 +23,7 @@ export default function RosterList({ team }: { team: any[] }) {
         </h2>
       </div>
       <div className="flex flex-col divide-y divide-slate-200">
-        {team.map((player) => {
+        {sortedTeam.map((player) => {
           const safePoints = Number(player.points || 0);
 
           return (
