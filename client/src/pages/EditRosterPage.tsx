@@ -15,7 +15,7 @@ export default function DailyRosterPage() {
   const [isSaving, setIsSaving] = useState(false);
 
   const [searchTerm, setSearchTerm] = useState("");
-  const [posFilter, setPosFilter] = useState("ALL");
+  const [posFilter, setPosFilter] = useState("FORWARDS");
   const [teamFilter, setTeamFilter] = useState("ALL");
 
   useEffect(() => {
@@ -160,7 +160,7 @@ export default function DailyRosterPage() {
   }, [playerPool, searchTerm, posFilter, teamFilter, sortConfig]);
 
   return (
-    <div className="flex bg-slate-50 text-slate-900 h-screen overflow-hidden">
+    <div className="flex bg-slate-50 text-slate-900 overflow-hidden">
       <Sidebar onLogout={() => {}} />
 
       <div className="flex-1 flex flex-col ml-16">
@@ -177,7 +177,7 @@ export default function DailyRosterPage() {
         />
 
         {/* FORMATION AREA */}
-        <div className="overflow-y-auto p-8 bg-slate-50/50 border-b border-slate-300">
+        <div className="overflow-y-auto p-8 bg-slate-100 border-b border-slate-300">
           <div className="flex flex-col gap-6 max-w-4xl mx-auto">
             <div className="grid grid-cols-3 gap-4">
               {[...Array(3)].map((_, i) => (
@@ -232,7 +232,6 @@ export default function DailyRosterPage() {
                 className="bg-slate-50 border border-slate-200 text-[10px] py-2.5 px-4 font-bold uppercase outline-none min-w-[120px]"
                 onChange={(e) => setPosFilter(e.target.value)}
               >
-                <option value="ALL">ALL POS</option>
                 <option value="FORWARDS">FORWARDS</option>
                 <option value="D">DEFENCE</option>
                 <option value="G">GOALIE</option>
