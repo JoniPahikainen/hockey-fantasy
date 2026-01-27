@@ -2,12 +2,14 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../lib/api";
 
-export default function MiniStandings({ leagueId = 1, teamId = 1 }: { leagueId?: number, teamId?: number }) {
+export default function MiniStandings({ leagueId, teamId }: { leagueId?: number, teamId?: number }) {
   const navigate = useNavigate();
   const [standings, setStandings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!leagueId) return;
+
     const fetchMiniStandings = async () => {
       try {
         const res = await api.get(`/leagues/${leagueId}/standings/current`);
@@ -20,8 +22,8 @@ export default function MiniStandings({ leagueId = 1, teamId = 1 }: { leagueId?:
           }));
           setStandings(mappedData);
         }
-      } catch (err) {
-        console.error("Error fetching mini standings:", err);
+        } catch (err) {
+          console.error("Error fetching mini standings:", err);
       } finally {
         setLoading(false);
       }
@@ -29,6 +31,22 @@ export default function MiniStandings({ leagueId = 1, teamId = 1 }: { leagueId?:
 
     fetchMiniStandings();
   }, [leagueId, teamId]);
+
+  if (!leagueId) {
+    return (
+      <div className="bg-white border-2 border-dashed border-slate-200 p-6 text-center">
+        <p className="text-xs font-black text-slate-400 uppercase italic">
+          No League Assigned
+        </p>
+        <button 
+           onClick={() => navigate("/league")}
+           className="mt-2 text-[10px] bg-slate-900 text-white px-3 py-1 uppercase font-bold"
+        >
+          Join a League
+        </button>
+      </div>
+    );
+  }
 
   if (loading) {
     return (

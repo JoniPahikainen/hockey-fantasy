@@ -13,6 +13,8 @@ export default function HomePage() {
   const [matches, setMatches] = useState<any[]>([]);
   const [optimalLineup, setOptimalLineup] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [teamInfo, setTeamInfo] = useState<{ leagueId?: number; teamId?: number }>({});
+  
   
   const todayStr = new Date().toISOString().split("T")[0];
 
@@ -41,6 +43,7 @@ export default function HomePage() {
 
       if (dashRes.data.ok && dashRes.data.team) {
         setUserRoster(dashRes.data.team.players);
+        setTeamInfo({ leagueId: dashRes.data.team.league_id, teamId: dashRes.data.team.id });
       }
 
       if (optimalRes.data.ok) {
@@ -97,7 +100,7 @@ export default function HomePage() {
             ) : (
               <UpcomingMatches match_data={matches} />
             )}
-            <MiniStandings />
+            <MiniStandings leagueId={teamInfo.leagueId} teamId={teamInfo.teamId} />
             <RosterList team={userRoster} />
           </div>
         </div>
