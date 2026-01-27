@@ -90,7 +90,7 @@ export default function RegisterPage() {
                   type="text"
                   required
                   disabled={isLoading}
-                  className="bg-slate-50 border border-slate-200 p-3 text-[12px] font-bold uppercase outline-none focus:border-slate-400 transition-all disabled:opacity-50"
+                  className="bg-slate-50 border border-slate-200 p-3 text-[12px] font-bold outline-none focus:border-slate-400 transition-all disabled:opacity-50"
                   placeholder="Manager_Name"
                   value={formData.username}
                   onChange={(e) => setFormData({ ...formData, username: e.target.value })}
@@ -105,7 +105,7 @@ export default function RegisterPage() {
                   type="email"
                   required
                   disabled={isLoading}
-                  className="bg-slate-50 border border-slate-200 p-3 text-[12px] font-bold uppercase outline-none focus:border-slate-400 transition-all disabled:opacity-50"
+                  className="bg-slate-50 border border-slate-200 p-3 text-[12px] font-bold outline-none focus:border-slate-400 transition-all disabled:opacity-50"
                   placeholder="name@league.com"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}

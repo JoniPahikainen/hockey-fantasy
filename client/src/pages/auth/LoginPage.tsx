@@ -85,7 +85,7 @@ export default function LoginPage() {
                   type="email"
                   required
                   disabled={isLoading}
-                  className="bg-slate-50 border border-slate-200 p-3 text-[12px] font-bold uppercase outline-none focus:border-slate-400 transition-all disabled:opacity-50"
+                  className="bg-slate-50 border border-slate-200 p-3 text-[12px] font-bold outline-none focus:border-slate-400 transition-all disabled:opacity-50"
                   placeholder="name@league.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
