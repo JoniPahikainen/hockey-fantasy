@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import Sidebar from "../components/common/Sidebar";
-import Calender from "../components/home/Calender";
+{/* import Calender from "../components/home/Calender"; */}
 import RosterList from "../components/home/RosterList";
 import UpcomingMatches from "../components/home/UpcomingMatches";
 import MiniStandings from "../components/home/MiniStandings";
@@ -9,7 +8,6 @@ import BestPerformers from "../components/home/BestPerformers";
 import api from "../lib/api";
 
 export default function HomePage() {
-  const navigate = useNavigate();
   const [userName, setUserName] = useState("Team Manager");
   const [userRoster, setUserRoster] = useState<any[]>([]);
   const [matches, setMatches] = useState<any[]>([]);
@@ -60,7 +58,7 @@ export default function HomePage() {
 
   return (
     <div className="flex h-screen bg-slate-50 text-slate-900">
-      <Sidebar onLogout={() => navigate("/login")} />
+      <Sidebar />
 
       <div className="flex-1 overflow-auto px-6 py-8 ml-16">
         {/* HEADER SECTION */}

@@ -161,7 +161,7 @@ export default function DailyRosterPage() {
 
   return (
     <div className="flex bg-slate-50 text-slate-900 overflow-hidden">
-      <Sidebar onLogout={() => {}} />
+      <Sidebar />
 
       <div className="flex-1 flex flex-col ml-16">
         {/* HEADER */}

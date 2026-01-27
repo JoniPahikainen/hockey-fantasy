@@ -1,8 +1,9 @@
-import { NonBinaryIcon } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 
-interface SidebarProps {
-  onLogout: () => void;
+const handleLogout = () => {
+  localStorage.removeItem("token");
+  localStorage.removeItem("user");
+  window.location.href = "/login";
 }
 
 const iconBtn =
@@ -14,7 +15,7 @@ const activeBtn =
 const tooltip =
   "absolute left-full ml-4 px-2 py-1 bg-white text-black text-[10px] font-bold uppercase tracking-widest whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none z-50 transition-opacity";
 
-export default function Sidebar({ onLogout }: SidebarProps) {
+export default function Sidebar() {
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -118,13 +119,20 @@ export default function Sidebar({ onLogout }: SidebarProps) {
           <span className={tooltip}>Settings</span>
         </button>
 
-        <button onClick={onLogout} className={iconBtn}>
+        <button 
+            onClick={() => {
+              if (window.confirm("Are you sure you want to logout?")) {
+                handleLogout();
+              }
+            }} 
+            className={iconBtn}
+          >
           <svg
             className="w-5 h-5"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
-          >
+          > 
             <path
               strokeWidth={1.5}
               strokeLinecap="round"
@@ -132,7 +140,7 @@ export default function Sidebar({ onLogout }: SidebarProps) {
               d="M17 16l4-4-4-4M21 12H7m6 9a3 3 0 01-3-3V6a3 3 0 013-3"
             />
           </svg>
-          <span className={tooltip}>Exit</span>
+          <span className={tooltip}>Logout</span>
         </button>
       </div>
     </aside>
