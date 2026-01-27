@@ -88,14 +88,8 @@ export const loginUser = async (req: Request, res: Response) => {
             return res.status(400).json({ ok: false, error: "Email and password are required" });
         }
 
-        console.log(email, password);
-
-
         const result = await pool.query("SELECT * FROM users WHERE email = $1", [req.body.email]);
-        console.log(result);
         const user = result.rows[0];
-
-        console.log(user);
 
         if (!user) {
             return res.status(401).json({ ok: false, error: "Invalid email or password" });

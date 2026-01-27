@@ -4,7 +4,6 @@ import pool from "../db";
 export const createTeam = async (req: Request, res: Response) => {
   try {
     const { team_name, user_id } = req.body;
-    console.log("Creating fantasy team with data:", { team_name, user_id });
     const result = await pool.query(
       `INSERT INTO fantasy_teams (team_name, user_id)
        VALUES ($1, $2)
