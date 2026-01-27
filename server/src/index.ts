@@ -6,12 +6,14 @@ import matchRouter from './routes/matchRoutes';
 import playerRouter from './routes/nhlPlayerRoutes';
 import fantasyTeamRouter from './routes/fantasyTeamRoutes';
 import leagueRouter from './routes/leagueRoutes';
+import morgan from 'morgan';
 
 dotenv.config();
 
 const app = express();
 app.use(cors());
 app.use(express.json());
+app.use(morgan('dev'));
 
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok' });
