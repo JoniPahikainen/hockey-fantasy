@@ -1,12 +1,12 @@
 import { useState, useMemo, useEffect } from "react";
 import Sidebar from "../components/common/Sidebar";
-import RosterHeader from "../components/roster/RosterHeader";
-import FormationCard from "../components/roster/FormationCard";
+import TeamHeader from "../components/team/TeamHeader";
+import FormationCard from "../components/team/FormationCard";
 import api from "../lib/api";
 
 type SortKey = "name" | "pos" | "team" | "points" | "salary";
 
-export default function DailyRosterPage() {
+export default function DailyTeamPage() {
   const [playerPool, setPlayerPool] = useState<any[]>([]);
   const [userTeams, setUserTeams] = useState<any[]>([]);
   const [selectedTeamId, setSelectedTeamId] = useState<number | null>(null);
@@ -165,7 +165,7 @@ export default function DailyRosterPage() {
 
       <div className="flex-1 flex flex-col ml-16">
         {/* HEADER */}
-        <RosterHeader
+        <TeamHeader
           userTeams={userTeams}
           selectedTeamId={selectedTeamId}
           setSelectedTeamId={setSelectedTeamId}

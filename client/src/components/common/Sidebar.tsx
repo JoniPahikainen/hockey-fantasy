@@ -48,7 +48,7 @@ export default function Sidebar() {
           <span className={tooltip}>Dashboard</span>
         </button>
 
-        <button onClick={() => navigate("/roster")} className={iconBtn}>
+        <button onClick={() => navigate("/team")} className={iconBtn}>
           <svg
             className="w-5 h-5"
             fill="none"
@@ -62,7 +62,7 @@ export default function Sidebar() {
               d="M17 20H7m10 0v-2a3 3 0 00-6 0v2"
             />
           </svg>
-          <span className={tooltip}>Roster</span>
+          <span className={tooltip}>Team</span>
         </button>
 
         <button className={iconBtn}>

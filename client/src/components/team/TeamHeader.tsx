@@ -1,4 +1,4 @@
-interface RosterHeaderProps {
+interface TeamHeaderProps {
   userTeams: any[];
   selectedTeamId: number | null;
   setSelectedTeamId: (id: number) => void;
@@ -9,15 +9,15 @@ interface RosterHeaderProps {
   onSave: () => void;
 }
 
-export default function RosterHeader({
+export default function TeamHeader({
   userTeams, selectedTeamId, setSelectedTeamId, lineupCount, totalSalary, isDirty, isSaving, onSave
-}: RosterHeaderProps) {
+}: TeamHeaderProps) {
   return (
     <div className="px-6 pt-8 pb-0 bg-white z-10">
       <header className="flex flex-col lg:flex-row lg:justify-between mb-2 gap-4 items-end">
         <div>
           <h1 className="text-3xl font-black uppercase tracking-tighter italic text-slate-900 leading-none">
-            Roster Editor
+            Team Editor
           </h1>
         </div>
 
@@ -47,7 +47,7 @@ export default function RosterHeader({
           </div>
 
           <div className="flex flex-col">
-            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Roster Slots</span>
+            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Team Slots</span>
             <span className="font-mono font-black text-lg text-slate-900">
               {lineupCount} <span className="text-slate-300">/ 6</span>
             </span>

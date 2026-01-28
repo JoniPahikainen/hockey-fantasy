@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 
-export default function RosterList({ team }: { team: any[] }) {
+export default function TeamList({ team }: { team: any[] }) {
   const navigate = useNavigate();
 
   const postion: Record<string, number> = {
@@ -58,10 +58,10 @@ export default function RosterList({ team }: { team: any[] }) {
 
       <div className="bg-slate-50 px-4 py-2 border-t border-slate-200">
         <button
-          onClick={() => navigate("/roster")}
+          onClick={() => navigate("/team")}
           className="w-full text-[9px] font-black text-slate-500 uppercase hover:text-slate-900"
         >
-          Edit Roster
+          Edit Team
         </button>
       </div>
     </div>

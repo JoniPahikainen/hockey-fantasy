@@ -2,7 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import RegisterPage from './pages/auth/RegisterPage'
 import LoginPage from './pages/auth/LoginPage'
 import HomePage from './pages/HomePage'
-import DailyRosterPage from './pages/EditRosterPage'
+import DailyTeamPage from './pages/EditTeamPage'
 import LeagueStandingsPage from './pages/LeaguePage'
 import ProtectedRoute from './pages/auth/ProtectedRoute'
 
@@ -17,7 +17,7 @@ function App() {
         {/* PROTECTED ROUTES - Only managers can see these */}
         <Route element={<ProtectedRoute />}>
           <Route path="/" element={<HomePage />} />
-          <Route path="/roster" element={<DailyRosterPage />} />
+          <Route path="/team" element={<DailyTeamPage />} />
           <Route path="/league" element={<LeagueStandingsPage />} />
         </Route>
 

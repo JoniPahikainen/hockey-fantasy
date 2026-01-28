@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import Sidebar from "../components/common/Sidebar";
 {/* import Calender from "../components/home/Calender"; */}
-import RosterList from "../components/home/RosterList";
+import TeamList from "../components/home/TeamList";
 import UpcomingMatches from "../components/home/UpcomingMatches";
 import MiniStandings from "../components/home/MiniStandings";
 import BestPerformers from "../components/home/BestPerformers";
@@ -9,7 +9,7 @@ import api from "../lib/api";
 
 export default function HomePage() {
   const [userName, setUserName] = useState("Team Manager");
-  const [userRoster, setUserRoster] = useState<any[]>([]);
+  const [userTeam, setUserTeam] = useState<any[]>([]);
   const [matches, setMatches] = useState<any[]>([]);
   const [optimalLineup, setOptimalLineup] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -42,7 +42,7 @@ export default function HomePage() {
       }
 
       if (dashRes.data.ok && dashRes.data.team) {
-        setUserRoster(dashRes.data.team.players);
+        setUserTeam(dashRes.data.team.players);
         setTeamInfo({ leagueId: dashRes.data.team.league_id, teamId: dashRes.data.team.id });
       }
 
@@ -101,7 +101,7 @@ export default function HomePage() {
               <UpcomingMatches match_data={matches} />
             )}
             <MiniStandings leagueId={teamInfo.leagueId} teamId={teamInfo.teamId} />
-            <RosterList team={userRoster} />
+            <TeamList team={userTeam} />
           </div>
         </div>
       </div>
