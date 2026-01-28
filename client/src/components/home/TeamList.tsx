@@ -3,6 +3,22 @@ import { useNavigate } from "react-router-dom";
 export default function TeamList({ team }: { team: any[] }) {
   const navigate = useNavigate();
 
+  if (team.length === 0) {
+    return (
+      <div className="bg-white border-2 border-dashed border-slate-200 p-6 text-center">
+        <p className="text-xs font-black text-slate-400 uppercase italic">
+          No Team Built Yet
+        </p>
+        <button 
+           onClick={() => navigate("/team")}
+            className="mt-2 text-[10px] bg-slate-900 text-white px-3 py-1 uppercase font-bold"
+        >
+          Build Your Team
+        </button>
+      </div>
+    );
+  }
+
   const postion: Record<string, number> = {
     'F': 1,
     'D': 2,
