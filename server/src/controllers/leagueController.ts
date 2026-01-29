@@ -166,3 +166,43 @@ export const getCurrentPeriodStandings = async (req: Request, res: Response) => 
     return res.status(500).json({ ok: false, error: "Internal server error" });
   }
 };
+
+// Get leagues by user ID
+export const getLeaguesByUserId = async (req: Request, res: Response) => {
+  try {
+    const { user_id } = req.params;
+    const result = await pool.query(
+      `
+      SELECT l.league_id, l.name, l.creator_id
+      FROM leagues l
+      JOIN league_members lm ON l.league_id = lm.league_id
+      JOIN fantasy_teams ft ON lm.team_id = ft.team_id
+      WHERE ft.user_id = $1;
+      `,
+      [user_id]
+    );
+    return res.json({ ok: true, leagues: result.rows });
+  } catch (err) {
+    console.error("Error fetching leagues by user ID:", err);
+    return res.status(500).json({ ok: false, error: "Internal server error" });
+  }
+};
+
+// Get current period
+export const getCurrentPeriod = async (req: Request, res: Response) => {
+  try {
+    const result = await pool.query(
+      `SELECT period_id, start_date, end_date
+        FROM scoring_periods
+        WHERE CURRENT_DATE BETWEEN start_date AND end_date
+        LIMIT 1;`
+    );
+    if (result.rowCount === 0) {
+      return res.status(404).json({ ok: false, error: "No current period found" });
+    }
+    return res.json({ ok: true, period: result.rows[0] });
+  } catch (err) {
+    console.error("Error fetching current period:", err);
+    return res.status(500).json({ ok: false, error: "Internal server error" });
+  }
+};

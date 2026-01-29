@@ -6,23 +6,59 @@ import {
   LEAGUE_PERIODS,
 } from "../data/mockData";
 
-const CURRENT_PERIOD = 3;
-const LEAGUE_ID = 1;
 
 export default function LeagueStandingsPage() {
-  const [activePeriod, setActivePeriod] = useState(CURRENT_PERIOD);
+  const [activePeriod, setActivePeriod] = useState<number>(1);
   const [standings, setStandings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [leagueId, setLeagueId] = useState<number | null>(null);
+  const [leagueName, setLeagueName] = useState("");
+  const [currentPeriod, setCurrentPeriod] = useState<number | null>(null);
 
+  const userStr = localStorage.getItem("user")
+  const userId = userStr ? JSON.parse(userStr).id : null;
   const isFullSeason = activePeriod === 6;
 
   useEffect(() => {
+    const fetchMetadata = async () => {
+      try {
+        const { data } = await api.get("/leagues/current-period");
+        if (data.ok) {
+          setCurrentPeriod(data.period.period_id);
+          setActivePeriod(data.period.period_id);
+        }
+      } catch (err) {
+        console.error("Error fetching current period:", err);
+      }
+    };
+    fetchMetadata();
+  }, []);
+
+  useEffect(() => {
+    const fetchUserLeague = async () => {
+      if (!userId) return;
+      try {
+        const { data } = await api.get(`/leagues/user/${userId}`);
+        if (data.ok && data.leagues.length > 0) {
+          setLeagueId(data.leagues[0].league_id);
+          setLeagueName(data.leagues[0].name);
+
+        }
+      } catch (err) {
+        console.error("Error fetching user league:", err);
+      }
+    };
+    fetchUserLeague();
+  }, [userId]);
+
+  useEffect(() => {
+    if (!leagueId) return;
     const fetchStandings = async () => {
       setLoading(true);
       try {
         const endpoint = isFullSeason
-          ? `/leagues/${LEAGUE_ID}/standings`
-          : `/leagues/${LEAGUE_ID}/standings/period/${activePeriod}`;
+          ? `/leagues/${leagueId}/standings`
+          : `/leagues/${leagueId}/standings/period/${activePeriod}`;
         
         const { data } = await api.get(endpoint);
 
@@ -46,7 +82,7 @@ export default function LeagueStandingsPage() {
     };
 
     fetchStandings();
-  }, [activePeriod, isFullSeason]);
+  }, [activePeriod, isFullSeason, leagueId, userId]);
 
   const getMovement = (curr: number, prev: number) => {
     if (curr < prev) return <span className="text-emerald-500">▲</span>;
@@ -62,7 +98,7 @@ export default function LeagueStandingsPage() {
         <header className="flex flex-col lg:flex-row lg:justify-between mb-8 gap-4">
           <div>
             <h1 className="text-3xl font-black uppercase tracking-tighter italic">
-              League Standings
+               {leagueName || "League"} Standings
             </h1>
             <p className="text-slate-500 font-medium tracking-tight uppercase text-xs">
               {isFullSeason ? "Overall Rankings" : `Period ${activePeriod}`}
@@ -74,7 +110,7 @@ export default function LeagueStandingsPage() {
           <div className="flex gap-1 border-b border-slate-200 pb-4 overflow-x-auto">
             {LEAGUE_PERIODS.map((p) => {
               const isActive = activePeriod === p.id;
-              const isLocked = p.id !== 6 && p.id > CURRENT_PERIOD;
+              const isLocked = currentPeriod !== null && p.id !== 6 && p.id > currentPeriod;
               return (
                 <button
                   key={p.id}
