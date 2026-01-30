@@ -5,6 +5,7 @@ import HomePage from './pages/HomePage'
 import DailyTeamPage from './pages/EditTeamPage'
 import LeagueStandingsPage from './pages/LeaguePage'
 import ProtectedRoute from './pages/auth/ProtectedRoute'
+import LeagueSetupPage from './pages/LeagueSetupPage'
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/team" element={<DailyTeamPage />} />
           <Route path="/league" element={<LeagueStandingsPage />} />
+          <Route path="/league/setup" element={<LeagueSetupPage />} />
         </Route>
 
         {/* FALLBACK */}

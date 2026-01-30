@@ -5,6 +5,7 @@ import {
   LEAGUE_RECORDS,
   LEAGUE_PERIODS,
 } from "../data/mockData";
+import LeagueSetupPage from "./LeagueSetupPage";
 
 
 export default function LeagueStandingsPage() {
@@ -14,6 +15,7 @@ export default function LeagueStandingsPage() {
   const [leagueId, setLeagueId] = useState<number | null>(null);
   const [leagueName, setLeagueName] = useState("");
   const [currentPeriod, setCurrentPeriod] = useState<number | null>(null);
+  const [hasCheckedLeague, setHasCheckedLeague] = useState(false);
 
   const userStr = localStorage.getItem("user")
   const userId = userStr ? JSON.parse(userStr).id : null;
@@ -46,6 +48,8 @@ export default function LeagueStandingsPage() {
         }
       } catch (err) {
         console.error("Error fetching user league:", err);
+      } finally {
+        setHasCheckedLeague(true);
       }
     };
     fetchUserLeague();
@@ -89,6 +93,16 @@ export default function LeagueStandingsPage() {
     if (curr > prev) return <span className="text-rose-500">▼</span>;
     return <span className="text-slate-300 text-[8px]">●</span>;
   };
+
+
+
+  if (!hasCheckedLeague) {
+      return <div className="flex h-screen items-center justify-center bg-slate-50">Loading...</div>;
+  }
+
+  if (!leagueId) {
+    return <LeagueSetupPage />;
+  }
 
   return (
      <div className="flex h-screen bg-slate-50 text-slate-900">
