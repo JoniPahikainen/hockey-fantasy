@@ -62,13 +62,12 @@ export const getLeagueStandings = async (req: Request, res: Response) => {
         t.team_name, 
         u.username as owner_name, 
         COALESCE(SUM(pgs.points_earned * CASE WHEN rh.is_captain THEN 1.3 ELSE 1 END), 0) as total_points,
-        RANK() OVER (ORDER BY SUM(pgs.points_earned * CASE WHEN rh.is_captain THEN 1.3 ELSE 1 END) DESC) as rank
-      FROM league_members lm
+        RANK() OVER (ORDER BY COALESCE(SUM(pgs.points_earned * CASE WHEN rh.is_captain THEN 1.3 ELSE 1 END), 0) DESC) as rank      FROM league_members lm
       JOIN fantasy_teams t ON lm.team_id = t.team_id
       JOIN users u ON t.user_id = u.user_id
-      JOIN roster_history rh ON rh.team_id = t.team_id
-      JOIN player_game_stats pgs ON pgs.player_id = rh.player_id
-      JOIN matches m ON m.match_id = pgs.match_id 
+      LEFT JOIN roster_history rh ON rh.team_id = t.team_id
+      LEFT JOIN player_game_stats pgs ON pgs.player_id = rh.player_id
+      LEFT JOIN matches m ON m.match_id = pgs.match_id 
         AND m.scheduled_at::date = rh.game_date 
       WHERE lm.league_id = $1
       GROUP BY t.team_id, t.team_name, u.username
@@ -98,21 +97,18 @@ export const getLeagueStandingsByPeriod = async (
         t.team_id,
         t.team_name,
         u.username AS owner_name,
-        COALESCE(SUM(
-          pgs.points_earned * CASE WHEN rh.is_captain THEN 1.3 ELSE 1 END
-        ), 0) AS period_points,
+        COALESCE(SUM(pgs.points_earned * CASE WHEN rh.is_captain THEN 1.3 ELSE 1 END), 0) AS period_points,
         RANK() OVER (ORDER BY COALESCE(SUM(pgs.points_earned * CASE WHEN rh.is_captain THEN 1.3 ELSE 1 END), 0) DESC) AS rank
       FROM league_members lm
       JOIN fantasy_teams t ON lm.team_id = t.team_id
       JOIN users u ON t.user_id = u.user_id
-      CROSS JOIN scoring_periods sp
-      JOIN roster_history rh ON rh.team_id = t.team_id 
+      JOIN scoring_periods sp ON sp.period_id = $2
+      LEFT JOIN roster_history rh ON rh.team_id = t.team_id 
         AND rh.game_date BETWEEN sp.start_date AND sp.end_date
-      JOIN player_game_stats pgs ON pgs.player_id = rh.player_id
-      JOIN matches m ON m.match_id = pgs.match_id 
+      LEFT JOIN player_game_stats pgs ON pgs.player_id = rh.player_id
+      LEFT JOIN matches m ON m.match_id = pgs.match_id 
         AND m.scheduled_at::date = rh.game_date
       WHERE lm.league_id = $1 
-        AND sp.period_id = $2
       GROUP BY t.team_id, t.team_name, u.username
       ORDER BY period_points DESC
       `,
@@ -144,15 +140,15 @@ export const getCurrentPeriodStandings = async (req: Request, res: Response) => 
         t.team_name,
         u.username AS owner_name,
         COALESCE(SUM(pgs.points_earned * CASE WHEN rh.is_captain THEN 1.3 ELSE 1 END), 0) AS period_points,
-        RANK() OVER (ORDER BY SUM(pgs.points_earned * CASE WHEN rh.is_captain THEN 1.3 ELSE 1 END) DESC) AS rank
+        RANK() OVER (ORDER BY COALESCE(SUM(pgs.points_earned * CASE WHEN rh.is_captain THEN 1.3 ELSE 1 END), 0) DESC) AS rank
       FROM league_members lm
       JOIN fantasy_teams t ON lm.team_id = t.team_id
       JOIN users u ON t.user_id = u.user_id
       JOIN scoring_periods sp ON CURRENT_DATE BETWEEN sp.start_date AND sp.end_date
-      JOIN roster_history rh ON rh.team_id = t.team_id 
+      LEFT JOIN roster_history rh ON rh.team_id = t.team_id 
         AND rh.game_date BETWEEN sp.start_date AND sp.end_date
-      JOIN player_game_stats pgs ON pgs.player_id = rh.player_id
-      JOIN matches m ON m.match_id = pgs.match_id AND m.scheduled_at::date = rh.game_date
+      LEFT JOIN player_game_stats pgs ON pgs.player_id = rh.player_id
+      LEFT JOIN matches m ON m.match_id = pgs.match_id AND m.scheduled_at::date = rh.game_date
       WHERE lm.league_id = $1
       GROUP BY t.team_id, t.team_name, u.username
       ORDER BY period_points DESC

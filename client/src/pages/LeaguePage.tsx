@@ -1,12 +1,8 @@
 import { useState, useEffect } from "react";
 import Sidebar from "../components/common/Sidebar";
 import api from "../lib/api";
-import {
-  LEAGUE_RECORDS,
-  LEAGUE_PERIODS,
-} from "../data/mockData";
+import { LEAGUE_RECORDS, LEAGUE_PERIODS } from "../data/mockData";
 import LeagueSetupPage from "./LeagueSetupPage";
-
 
 export default function LeagueStandingsPage() {
   const [activePeriod, setActivePeriod] = useState<number>(1);
@@ -17,7 +13,7 @@ export default function LeagueStandingsPage() {
   const [currentPeriod, setCurrentPeriod] = useState<number | null>(null);
   const [hasCheckedLeague, setHasCheckedLeague] = useState(false);
 
-  const userStr = localStorage.getItem("user")
+  const userStr = localStorage.getItem("user");
   const userId = userStr ? JSON.parse(userStr).id : null;
   const isFullSeason = activePeriod === 6;
 
@@ -44,7 +40,6 @@ export default function LeagueStandingsPage() {
         if (data.ok && data.leagues.length > 0) {
           setLeagueId(data.leagues[0].league_id);
           setLeagueName(data.leagues[0].name);
-
         }
       } catch (err) {
         console.error("Error fetching user league:", err);
@@ -63,7 +58,7 @@ export default function LeagueStandingsPage() {
         const endpoint = isFullSeason
           ? `/leagues/${leagueId}/standings`
           : `/leagues/${leagueId}/standings/period/${activePeriod}`;
-        
+
         const { data } = await api.get(endpoint);
 
         if (data.ok) {
@@ -73,8 +68,8 @@ export default function LeagueStandingsPage() {
             name: s.team_name,
             manager: s.owner_name,
             points: isFullSeason ? s.total_points : s.period_points,
-            lastDayPoints: 0, 
-            isUser: false
+            lastDayPoints: 0,
+            isUser: false,
           }));
           setStandings(mappedData);
         }
@@ -94,10 +89,12 @@ export default function LeagueStandingsPage() {
     return <span className="text-slate-300 text-[8px]">●</span>;
   };
 
-
-
   if (!hasCheckedLeague) {
-      return <div className="flex h-screen items-center justify-center bg-slate-50">Loading...</div>;
+    return (
+      <div className="flex h-screen items-center justify-center bg-slate-50">
+        Loading...
+      </div>
+    );
   }
 
   if (!leagueId) {
@@ -105,18 +102,27 @@ export default function LeagueStandingsPage() {
   }
 
   return (
-     <div className="flex h-screen bg-slate-50 text-slate-900">
+    <div className="flex h-screen bg-slate-50 text-slate-900">
       <Sidebar />
 
       <div className="flex-1 overflow-auto px-6 py-8 ml-16">
-        <header className="flex flex-col lg:flex-row lg:justify-between mb-8 gap-4">
+        <header className="flex flex-col lg:flex-row lg:justify-between lg:items-start mb-8 gap-4">
           <div>
             <h1 className="text-3xl font-black uppercase tracking-tighter italic">
-               {leagueName || "League"} Standings
+              {leagueName || "League"} Standings
             </h1>
             <p className="text-slate-500 font-medium tracking-tight uppercase text-xs">
               {isFullSeason ? "Overall Rankings" : `Period ${activePeriod}`}
             </p>
+          </div>
+
+          <div className="bg-slate-100 border border-slate-300 px-4 py-2">
+            <span className="block text-[9px] font-black uppercase text-slate-400 tracking-widest">
+              League ID
+            </span>
+            <span className="font-mono font-black text-sm text-slate-900">
+              {leagueId}
+            </span>
           </div>
         </header>
 
@@ -124,7 +130,8 @@ export default function LeagueStandingsPage() {
           <div className="flex gap-1 border-b border-slate-200 pb-4 overflow-x-auto">
             {LEAGUE_PERIODS.map((p) => {
               const isActive = activePeriod === p.id;
-              const isLocked = currentPeriod !== null && p.id !== 6 && p.id > currentPeriod;
+              const isLocked =
+                currentPeriod !== null && p.id !== 6 && p.id > currentPeriod;
               return (
                 <button
                   key={p.id}
@@ -155,18 +162,31 @@ export default function LeagueStandingsPage() {
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="border-b border-slate-200 bg-slate-50">
-                    <th className="px-6 py-3 text-[10px] font-black uppercase text-slate-400">Rank</th>
-                    <th className="px-6 py-3 text-[10px] font-black uppercase text-slate-400">Team / Manager</th>
-                    <th className="px-6 py-3 text-[10px] font-black uppercase text-slate-400 text-right">Points</th>
+                    <th className="px-6 py-3 text-[10px] font-black uppercase text-slate-400">
+                      Rank
+                    </th>
+                    <th className="px-6 py-3 text-[10px] font-black uppercase text-slate-400">
+                      Team / Manager
+                    </th>
+                    <th className="px-6 py-3 text-[10px] font-black uppercase text-slate-400 text-right">
+                      Points
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200">
                   {standings.map((team) => (
-                    <tr key={team.rank} className="hover:bg-slate-50 transition-colors group">
+                    <tr
+                      key={team.rank}
+                      className="hover:bg-slate-50 transition-colors group"
+                    >
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
-                          <span className="font-mono font-black text-lg">{team.rank}</span>
-                          <span className="text-[8px]">{getMovement(team.rank, team.previousRank)}</span>
+                          <span className="font-mono font-black text-lg">
+                            {team.rank}
+                          </span>
+                          <span className="text-[8px]">
+                            {getMovement(team.rank, team.previousRank)}
+                          </span>
                         </div>
                       </td>
                       <td className="px-6 py-4">
@@ -218,12 +238,21 @@ function RecordTable({ title, data, accent }: any) {
       </div>
       <div className="flex flex-col divide-y divide-slate-100">
         {data.map((row: any, i: number) => (
-          <div key={i} className="flex justify-between items-center px-4 py-3 hover:bg-slate-50">
+          <div
+            key={i}
+            className="flex justify-between items-center px-4 py-3 hover:bg-slate-50"
+          >
             <div className="flex flex-col">
-              <span className="text-[9px] font-black uppercase text-slate-400">{row.label}</span>
-              <span className="text-xs font-bold uppercase text-slate-800">{row.team}</span>
+              <span className="text-[9px] font-black uppercase text-slate-400">
+                {row.label}
+              </span>
+              <span className="text-xs font-bold uppercase text-slate-800">
+                {row.team}
+              </span>
             </div>
-            <span className={`font-mono font-black text-sm ${accent}`}>{row.value}</span>
+            <span className={`font-mono font-black text-sm ${accent}`}>
+              {row.value}
+            </span>
           </div>
         ))}
       </div>

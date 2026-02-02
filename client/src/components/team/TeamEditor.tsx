@@ -1,14 +1,13 @@
 import { useState, useMemo, useEffect } from "react";
-import Sidebar from "../components/common/Sidebar";
-import TeamHeader from "../components/team/TeamHeader";
-import FormationCard from "../components/team/FormationCard";
-import api from "../lib/api";
+import TeamHeader from "./TeamHeader";
+import FormationCard from "./FormationCard";
+import api from "../../lib/api";
 
 type SortKey = "name" | "pos" | "team" | "points" | "salary";
 
-export default function DailyTeamPage() {
+export default function TeamEditor({ initialTeams, userId }: { initialTeams: any[], userId: number }) {
   const [playerPool, setPlayerPool] = useState<any[]>([]);
-  const [userTeams, setUserTeams] = useState<any[]>([]);
+  const [userTeams, setUserTeams] = useState(initialTeams);
   const [selectedTeamId, setSelectedTeamId] = useState<number | null>(null);
   const [lineup, setLineup] = useState<any[]>([]);
   const [savedLineupIds, setSavedLineupIds] = useState<number[]>([]);
@@ -19,35 +18,20 @@ export default function DailyTeamPage() {
   const [teamFilter, setTeamFilter] = useState("ALL");
 
   useEffect(() => {
-    const initPage = async () => {
-      try {
-        const userStr = localStorage.getItem("user");
-        if (!userStr) {
-          window.location.href = "/login";
-          return null;
-        }
-        
-        const user = JSON.parse(userStr);
-        const userId = user.id;
-
-        const [poolRes, teamsRes] = await Promise.all([
-          api.get("/players"),
-          api.get(`/fantasy-teams/owner/${userId}`),
-        ]);
-
-        if (poolRes.data.ok) setPlayerPool(poolRes.data.players);
-        
-        if (teamsRes.data.ok && teamsRes.data.teams.length > 0) {
-          setUserTeams(teamsRes.data.teams);
-          
-          setSelectedTeamId(teamsRes.data.teams[0].team_id);
-        }
-      } catch (err) {
-        console.error("Initialization Error:", err);
+  const initPage = async () => {
+    try {
+      const poolRes = await api.get("/players");
+      if (poolRes.data.ok) setPlayerPool(poolRes.data.players);
+      
+      if (userTeams.length > 0 && !selectedTeamId) {
+        setSelectedTeamId(userTeams[0].team_id);
       }
-    };
-    initPage();
-  }, []);
+    } catch (err) {
+      console.error("Initialization Error:", err);
+    }
+  };
+  initPage();
+}, [userId, userTeams]);
 
   useEffect(() => {
     if (!selectedTeamId) return;
@@ -160,10 +144,8 @@ export default function DailyTeamPage() {
   }, [playerPool, searchTerm, posFilter, teamFilter, sortConfig]);
 
   return (
-    <div className="flex bg-slate-50 text-slate-900 overflow-hidden">
-      <Sidebar />
 
-      <div className="flex-1 flex flex-col ml-16">
+      <div className="flex-1 overflow-y-auto">
         {/* HEADER */}
         <TeamHeader
           userTeams={userTeams}
@@ -177,7 +159,7 @@ export default function DailyTeamPage() {
         />
 
         {/* FORMATION AREA */}
-        <div className="overflow-y-auto p-8 bg-slate-100 border-b border-slate-300">
+        <div className="p-8 bg-slate-100 border-b border-slate-300">
           <div className="flex flex-col gap-6 max-w-4xl mx-auto">
             <div className="grid grid-cols-3 gap-4">
               {[...Array(3)].map((_, i) => (
@@ -211,7 +193,7 @@ export default function DailyTeamPage() {
         </div>
 
         {/* PLAYER POOL TABLE */}
-        <section className="flex-1 overflow-hidden flex flex-col p-8 bg-white">
+        <section className="p-8 bg-white min-h-[600px]">
           <div className="flex flex-wrap gap-4 mb-6 items-end">
             <div className="flex flex-col gap-1">
               <span className="text-[9px] font-black text-slate-400 uppercase">
@@ -328,6 +310,5 @@ export default function DailyTeamPage() {
           </div>
         </section>
       </div>
-    </div>
   );
 }
