@@ -134,9 +134,19 @@ export default function TeamEditor({ initialTeams, userId }: { initialTeams: any
     });
 
     result.sort((a: any, b: any) => {
-      if (a[sortConfig.key] < b[sortConfig.key])
+      const numericKeys: SortKey[] = ["points", "salary"];
+
+      let valA = a[sortConfig.key];
+      let valB = b[sortConfig.key];
+
+      if (numericKeys.includes(sortConfig.key)) {
+        valA = Number(valA) || 0;
+        valB = Number(valB) || 0;
+      }
+
+      if (valA < valB)
         return sortConfig.direction === "asc" ? -1 : 1;
-      if (a[sortConfig.key] > b[sortConfig.key])
+      if (valA > valB)
         return sortConfig.direction === "asc" ? 1 : -1;
       return 0;
     });
