@@ -1,0 +1,40 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    env_file:
+      - .env.docker
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./server/database/migrations:/docker-entrypoint-initdb.d
+  server:
+    build: ./server
+    env_file:
+      - .env.docker
+    volumes:
+      - ./server:/app
+      - /app/node_modules
+    ports:
+      - "4000:4000"
+    depends_on:
+      - postgres
+
+  client:
+    build: ./client
+    env_file:
+      - .env.docker
+    volumes:
+      - ./client:/app
+      - /app/node_modules
+      - ./.env.docker:/app/.env.local
+    ports:
+      - "5173:5173"
+    depends_on:
+      - server
+
+volumes:
+  pgdata:

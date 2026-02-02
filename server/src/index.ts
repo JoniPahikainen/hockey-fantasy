@@ -1,14 +1,15 @@
+import * as dotenv from 'dotenv';
+import * as path from 'path';
+dotenv.config({ path: path.resolve(__dirname, '../../.env.local') });
+
 import express from 'express';
 import cors from 'cors';
-import * as dotenv from 'dotenv';
 import userRouter from './routes/userRoutes';
 import matchRouter from './routes/matchRoutes';
 import playerRouter from './routes/nhlPlayerRoutes';
 import fantasyTeamRouter from './routes/fantasyTeamRoutes';
 import leagueRouter from './routes/leagueRoutes';
 import morgan from 'morgan';
-
-dotenv.config();
 
 const app = express();
 app.use(cors());
