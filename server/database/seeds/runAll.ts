@@ -4,6 +4,7 @@ import { seedMatches } from "./seedMatches";
 import { seedRawStats } from "./seedScores";
 import { seedPoints } from "./seedPoints";
 import { Logger } from "../../src/utils/logger";
+import { seedHistory } from "./seedHistory";
 
 async function runAll() {
   const masterTracker = new Logger("MASTER_SYNC");
@@ -14,6 +15,7 @@ async function runAll() {
     { name: "PLAYERS", fn: seedPlayers },
     { name: "MATCHES", fn: seedMatches },
     { name: "SCORES", fn: seedRawStats },
+    { name: "HISTORY", fn: seedHistory },
     { name: "POINTS", fn: seedPoints }
   ];
 

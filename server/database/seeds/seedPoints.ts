@@ -102,16 +102,18 @@ export async function seedPoints() {
 
     batchTracker.finish();
 
-    tracker.log("INFO", "Step 2: Finalizing Fantasy Team totals...");
+    tracker.log("INFO", "Step 2: Finalizing Fantasy Team totals from History...");
     await client.query(`
       UPDATE fantasy_teams ft
-      SET total_points = COALESCE(sub.team_total, 0)
+      SET total_points = COALESCE(sub.total_earned, 0)
       FROM (
-        SELECT ftp.team_id, 
-               SUM(pgs.points_earned * CASE WHEN ftp.is_captain THEN 1.3 ELSE 1 END) as team_total
-        FROM fantasy_team_players ftp
-        JOIN player_game_stats pgs ON ftp.player_id = pgs.player_id
-        GROUP BY ftp.team_id
+        SELECT 
+            rh.team_id, 
+            SUM(pgs.points_earned * CASE WHEN rh.is_captain THEN 1.3 ELSE 1 END) as total_earned
+        FROM roster_history rh
+        JOIN matches m ON m.scheduled_at::date = rh.game_date
+        JOIN player_game_stats pgs ON (pgs.player_id = rh.player_id AND pgs.match_id = m.match_id)
+        GROUP BY rh.team_id
       ) sub
       WHERE ft.team_id = sub.team_id;
     `);

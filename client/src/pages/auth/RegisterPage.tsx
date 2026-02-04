@@ -26,12 +26,14 @@ export default function RegisterPage() {
     try {
       const res = await api.post("/user/register", formData);
 
+      console.log("Registration response:", res.data);
+
       if (res.data.token) {
         localStorage.setItem("token", res.data.token);
         localStorage.setItem("user", JSON.stringify(res.data.user));
-
-        navigate("/", { replace: true });
+        console.log("Registration successful");
       }
+      navigate("/", { replace: true });
     } catch (err: any) {
       console.error("Registration failed:", err);
       setError(
