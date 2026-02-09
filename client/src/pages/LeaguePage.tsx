@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, Fragment } from "react";
 import Sidebar from "../components/common/Sidebar";
 import api from "../lib/api";
 import { LEAGUE_RECORDS, LEAGUE_PERIODS } from "../data/mockData";
 import LeagueSetupPage from "./LeagueSetupPage";
+import TeamPerformanceGraph from "../components/league/TeamPerformanceGraph";
 
 export default function LeagueStandingsPage() {
   const [activePeriod, setActivePeriod] = useState<number>(1);
@@ -12,10 +13,15 @@ export default function LeagueStandingsPage() {
   const [leagueName, setLeagueName] = useState("");
   const [currentPeriod, setCurrentPeriod] = useState<number | null>(null);
   const [hasCheckedLeague, setHasCheckedLeague] = useState(false);
+  const [expandedTeamId, setExpandedTeamId] = useState<number | null>(null);
 
   const userStr = localStorage.getItem("user");
   const userId = userStr ? JSON.parse(userStr).id : null;
   const isFullSeason = activePeriod === 6;
+
+  const toggleTeam = (teamId: number) => {
+  setExpandedTeamId(prev => (prev === teamId ? null : teamId));
+};
 
   useEffect(() => {
     const fetchMetadata = async () => {
@@ -63,6 +69,7 @@ export default function LeagueStandingsPage() {
 
         if (data.ok) {
           const mappedData = data.standings.map((s: any) => ({
+            teamId: s.team_id,
             rank: parseInt(s.rank),
             previousRank: parseInt(s.rank),
             name: s.team_name,
@@ -175,36 +182,48 @@ export default function LeagueStandingsPage() {
                 </thead>
                 <tbody className="divide-y divide-slate-200">
                   {standings.map((team) => (
-                    <tr
-                      key={team.rank}
-                      className="hover:bg-slate-50 transition-colors group"
-                    >
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          <span className="font-mono font-black text-lg">
-                            {team.rank}
+                    <Fragment key={team.teamId}>
+                      <tr
+                        onClick={() => toggleTeam(team.teamId)}
+                        className={`cursor-pointer transition-colors group ${
+                          expandedTeamId === team.teamId ? "bg-slate-100" : "hover:bg-slate-50"
+                        }`}
+                      >
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-3">
+                            <span className="font-mono font-black text-lg">{team.rank}</span>
+                            <span className="text-[8px]">{getMovement(team.rank, team.previousRank)}</span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex flex-col">
+                            <span className="text-sm font-black uppercase text-slate-800 group-hover:text-indigo-600 transition-colors">
+                              {team.name} {expandedTeamId === team.teamId ? '▴' : '▾'}
+                            </span>
+                            <span className="text-[10px] font-bold text-slate-400 uppercase italic">
+                              {team.manager}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <span className="font-mono font-black text-lg text-slate-900">
+                            {Number(team.points || 0).toFixed(1)}
                           </span>
-                          <span className="text-[8px]">
-                            {getMovement(team.rank, team.previousRank)}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex flex-col">
-                          <span className="text-sm font-black uppercase text-slate-800 group-hover:text-indigo-600 transition-colors">
-                            {team.name}
-                          </span>
-                          <span className="text-[10px] font-bold text-slate-400 uppercase italic">
-                            {team.manager}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <span className="font-mono font-black text-lg text-slate-900">
-                          {Number(team.points || 0).toFixed(1)}
-                        </span>
-                      </td>
-                    </tr>
+                        </td>
+                      </tr>
+                      
+                      {/* THE GRAPH SECTION */}
+                      {expandedTeamId === team.teamId && (
+                        <tr>
+                          <td colSpan={3} className="p-0 border-b border-slate-300">
+                            <TeamPerformanceGraph 
+                              teamId={team.teamId} 
+                              periodId={activePeriod} 
+                            />
+                          </td>
+                        </tr>
+                      )}
+                    </Fragment>
                   ))}
                 </tbody>
               </table>
