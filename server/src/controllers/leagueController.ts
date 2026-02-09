@@ -204,3 +204,46 @@ export const getCurrentPeriod = async (req: Request, res: Response) => {
     return res.status(500).json({ ok: false, error: "Internal server error" });
   }
 };
+
+// Get daily team performance for graphing
+export const getDailyTeamPerformance = async (req: Request, res: Response) => {
+  try {
+    const { team_id, period_id } = req.params;
+
+    const result = await pool.query(
+      `
+      WITH current_period AS (
+        SELECT start_date, end_date 
+        FROM scoring_periods 
+        WHERE period_id = $2
+        LIMIT 1
+      )
+      SELECT 
+        days.game_date,
+        -- Calculate total points earned that day (with Captain bonus)
+        COALESCE(SUM(pgs.points_earned * CASE WHEN rh.is_captain THEN 1.3 ELSE 1 END), 0) as points,
+        -- Count how many players from the roster actually played a match that day
+        COUNT(DISTINCT pgs.player_id) as active_players_count
+      FROM (
+        -- Generate all dates in the current period so the graph has no gaps
+        SELECT generate_series(start_date, end_date, '1 day')::date as game_date
+        FROM current_period
+      ) days
+      LEFT JOIN roster_history rh ON rh.game_date = days.game_date AND rh.team_id = $1
+      LEFT JOIN matches m ON m.scheduled_at::date = rh.game_date
+      LEFT JOIN player_game_stats pgs ON (pgs.player_id = rh.player_id AND pgs.match_id = m.match_id)
+      GROUP BY days.game_date
+      ORDER BY days.game_date ASC;
+      `,
+      [team_id, period_id]
+    );
+
+    return res.json({ 
+      ok: true, 
+      data: result.rows 
+    });
+  } catch (err) {
+    console.error("Error fetching daily performance:", err);
+    return res.status(500).json({ ok: false, error: "Internal server error" });
+  }
+};
