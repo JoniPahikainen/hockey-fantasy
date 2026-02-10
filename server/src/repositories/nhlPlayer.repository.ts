@@ -1,9 +1,7 @@
-import { Request, Response } from "express";
 import pool from "../db";
 
-export const getPlayerPool = async (req: Request, res: Response) => {
-  try {
-    const result = await pool.query(`
+export const findAllPlayersWithStats = async () => {
+  const query = `
       SELECT 
         p.player_id AS id,
         p.first_name || ' ' || p.last_name AS name,
@@ -17,11 +15,7 @@ export const getPlayerPool = async (req: Request, res: Response) => {
       LEFT JOIN real_teams t ON p.team_abbrev = t.abbreviation
       GROUP BY p.player_id, p.first_name, p.last_name, p.position, p.team_abbrev, p.current_price, t.primary_color
       ORDER BY points DESC;
-    `);
-
-    res.json({ ok: true, players: result.rows });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ ok: false, error: "Database error" });
-  }
+  `;
+  const result = await pool.query(query);
+  return result.rows;
 };
