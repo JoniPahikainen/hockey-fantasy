@@ -8,7 +8,7 @@ import {
   saveLineup,
   getUserTeamWithPlayers,
   getOptimalLineups
-} from "../controllers/fantasyTeamController";
+} from "../controllers/fantasyTeam.controller";
 const router = Router();
 
 router.post("/fantasy-teams", createTeam);
