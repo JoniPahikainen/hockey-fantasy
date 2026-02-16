@@ -8,7 +8,7 @@ import {
   getLeaguesByUserId,
   getCurrentPeriod,
   getDailyTeamPerformance,
-} from "../controllers/leagueController";
+} from "../controllers/league.controller";
 
 const router = Router();
 

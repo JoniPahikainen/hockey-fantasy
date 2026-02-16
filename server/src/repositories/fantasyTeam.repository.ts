@@ -230,3 +230,30 @@ export const getRankedLineup = async (order: "DESC" | "ASC") => {
   const result = await pool.query(sql);
   return result.rows;
 };
+
+export const getDailyTeamPerformance = (team_id: number, period_id: number) => {
+  return pool.query(
+    `
+      WITH current_period AS (
+        SELECT start_date, end_date 
+        FROM scoring_periods 
+        WHERE period_id = $2
+        LIMIT 1
+      )
+      SELECT 
+        days.game_date,
+        COALESCE(SUM(pgs.points_earned * CASE WHEN rh.is_captain THEN 1.3 ELSE 1 END), 0) as points,
+        COUNT(DISTINCT pgs.player_id) as active_players_count
+      FROM (
+        SELECT generate_series(start_date, end_date, '1 day')::date as game_date
+        FROM current_period
+      ) days
+      LEFT JOIN roster_history rh ON rh.game_date = days.game_date AND rh.team_id = $1
+      LEFT JOIN matches m ON m.scheduled_at::date = rh.game_date
+      LEFT JOIN player_game_stats pgs ON (pgs.player_id = rh.player_id AND pgs.match_id = m.match_id)
+      GROUP BY days.game_date
+      ORDER BY days.game_date ASC;
+      `,
+    [team_id, period_id],
+  );
+};
