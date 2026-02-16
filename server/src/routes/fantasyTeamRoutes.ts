@@ -7,7 +7,8 @@ import {
   getTeamsByOwner,
   saveLineup,
   getUserTeamWithPlayers,
-  getOptimalLineups
+  getOptimalLineups,
+  deleteTeam
 } from "../controllers/fantasyTeam.controller";
 const router = Router();
 
@@ -19,5 +20,6 @@ router.get("/fantasy-teams/owner/:user_id", getTeamsByOwner);
 router.post("/fantasy-teams/save-lineup", saveLineup);
 router.get("/fantasy-teams/user-dashboard/:user_id", getUserTeamWithPlayers);
 router.get("/fantasy-teams/optimal-lineups", getOptimalLineups);
+router.delete("/fantasy-teams/:team_id", deleteTeam);
 
 export default router;

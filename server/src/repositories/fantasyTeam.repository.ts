@@ -257,3 +257,7 @@ export const getDailyTeamPerformance = (team_id: number, period_id: number) => {
     [team_id, period_id],
   );
 };
+
+export const deleteTeam = (teamId: number) => {
+  return pool.query("DELETE FROM fantasy_teams WHERE team_id = $1 RETURNING team_id", [teamId]);
+};

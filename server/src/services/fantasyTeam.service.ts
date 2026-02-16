@@ -108,3 +108,11 @@ export const getOptimalAndWorstLineups = async () => {
 
   return { best, worst };
 };
+
+export const deleteTeam = async (teamId: number) => {
+  const result = await repo.deleteTeam(teamId);
+  if (result.rowCount === 0) {
+    throw new ServiceError("Team not found", 404);
+  }
+  return result.rows[0];
+};

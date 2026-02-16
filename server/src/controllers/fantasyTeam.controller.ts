@@ -167,3 +167,21 @@ export const getOptimalLineups = async (req: Request, res: Response) => {
     return res.status(500).json({ ok: false, error: "Internal server error" });
   }
 };
+
+export const deleteTeam = async (req: Request, res: Response) => {
+  try {
+    const teamId = Number(req.params.team_id);
+    if (!Number.isInteger(teamId)) {
+      return res.status(400).json({ ok: false, error: "Invalid team id" });
+    }
+
+    const deleted = await service.deleteTeam(teamId);
+    return res.json({ ok: true, deleted });
+  } catch (err: any) {
+    if (err instanceof ServiceError) {
+      return res.status(err.statusCode).json({ ok: false, error: err.message });
+    }
+    console.error("Error deleting team:", err);
+    return res.status(500).json({ ok: false, error: "Internal server error" });
+  }
+};
