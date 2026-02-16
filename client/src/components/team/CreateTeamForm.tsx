@@ -1,19 +1,28 @@
 import { useState } from "react";
 import api from "../../lib/api";
 
-export default function CreateTeamForm({ userId, onCreated }: { userId: number, onCreated: () => void }) {
+export default function CreateTeamForm({
+  userId,
+  onCreated,
+}: {
+  userId: number;
+  onCreated: () => void;
+}) {
   const [name, setName] = useState("");
   const [isCreating, setIsCreating] = useState(false);
 
   const handleCreate = async (e: React.FormEvent) => {
-    console.log("Creating team...");
     e.preventDefault();
+    if (!name.trim()) return;
+
     setIsCreating(true);
     try {
-      console.log("Creating team with name:", name, "for user ID:", userId);
-      const res = await api.post("/fantasy-teams", { team_name: name, user_id: userId });
+      const res = await api.post("/fantasy-teams", {
+        team_name: name,
+        user_id: userId,
+      });
       if (res.data.ok) onCreated();
-    } catch (err) {
+    } catch {
       alert("Failed to create team");
     } finally {
       setIsCreating(false);
@@ -21,25 +30,31 @@ export default function CreateTeamForm({ userId, onCreated }: { userId: number, 
   };
 
   return (
-    <div className="flex-1 flex items-center justify-center p-8 bg-slate-100">
-      <div className="max-w-md w-full bg-white border-2 border-slate-900 p-10 shadow-[12px_12px_0px_0px_rgba(15,23,42,1)]">
-        <h1 className="text-4xl font-black uppercase italic tracking-tighter mb-2">Create Team</h1>        
-        <form onSubmit={handleCreate} className="space-y-6">
+    <div className="flex-1 flex items-center justify-center p-10 bg-slate-100">
+      <div className="max-w-md w-full bg-white border border-slate-200 rounded-xl p-10 shadow-xl">
+        <h1 className="text-2xl font-bold uppercase tracking-wide text-slate-900 mb-8">
+          Create Team
+        </h1>
+
+        <form onSubmit={handleCreate} className="space-y-8">
           <div>
-            <label className="block text-[10px] font-black uppercase text-slate-400 mb-2">Team Name</label>
-            <input 
+            <label className="block text-[10px] font-semibold uppercase tracking-widest text-slate-400 mb-3">
+              Team Name
+            </label>
+            <input
               required
-              className="w-full border-b-2 border-slate-200 bg-slate-50 px-4 py-4 text-lg font-black outline-none focus:border-indigo-600 transition-colors"
-              placeholder="Enter your team name..."
               value={name}
               onChange={(e) => setName(e.target.value)}
+              placeholder="Enter team name"
+              className="w-full rounded-md border border-slate-300 bg-white px-4 py-3 text-base font-semibold text-slate-900 outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900 transition"
             />
           </div>
-          <button 
-            disabled={isCreating}
-            className="w-full bg-slate-900 text-white font-black uppercase py-5 tracking-[0.2em] hover:bg-indigo-600 disabled:opacity-50 transition-all"
+
+          <button
+            disabled={isCreating || !name.trim()}
+            className="w-full px-5 py-3 rounded-md bg-slate-900 text-white font-semibold uppercase tracking-wide hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition"
           >
-            {isCreating ? "Deploying..." : "Create Team"}
+            {isCreating ? "Creating..." : "Create Team"}
           </button>
         </form>
       </div>

@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import Sidebar from "../components/common/Sidebar";
 import api from "../lib/api";
 import CreateTeamForm from "../components/team/CreateTeamForm";
-import TeamEditor from "../components/team/TeamEditor"; // Your existing code
+import TeamEditor from "../components/team/TeamEditor";
 
 export default function DailyTeamPage() {
   const [userTeams, setUserTeams] = useState<any[]>([]);

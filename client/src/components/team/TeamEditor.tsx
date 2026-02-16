@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import TeamHeader from "./TeamHeader";
+import CreateTeamModal from "./CreateTeamModal";
 import FormationCard from "./FormationCard";
 import api from "../../lib/api";
 
@@ -12,26 +13,27 @@ export default function TeamEditor({ initialTeams, userId }: { initialTeams: any
   const [lineup, setLineup] = useState<any[]>([]);
   const [savedLineupIds, setSavedLineupIds] = useState<number[]>([]);
   const [isSaving, setIsSaving] = useState(false);
+  const [isCreatingTeam, setIsCreatingTeam] = useState(false);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [posFilter, setPosFilter] = useState("FORWARDS");
   const [teamFilter, setTeamFilter] = useState("ALL");
 
   useEffect(() => {
-  const initPage = async () => {
-    try {
-      const poolRes = await api.get("/players");
-      if (poolRes.data.ok) setPlayerPool(poolRes.data.players);
-      
-      if (userTeams.length > 0 && !selectedTeamId) {
-        setSelectedTeamId(userTeams[0].team_id);
+    const initPage = async () => {
+      try {
+        const poolRes = await api.get("/players");
+        if (poolRes.data.ok) setPlayerPool(poolRes.data.players);
+
+        if (userTeams.length > 0 && !selectedTeamId) {
+          setSelectedTeamId(userTeams[0].team_id);
+        }
+      } catch (err) {
+        console.error("Initialization Error:", err);
       }
-    } catch (err) {
-      console.error("Initialization Error:", err);
-    }
-  };
-  initPage();
-}, [userId, userTeams]);
+    };
+    initPage();
+  }, [userId, userTeams]);
 
   useEffect(() => {
     if (!selectedTeamId) return;
@@ -153,172 +155,211 @@ export default function TeamEditor({ initialTeams, userId }: { initialTeams: any
     return result;
   }, [playerPool, searchTerm, posFilter, teamFilter, sortConfig]);
 
+  const handleDeleteTeam = async () => {
+    if (!selectedTeamId) return;
+    if (!window.confirm("Are you sure you want to delete this team? This cannot be undone.")) return;
+
+    try {
+      const res = await api.delete(`/fantasy-teams/${selectedTeamId}`);
+      if (res.data.ok) {
+        // Remove from local state
+        const updatedTeams = userTeams.filter(t => t.team_id !== selectedTeamId);
+        setUserTeams(updatedTeams);
+
+        // Select the first remaining team or null
+        if (updatedTeams.length > 0) {
+          setSelectedTeamId(updatedTeams[0].team_id);
+        } else {
+          setSelectedTeamId(null);
+        }
+        alert("Team deleted successfully");
+      }
+    } catch (err) {
+      console.error("Delete error", err);
+      alert("Failed to delete team");
+    }
+  };
+
+  const handleTeamCreated = (newTeam: any) => {
+    setUserTeams((prev) => [...prev, newTeam]);
+    setSelectedTeamId(newTeam.team_id);
+    setIsCreatingTeam(false);
+  };
+
   return (
 
-      <div className="flex-1 overflow-y-auto">
-        {/* HEADER */}
-        <TeamHeader
-          userTeams={userTeams}
-          selectedTeamId={selectedTeamId}
-          setSelectedTeamId={setSelectedTeamId}
-          lineupCount={lineup.length}
-          totalSalary={totalSalary}
-          isDirty={isDirty}
-          isSaving={isSaving}
-          onSave={saveLineup}
-        />
+    <div className="flex-1 overflow-y-auto relative">
+      <CreateTeamModal
+        isOpen={isCreatingTeam}
+        onClose={() => setIsCreatingTeam(false)}
+        onCreated={handleTeamCreated}
+        userId={userId}
+      />
 
-        {/* FORMATION AREA */}
-        <div className="p-8 bg-slate-100 border-b border-slate-300">
-          <div className="flex flex-col gap-6 max-w-4xl mx-auto">
-            <div className="grid grid-cols-3 gap-4">
-              {[...Array(3)].map((_, i) => (
-                <FormationCard
-                  key={`f-${i}`}
-                  label="FWD"
-                  onRemove={removeFromLineup}
-                  player={lineup.filter((p) => p.pos === "F")[i]}
-                />
-              ))}
-            </div>
-            <div className="grid grid-cols-2 gap-4 max-w-2xl mx-auto w-full">
-              {[...Array(2)].map((_, i) => (
-                <FormationCard
-                  key={`d-${i}`}
-                  label="DEF"
-                  onRemove={removeFromLineup}
-                  player={lineup.filter((p) => p.pos === "D")[i]}
-                />
-              ))}
-            </div>
-            <div className="max-w-xs mx-auto w-full">
+      {/* HEADER */}
+      <TeamHeader
+        userTeams={userTeams}
+        selectedTeamId={selectedTeamId}
+        setSelectedTeamId={setSelectedTeamId}
+        lineupCount={lineup.length}
+        totalSalary={totalSalary}
+        isDirty={isDirty}
+        isSaving={isSaving}
+        onSave={saveLineup}
+        onDeleteTeam={handleDeleteTeam}
+        onAddNewTeam={() => setIsCreatingTeam(true)}
+      />
+
+      {/* FORMATION AREA */}
+      <div className="p-8 bg-slate-100 border-b border-slate-300">
+        <div className="flex flex-col gap-6 max-w-4xl mx-auto">
+          <div className="grid grid-cols-3 gap-4">
+            {[...Array(3)].map((_, i) => (
               <FormationCard
-                label="GOALIE"
-                isGoalie
+                key={`f-${i}`}
+                label="FWD"
                 onRemove={removeFromLineup}
-                player={lineup.find((p) => p.pos === "G")}
+                player={lineup.filter((p) => p.pos === "F")[i]}
               />
-            </div>
+            ))}
+          </div>
+          <div className="grid grid-cols-2 gap-4 max-w-2xl mx-auto w-full">
+            {[...Array(2)].map((_, i) => (
+              <FormationCard
+                key={`d-${i}`}
+                label="DEF"
+                onRemove={removeFromLineup}
+                player={lineup.filter((p) => p.pos === "D")[i]}
+              />
+            ))}
+          </div>
+          <div className="max-w-xs mx-auto w-full">
+            <FormationCard
+              label="GOALIE"
+              isGoalie
+              onRemove={removeFromLineup}
+              player={lineup.find((p) => p.pos === "G")}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* PLAYER POOL TABLE */}
+      <section className="p-8 bg-white min-h-[600px]">
+        <div className="flex flex-wrap gap-4 mb-6 items-end">
+          <div className="flex flex-col gap-1">
+            <span className="text-[9px] font-black text-slate-400 uppercase">
+              Search
+            </span>
+            <input
+              type="text"
+              placeholder="PLAYER NAME..."
+              className="bg-slate-50 border border-slate-200 text-[10px] py-2.5 px-4 font-bold uppercase w-64 outline-none focus:border-black"
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <div className="flex flex-col gap-1">
+            <span className="text-[9px] font-black text-slate-400 uppercase">
+              Position
+            </span>
+            <select
+              className="bg-slate-50 border border-slate-200 text-[10px] py-2.5 px-4 font-bold uppercase outline-none min-w-[120px]"
+              onChange={(e) => setPosFilter(e.target.value)}
+            >
+              <option value="FORWARDS">FORWARDS</option>
+              <option value="D">DEFENCE</option>
+              <option value="G">GOALIE</option>
+            </select>
+          </div>
+          <div className="flex flex-col gap-1">
+            <span className="text-[9px] font-black text-slate-400 uppercase">
+              Team
+            </span>
+            <select
+              className="bg-slate-50 border border-slate-200 text-[10px] py-2.5 px-4 font-bold uppercase outline-none min-w-[120px]"
+              onChange={(e) => setTeamFilter(e.target.value)}
+            >
+              {teamsList.map((team) => (
+                <option key={team} value={team}>
+                  {team}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
 
-        {/* PLAYER POOL TABLE */}
-        <section className="p-8 bg-white min-h-[600px]">
-          <div className="flex flex-wrap gap-4 mb-6 items-end">
-            <div className="flex flex-col gap-1">
-              <span className="text-[9px] font-black text-slate-400 uppercase">
-                Search
-              </span>
-              <input
-                type="text"
-                placeholder="PLAYER NAME..."
-                className="bg-slate-50 border border-slate-200 text-[10px] py-2.5 px-4 font-bold uppercase w-64 outline-none focus:border-black"
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-            <div className="flex flex-col gap-1">
-              <span className="text-[9px] font-black text-slate-400 uppercase">
-                Position
-              </span>
-              <select
-                className="bg-slate-50 border border-slate-200 text-[10px] py-2.5 px-4 font-bold uppercase outline-none min-w-[120px]"
-                onChange={(e) => setPosFilter(e.target.value)}
-              >
-                <option value="FORWARDS">FORWARDS</option>
-                <option value="D">DEFENCE</option>
-                <option value="G">GOALIE</option>
-              </select>
-            </div>
-            <div className="flex flex-col gap-1">
-              <span className="text-[9px] font-black text-slate-400 uppercase">
-                Team
-              </span>
-              <select
-                className="bg-slate-50 border border-slate-200 text-[10px] py-2.5 px-4 font-bold uppercase outline-none min-w-[120px]"
-                onChange={(e) => setTeamFilter(e.target.value)}
-              >
-                {teamsList.map((team) => (
-                  <option key={team} value={team}>
-                    {team}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <div className="flex-1 overflow-auto border border-slate-200">
-            <table className="w-full text-left border-collapse">
-              <thead className="sticky top-0 bg-slate-900 text-white z-20">
-                <tr className="text-[9px] font-black uppercase tracking-widest cursor-pointer">
-                  <th className="px-6 py-4" onClick={() => requestSort("name")}>
-                    Player
-                  </th>
-                  <th className="px-6 py-4" onClick={() => requestSort("pos")}>
-                    Pos
-                  </th>
-                  <th className="px-6 py-4" onClick={() => requestSort("team")}>
-                    Team
-                  </th>
-                  <th
-                    className="px-6 py-4 text-right"
-                    onClick={() => requestSort("points")}
-                  >
-                    Pts
-                  </th>
-                  <th
-                    className="px-6 py-4 text-right"
-                    onClick={() => requestSort("salary")}
-                  >
-                    Salary
-                  </th>
-                  <th className="px-6 py-4 text-center">Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {processedPool.map((player) => {
-                  const playerId = player.player_id || player.id;
-                  const isSelected = lineup.find((p) => (p.player_id || p.id) === playerId);
-                  return (
-                    <tr
-                      key={player.id}
-                      className={`hover:bg-slate-50 transition-colors ${
-                        isSelected ? "opacity-30" : ""
+        <div className="flex-1 overflow-auto border border-slate-200">
+          <table className="w-full text-left border-collapse">
+            <thead className="sticky top-0 bg-slate-900 text-white z-20">
+              <tr className="text-[9px] font-black uppercase tracking-widest cursor-pointer">
+                <th className="px-6 py-4" onClick={() => requestSort("name")}>
+                  Player
+                </th>
+                <th className="px-6 py-4" onClick={() => requestSort("pos")}>
+                  Pos
+                </th>
+                <th className="px-6 py-4" onClick={() => requestSort("team")}>
+                  Team
+                </th>
+                <th
+                  className="px-6 py-4 text-right"
+                  onClick={() => requestSort("points")}
+                >
+                  Pts
+                </th>
+                <th
+                  className="px-6 py-4 text-right"
+                  onClick={() => requestSort("salary")}
+                >
+                  Salary
+                </th>
+                <th className="px-6 py-4 text-center">Action</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {processedPool.map((player) => {
+                const playerId = player.player_id || player.id;
+                const isSelected = lineup.find((p) => (p.player_id || p.id) === playerId);
+                return (
+                  <tr
+                    key={player.id}
+                    className={`hover:bg-slate-50 transition-colors ${isSelected ? "opacity-30" : ""
                       }`}
+                  >
+                    <td className="px-6 py-4 font-black text-xs uppercase">
+                      {player.name}
+                    </td>
+                    <td className="px-6 py-4 text-[10px] font-bold text-slate-400">
+                      {player.pos}
+                    </td>
+                    <td
+                      style={{ color: player.color }}
+                      className="px-6 py-4 text-[10px] font-bold text-slate-400"
                     >
-                      <td className="px-6 py-4 font-black text-xs uppercase">
-                        {player.name}
-                      </td>
-                      <td className="px-6 py-4 text-[10px] font-bold text-slate-400">
-                        {player.pos}
-                      </td>
-                      <td
-                        style={{ color: player.color }}
-                        className="px-6 py-4 text-[10px] font-bold text-slate-400"
+                      {player.team}
+                    </td>
+                    <td className="px-6 py-4 text-right font-mono text-xs font-bold">
+                      {Number(player.points).toFixed(1)}
+                    </td>
+                    <td className="px-6 py-4 text-right font-mono text-xs font-bold text-slate-900">
+                      ${formatSalary(player.salary)}
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <button
+                        onClick={() => addToLineup(player)}
+                        disabled={isSelected}
+                        className="text-[9px] font-black uppercase px-6 py-2 border border-black hover:bg-black hover:text-white disabled:opacity-0 transition-all"
                       >
-                        {player.team}
-                      </td>
-                      <td className="px-6 py-4 text-right font-mono text-xs font-bold">
-                        {Number(player.points).toFixed(1)}
-                      </td>
-                      <td className="px-6 py-4 text-right font-mono text-xs font-bold text-slate-900">
-                        ${formatSalary(player.salary)}
-                      </td>
-                      <td className="px-6 py-4 text-center">
-                        <button
-                          onClick={() => addToLineup(player)}
-                          disabled={isSelected}
-                          className="text-[9px] font-black uppercase px-6 py-2 border border-black hover:bg-black hover:text-white disabled:opacity-0 transition-all"
-                        >
-                          Select
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </section>
-      </div>
+                        Select
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
   );
 }
