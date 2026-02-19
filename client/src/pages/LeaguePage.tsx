@@ -9,7 +9,6 @@ import { useActiveTeam } from "../context/ActiveTeamContext";
 export default function LeagueStandingsPage() {
   const [activePeriod, setActivePeriod] = useState<number>(1);
   const [standings, setStandings] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
   const [userLeagues, setUserLeagues] = useState<any[]>([]);
   const [selectedLeagueId, setSelectedLeagueId] = useState<number | null>(null);
   const [currentPeriod, setCurrentPeriod] = useState<number | null>(null);
@@ -71,7 +70,6 @@ export default function LeagueStandingsPage() {
     if (!selectedLeagueId) return;
 
     const fetchStandings = async () => {
-      setLoading(true);
       try {
         const endpoint = isFullSeason
           ? `/leagues/${selectedLeagueId}/standings`
@@ -94,8 +92,6 @@ export default function LeagueStandingsPage() {
         }
       } catch (err) {
         console.error("Failed to fetch standings:", err);
-      } finally {
-        setLoading(false);
       }
     };
 
