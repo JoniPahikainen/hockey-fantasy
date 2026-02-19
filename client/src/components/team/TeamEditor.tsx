@@ -1,8 +1,8 @@
 import { useState, useMemo, useEffect } from "react";
 import TeamHeader from "./TeamHeader";
-import CreateTeamModal from "./CreateTeamModal";
 import FormationCard from "./FormationCard";
 import api from "../../lib/api";
+import { useActiveTeam } from "../../context/ActiveTeamContext";
 
 type SortKey = "name" | "pos" | "team" | "points" | "salary";
 
@@ -18,22 +18,28 @@ export default function TeamEditor({ initialTeams, userId }: { initialTeams: any
   const [searchTerm, setSearchTerm] = useState("");
   const [posFilter, setPosFilter] = useState("FORWARDS");
   const [teamFilter, setTeamFilter] = useState("ALL");
+  const { activeTeamId, activeTeamName } = useActiveTeam();
 
   useEffect(() => {
     const initPage = async () => {
       try {
         const poolRes = await api.get("/players");
         if (poolRes.data.ok) setPlayerPool(poolRes.data.players);
-
-        if (userTeams.length > 0 && !selectedTeamId) {
-          setSelectedTeamId(userTeams[0].team_id);
-        }
       } catch (err) {
         console.error("Initialization Error:", err);
       }
     };
     initPage();
-  }, [userId, userTeams]);
+  }, [userId]);
+
+  // Keep selected team in sync with global active team
+  useEffect(() => {
+    if (activeTeamId) {
+      setSelectedTeamId(activeTeamId);
+    } else {
+      setSelectedTeamId(null);
+    }
+  }, [activeTeamId]);
 
   useEffect(() => {
     if (!selectedTeamId) return;
@@ -155,59 +161,17 @@ export default function TeamEditor({ initialTeams, userId }: { initialTeams: any
     return result;
   }, [playerPool, searchTerm, posFilter, teamFilter, sortConfig]);
 
-  const handleDeleteTeam = async () => {
-    if (!selectedTeamId) return;
-    if (!window.confirm("Are you sure you want to delete this team? This cannot be undone.")) return;
-
-    try {
-      const res = await api.delete(`/fantasy-teams/${selectedTeamId}`);
-      if (res.data.ok) {
-        // Remove from local state
-        const updatedTeams = userTeams.filter(t => t.team_id !== selectedTeamId);
-        setUserTeams(updatedTeams);
-
-        // Select the first remaining team or null
-        if (updatedTeams.length > 0) {
-          setSelectedTeamId(updatedTeams[0].team_id);
-        } else {
-          setSelectedTeamId(null);
-        }
-        alert("Team deleted successfully");
-      }
-    } catch (err) {
-      console.error("Delete error", err);
-      alert("Failed to delete team");
-    }
-  };
-
-  const handleTeamCreated = (newTeam: any) => {
-    setUserTeams((prev) => [...prev, newTeam]);
-    setSelectedTeamId(newTeam.team_id);
-    setIsCreatingTeam(false);
-  };
-
   return (
 
     <div className="flex-1 overflow-y-auto relative">
-      <CreateTeamModal
-        isOpen={isCreatingTeam}
-        onClose={() => setIsCreatingTeam(false)}
-        onCreated={handleTeamCreated}
-        userId={userId}
-      />
-
       {/* HEADER */}
       <TeamHeader
-        userTeams={userTeams}
-        selectedTeamId={selectedTeamId}
-        setSelectedTeamId={setSelectedTeamId}
+        activeTeamName={activeTeamName || "—"}
         lineupCount={lineup.length}
         totalSalary={totalSalary}
         isDirty={isDirty}
         isSaving={isSaving}
         onSave={saveLineup}
-        onDeleteTeam={handleDeleteTeam}
-        onAddNewTeam={() => setIsCreatingTeam(true)}
       />
 
       {/* FORMATION AREA */}

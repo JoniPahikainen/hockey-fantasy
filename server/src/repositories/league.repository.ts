@@ -99,7 +99,12 @@ export const getCurrentPeriodStandings = (league_id: number) => {
 export const getLeaguesByUserId = (user_id: number) => {
   return pool.query(
     `
-      SELECT l.league_id, l.name, l.creator_id
+      SELECT 
+        l.league_id, 
+        l.name, 
+        l.creator_id,
+        lm.team_id,
+        ft.team_name
       FROM leagues l
       JOIN league_members lm ON l.league_id = lm.league_id
       JOIN fantasy_teams ft ON lm.team_id = ft.team_id

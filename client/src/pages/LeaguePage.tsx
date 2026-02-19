@@ -4,16 +4,18 @@ import api from "../lib/api";
 import { LEAGUE_RECORDS, LEAGUE_PERIODS } from "../data/mockData";
 import LeagueSetupPage from "./LeagueSetupPage";
 import TeamPerformanceGraph from "../components/league/TeamPerformanceGraph";
+import { useActiveTeam } from "../context/ActiveTeamContext";
 
 export default function LeagueStandingsPage() {
   const [activePeriod, setActivePeriod] = useState<number>(1);
   const [standings, setStandings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [leagueId, setLeagueId] = useState<number | null>(null);
-  const [leagueName, setLeagueName] = useState("");
+  const [userLeagues, setUserLeagues] = useState<any[]>([]);
+  const [selectedLeagueId, setSelectedLeagueId] = useState<number | null>(null);
   const [currentPeriod, setCurrentPeriod] = useState<number | null>(null);
   const [hasCheckedLeague, setHasCheckedLeague] = useState(false);
   const [expandedTeamId, setExpandedTeamId] = useState<number | null>(null);
+  const { activeTeamId } = useActiveTeam();
 
   const userStr = localStorage.getItem("user");
   const userId = userStr ? JSON.parse(userStr).id : null;
@@ -39,31 +41,41 @@ export default function LeagueStandingsPage() {
   }, []);
 
   useEffect(() => {
-    const fetchUserLeague = async () => {
+    const fetchUserLeagues = async () => {
       if (!userId) return;
+
       try {
         const { data } = await api.get(`/leagues/user/${userId}`);
-        if (data.ok && data.leagues.length > 0) {
-          setLeagueId(data.leagues[0].league_id);
-          setLeagueName(data.leagues[0].name);
+        if (data.ok && Array.isArray(data.leagues)) {
+          let leagues = data.leagues as any[];
+
+          if (activeTeamId) {
+            leagues = leagues.filter((l) => l.team_id === activeTeamId);
+          }
+
+          setUserLeagues(leagues);
+          setSelectedLeagueId(leagues.length ? leagues[0].league_id : null);
         }
       } catch (err) {
-        console.error("Error fetching user league:", err);
+        console.error("Error fetching user leagues:", err);
       } finally {
         setHasCheckedLeague(true);
       }
     };
-    fetchUserLeague();
-  }, [userId]);
+
+    fetchUserLeagues();
+  }, [userId, activeTeamId]);
+
 
   useEffect(() => {
-    if (!leagueId) return;
+    if (!selectedLeagueId) return;
+
     const fetchStandings = async () => {
       setLoading(true);
       try {
         const endpoint = isFullSeason
-          ? `/leagues/${leagueId}/standings`
-          : `/leagues/${leagueId}/standings/period/${activePeriod}`;
+          ? `/leagues/${selectedLeagueId}/standings`
+          : `/leagues/${selectedLeagueId}/standings/period/${activePeriod}`;
 
         const { data } = await api.get(endpoint);
 
@@ -88,7 +100,7 @@ export default function LeagueStandingsPage() {
     };
 
     fetchStandings();
-  }, [activePeriod, isFullSeason, leagueId, userId]);
+  }, [activePeriod, isFullSeason, selectedLeagueId]);
 
   const getMovement = (curr: number, prev: number) => {
     if (curr < prev) return <span className="text-emerald-500">▲</span>;
@@ -104,34 +116,93 @@ export default function LeagueStandingsPage() {
     );
   }
 
-  if (!leagueId) {
+  if (userLeagues.length === 0) {
     return <LeagueSetupPage />;
   }
+
+  const handleLeaveLeague = async () => {
+    if (!selectedLeagueId || !userId) return;
+
+    try {
+      const { data } = await api.post(
+        `/leagues/${selectedLeagueId}/leave`,
+        { user_id: userId }
+      );
+
+      if (data.ok) {
+        const updated = userLeagues.filter(
+          (l) => l.league_id !== selectedLeagueId
+        );
+
+        setUserLeagues(updated);
+        setSelectedLeagueId(updated.length ? updated[0].league_id : null);
+      }
+    } catch (err) {
+      console.error("Failed to leave league:", err);
+    }
+  };
+
+  const selectedLeague = userLeagues.find(
+    (league) => league.league_id === selectedLeagueId
+  );
+
+
+
 
   return (
     <div className="flex h-screen bg-slate-50 text-slate-900">
       <Sidebar />
 
       <div className="flex-1 overflow-auto px-6 py-8 ml-16">
-        <header className="flex flex-col lg:flex-row lg:justify-between lg:items-start mb-8 gap-4">
-          <div>
-            <h1 className="text-3xl font-black uppercase tracking-tighter italic">
-              {leagueName || "League"} Standings
-            </h1>
-            <p className="text-slate-500 font-medium tracking-tight uppercase text-xs">
-              {isFullSeason ? "Overall Rankings" : `Period ${activePeriod}`}
-            </p>
+        <header className="flex flex-col lg:flex-row lg:justify-between lg:items-start mb-8 gap-6">
+          
+          {/* LEFT SIDE */}
+          <div className="flex flex-col gap-3">
+            <div>
+              <h1 className="text-3xl font-black uppercase tracking-tighter italic">
+                {selectedLeague?.name || "League"} Standings
+              </h1>
+              <p className="text-slate-500 font-medium tracking-tight uppercase text-xs">
+                {isFullSeason ? "Overall Rankings" : `Period ${activePeriod}`}
+              </p>
+            </div>
+
+            {userLeagues.length > 1 && (
+              <select
+                value={selectedLeagueId || ""}
+                onChange={(e) => setSelectedLeagueId(Number(e.target.value))}
+                className="w-64 bg-white border border-slate-300 px-3 py-2 text-xs font-bold uppercase"
+              >
+                {userLeagues.map((league) => (
+                  <option key={league.league_id} value={league.league_id}>
+                    {league.name}
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
 
-          <div className="bg-slate-100 border border-slate-300 px-4 py-2">
-            <span className="block text-[9px] font-black uppercase text-slate-400 tracking-widest">
-              League ID
-            </span>
-            <span className="font-mono font-black text-sm text-slate-900">
-              {leagueId}
-            </span>
+          {/* RIGHT SIDE */}
+          <div className="flex flex-col items-start lg:items-end gap-3">
+            <div className="bg-slate-100 border border-slate-300 px-4 py-2">
+              <span className="block text-[9px] font-black uppercase text-slate-400 tracking-widest">
+                League ID
+              </span>
+              <span className="font-mono font-black text-sm text-slate-900">
+                {selectedLeagueId}
+              </span>
+            </div>
+
+            <button
+              onClick={handleLeaveLeague}
+              className="bg-rose-600 text-white text-[9px] font-black uppercase px-3 py-2 hover:bg-rose-700 transition-colors"
+            >
+              Leave League
+            </button>
           </div>
+
         </header>
+
 
         <main className="max-w-7xl mx-auto space-y-8">
           <div className="flex gap-1 border-b border-slate-200 pb-4 overflow-x-auto">

@@ -6,6 +6,7 @@ import UpcomingMatches from "../components/home/UpcomingMatches";
 import MiniStandings from "../components/home/MiniStandings";
 import BestPerformers from "../components/home/BestPerformers";
 import api from "../lib/api";
+import { useActiveTeam } from "../context/ActiveTeamContext";
 
 export default function HomePage() {
   const [userName, setUserName] = useState("Team Manager");
@@ -14,8 +15,8 @@ export default function HomePage() {
   const [optimalLineup, setOptimalLineup] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [teamInfo, setTeamInfo] = useState<{ leagueId?: number; teamId?: number }>({});
-  
-  
+  const { activeTeamId } = useActiveTeam();
+
   const todayStr = new Date().toISOString().split("T")[0];
 
   useEffect(() => {
@@ -27,37 +28,71 @@ export default function HomePage() {
     const userId = user.id;
 
     const fetchDashboardData = async () => {
-    try {
-      setLoading(true);
-      
-      const [matchRes, dashRes, optimalRes] = await Promise.all([
-        api.get(`/matches/${todayStr}`),
-        api.get(`/fantasy-teams/user-dashboard/${userId}`),
-        api.get(`/fantasy-teams/optimal-lineups`)
-        
-      ]);
+      try {
+        setLoading(true);
 
-      if (matchRes.data.ok) {
-        setMatches(matchRes.data.matches);
-      }
+        const [matchRes, optimalRes, leaguesRes] = await Promise.all([
+          api.get(`/matches/${todayStr}`),
+          api.get(`/fantasy-teams/optimal-lineups`),
+          api.get(`/leagues/user/${userId}`),
+        ]);
 
-      if (dashRes.data.ok && dashRes.data.team) {
-        setUserTeam(dashRes.data.team.players);
-        setTeamInfo({ leagueId: dashRes.data.team.league_id, teamId: dashRes.data.team.id });
-      }
+        if (matchRes.data.ok) {
+          setMatches(matchRes.data.matches);
+        }
 
-      if (optimalRes.data.ok) {
-        setOptimalLineup(optimalRes.data.best || []);
+        if (optimalRes.data.ok) {
+          setOptimalLineup(optimalRes.data.best || []);
+        }
+
+        if (activeTeamId) {
+          try {
+            const teamPlayersRes = await api.get(
+              `/fantasy-teams/${activeTeamId}/players`,
+            );
+            if (teamPlayersRes.data.ok) {
+              setUserTeam(teamPlayersRes.data.players);
+            }
+          } catch (err) {
+            console.error("Failed to load active team players:", err);
+          }
+
+          let leagueIdForTeam: number | undefined = undefined;
+          if (leaguesRes.data.ok && Array.isArray(leaguesRes.data.leagues)) {
+            const league = (leaguesRes.data.leagues as any[]).find(
+              (l) => l.team_id === activeTeamId,
+            );
+            if (league) {
+              leagueIdForTeam = league.league_id;
+            }
+          }
+
+          setTeamInfo({ leagueId: leagueIdForTeam, teamId: activeTeamId });
+        } else {
+          try {
+            const dashRes = await api.get(
+              `/fantasy-teams/user-dashboard/${userId}`,
+            );
+            if (dashRes.data.ok && dashRes.data.team) {
+              setUserTeam(dashRes.data.team.players);
+              setTeamInfo({
+                leagueId: dashRes.data.team.league_id,
+                teamId: dashRes.data.team.id,
+              });
+            }
+          } catch (err) {
+            console.error("Dashboard Load Error (fallback):", err);
+          }
+        }
+      } catch (err) {
+        console.error("Dashboard Load Error:", err);
+      } finally {
+        setLoading(false);
       }
-    } catch (err) {
-      console.error("Dashboard Load Error:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
 
     fetchDashboardData();
-  }, [todayStr]);
+  }, [todayStr, activeTeamId]);
 
   return (
     <div className="flex h-screen bg-slate-50 text-slate-900">
