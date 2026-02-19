@@ -222,7 +222,13 @@ export default function Sidebar() {
           <span className={tooltip}>Dashboard</span>
         </button>
 
-        <button onClick={() => navigate("/team")} className={iconBtn}>
+        <button
+          onClick={() => navigate("/team")}
+          className={isActive("/team") ? activeBtn : iconBtn}
+        >
+          {isActive("/team") && (
+            <div className="absolute -left-3 w-1 h-6 bg-white" />
+          )}
           <svg
             className="w-5 h-5"
             fill="none"
@@ -239,24 +245,13 @@ export default function Sidebar() {
           <span className={tooltip}>Team</span>
         </button>
 
-        <button className={iconBtn}>
-          <svg
-            className="w-5 h-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeWidth={1.5}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M12 7a4 4 0 100 8 4 4 0 000-8zM4 21a8 8 0 0116 0"
-            />
-          </svg>
-          <span className={tooltip}>Market</span>
-        </button>
-
-        <button onClick={() => navigate("/league")} className={iconBtn}>
+        <button
+          onClick={() => navigate("/league")}
+          className={isActive("/league") ? activeBtn : iconBtn}
+        >
+          {isActive("/league") && (
+            <div className="absolute -left-3 w-1 h-6 bg-white" />
+          )}
           <svg
             className="w-5 h-5"
             fill="none"
