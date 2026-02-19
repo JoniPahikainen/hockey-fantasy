@@ -56,7 +56,7 @@ export const getLeaguesByUserId = async (user_id: number) => {
 export const getCurrentPeriod = async () => {
     const result = await repo.getCurrentPeriod();
     if (result.rowCount === 0) {
-        throw new ServiceError("No active period found", 404, false);
+        throw new ServiceError("No active period found", 404);
     }
     return result.rows[0];
 };
