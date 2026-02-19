@@ -2,6 +2,7 @@ import { Router } from "express";
 import {
   createLeague,
   joinLeague,
+  leaveLeague,
   getLeagueStandings,
   getLeagueStandingsByPeriod,
   getCurrentPeriodStandings,
@@ -14,6 +15,7 @@ const router = Router();
 
 router.post("/leagues", createLeague);
 router.post("/leagues/join", joinLeague);
+router.post("/leagues/:league_id/leave", leaveLeague);
 router.get("/leagues/:league_id/standings", getLeagueStandings);
 router.get("/leagues/:league_id/standings/period/:period_id", getLeagueStandingsByPeriod,);
 router.get("/leagues/:league_id/standings/current", getCurrentPeriodStandings);

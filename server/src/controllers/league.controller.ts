@@ -42,6 +42,27 @@ export const joinLeague = async (req: Request, res: Response) => {
   }
 };
 
+// Leave a league
+export const leaveLeague = async (req: Request, res: Response) => {
+  try {
+    const { league_id } = req.params;
+    const { team_id } = req.body;
+    if (!league_id || !team_id) {
+      return res
+        .status(400)
+        .json({ ok: false, error: "Missing required fields" });
+    }
+    await service.leaveLeague(Number(league_id), Number(team_id));
+    return res.json({ ok: true, message: "Successfully left league" });
+  } catch (err) {
+    if (err instanceof ServiceError) {
+      return res.status(err.statusCode).json({ ok: false, error: err.message });
+    }
+    console.error("Error leaving league:", err);
+    return res.status(500).json({ ok: false, error: "Internal server error" });
+  }
+};
+
 // Get full season standings for a league
 export const getLeagueStandings = async (req: Request, res: Response) => {
   try {

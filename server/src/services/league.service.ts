@@ -30,6 +30,37 @@ export const joinLeague = async (
     return true;
 };
 
+export const leaveLeague = async (
+  league_id: number,
+  team_id: number,
+) => {
+    const leagueCheck = await repo.getPasscode(league_id);
+    if (leagueCheck.rowCount === 0) {
+        throw new ServiceError("League not found", 404);
+    }
+    
+    // Get the creator_id and team's user_id
+    const creatorResult = await repo.getLeagueCreator(league_id);
+    const teamUserResult = await repo.getTeamUserId(team_id);
+    
+    if (teamUserResult.rowCount === 0) {
+        throw new ServiceError("Team not found", 404);
+    }
+    
+    const creator_id = creatorResult.rows[0].creator_id;
+    const user_id = teamUserResult.rows[0].user_id;
+    
+    // If user is the creator, delete the entire league
+    if (user_id === creator_id) {
+        await repo.deleteLeague(league_id);
+    } else {
+        // Otherwise just remove them from the league
+        await repo.removeMember(league_id, team_id);
+    }
+    
+    return true;
+};
+
 export const getLeagueStandings = async (league_id: number) => {
     const result = await repo.getFullStandings(league_id);
     return result.rows;

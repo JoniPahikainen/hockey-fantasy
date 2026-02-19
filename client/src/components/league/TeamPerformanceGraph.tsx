@@ -16,12 +16,14 @@ export default function TeamPerformanceGraph({ teamId, periodId }: Props) {
       setLoading(true);
       try {
         const { data } = await api.get(`/teams/${teamId}/performance/period/${periodId}`);
-        if (data.ok) {
-          const formatted = data.data.map((d: any) => ({
+        if (data.ok && Array.isArray(data.performance)) {
+          const formatted = data.performance.map((d: any) => ({
             ...d,
             shortDate: new Date(d.game_date).toLocaleDateString("en-US", { month: "short", day: "numeric" })
           }));
           setData(formatted);
+        } else {
+          setData([]);
         }
       } catch (err) {
         console.error("Graph fetch error:", err);

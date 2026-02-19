@@ -125,7 +125,7 @@ CREATE TABLE IF NOT EXISTS trade_history (
 CREATE TABLE IF NOT EXISTS leagues (
     league_id SERIAL PRIMARY KEY,
     name VARCHAR(50) NOT NULL,
-    passcode VARCHAR(20),
+    passcode VARCHAR(60),
     creator_id INT REFERENCES users(user_id) ON DELETE CASCADE
 );
 

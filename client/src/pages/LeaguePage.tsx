@@ -117,12 +117,12 @@ export default function LeagueStandingsPage() {
   }
 
   const handleLeaveLeague = async () => {
-    if (!selectedLeagueId || !userId) return;
+    if (!selectedLeagueId || !selectedLeague) return;
 
     try {
       const { data } = await api.post(
         `/leagues/${selectedLeagueId}/leave`,
-        { user_id: userId }
+        { team_id: selectedLeague.team_id }
       );
 
       if (data.ok) {
