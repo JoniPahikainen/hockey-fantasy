@@ -41,6 +41,12 @@ export default function TeamList({ team }: { team: any[] }) {
       <div className="flex flex-col divide-y divide-slate-200">
         {sortedTeam.map((player) => {
           const safePoints = Number(player.points || 0);
+          const pointsColor =
+            safePoints < 0
+              ? "text-red-600"
+              : safePoints > 0
+                ? "text-emerald-600"
+                : "text-slate-500";
 
           return (
             <div
@@ -64,7 +70,7 @@ export default function TeamList({ team }: { team: any[] }) {
                 </div>
               </div>
 
-              <div className="text-sm font-mono font-black">
+              <div className={`text-sm font-mono font-black ${pointsColor}`}>
                 {safePoints.toFixed(1)}
               </div>
             </div>

@@ -17,6 +17,7 @@ export default function HomePage() {
   const [optimalLineup, setOptimalLineup] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [teamInfo, setTeamInfo] = useState<{ leagueId?: number; teamId?: number }>({});
+  const [leagueName, setLeagueName] = useState<string | null>(null);
   const { activeTeamId } = useActiveTeam();
 
   const todayStr = new Date().toISOString().split("T")[0];
@@ -33,7 +34,8 @@ export default function HomePage() {
       try {
         setLoading(true);
         setNextGamesDateMatches([]);
-        setNextGamesDateLabel("");
+          setNextGamesDateLabel("");
+          setLeagueName(null);
 
         const [matchRes, optimalRes, leaguesRes] = await Promise.all([
           api.get(`/matches/${todayStr}`),
@@ -88,6 +90,7 @@ export default function HomePage() {
             );
             if (league) {
               leagueIdForTeam = league.league_id;
+              setLeagueName(league.name ?? null);
             }
           }
 
@@ -147,7 +150,6 @@ export default function HomePage() {
           {/* LEFT */}
           <div className="lg:col-span-4 flex flex-col gap-8">
             <BestPerformers team={optimalLineup} />
-            {/* <Calender data={GM_PLANNER_DATA} today={todayNum} /> */}
           </div>
 
           {/* RIGHT */}
