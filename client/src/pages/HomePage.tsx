@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import Sidebar from "../components/common/Sidebar";
 {/* import Calender from "../components/home/Calender"; */}
 import TeamList from "../components/home/TeamList";
-import UpcomingMatches from "../components/home/UpcomingMatches";
+import UpcomingMatches, { type UpcomingMatchesProps } from "../components/home/UpcomingMatches";
 import MiniStandings from "../components/home/MiniStandings";
 import BestPerformers from "../components/home/BestPerformers";
 import api from "../lib/api";
@@ -12,6 +12,8 @@ export default function HomePage() {
   const [userName, setUserName] = useState("Team Manager");
   const [userTeam, setUserTeam] = useState<any[]>([]);
   const [matches, setMatches] = useState<any[]>([]);
+  const [nextGamesDateMatches, setNextGamesDateMatches] = useState<any[]>([]);
+  const [nextGamesDateLabel, setNextGamesDateLabel] = useState<string>("");
   const [optimalLineup, setOptimalLineup] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [teamInfo, setTeamInfo] = useState<{ leagueId?: number; teamId?: number }>({});
@@ -30,6 +32,8 @@ export default function HomePage() {
     const fetchDashboardData = async () => {
       try {
         setLoading(true);
+        setNextGamesDateMatches([]);
+        setNextGamesDateLabel("");
 
         const [matchRes, optimalRes, leaguesRes] = await Promise.all([
           api.get(`/matches/${todayStr}`),
@@ -38,7 +42,27 @@ export default function HomePage() {
         ]);
 
         if (matchRes.data.ok) {
-          setMatches(matchRes.data.matches);
+          const todayMatches = matchRes.data.matches ?? [];
+          setMatches(todayMatches);
+
+          if (todayMatches.length === 0) {
+            const maxDaysToCheck = 60;
+            for (let offset = 1; offset <= maxDaysToCheck; offset++) {
+              const next = new Date(todayStr);
+              next.setDate(next.getDate() + offset);
+              const nextStr = next.toISOString().split("T")[0];
+              try {
+                const nextRes = await api.get(`/matches/${nextStr}`);
+                if (nextRes.data.ok && Array.isArray(nextRes.data.matches) && nextRes.data.matches.length > 0) {
+                  setNextGamesDateMatches(nextRes.data.matches);
+                  setNextGamesDateLabel(next.toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" }));
+                  break;
+                }
+              } catch {
+                // continue to next day
+              }
+            }
+          }
         }
 
         if (optimalRes.data.ok) {
@@ -133,7 +157,13 @@ export default function HomePage() {
                 Loading tonight's action...
               </div>
             ) : (
-              <UpcomingMatches match_data={matches} />
+              <UpcomingMatches
+                {...({
+                  match_data: matches,
+                  nextGamesMatches: nextGamesDateMatches,
+                  nextGamesLabel: nextGamesDateLabel,
+                } satisfies UpcomingMatchesProps)}
+              />
             )}
             <MiniStandings leagueId={teamInfo.leagueId} teamId={teamInfo.teamId} />
             <TeamList team={userTeam} />
