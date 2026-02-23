@@ -5,6 +5,7 @@ import TeamList from "../components/home/TeamList";
 import UpcomingMatches, { type UpcomingMatchesProps } from "../components/home/UpcomingMatches";
 import MiniStandings from "../components/home/MiniStandings";
 import BestPerformers from "../components/home/BestPerformers";
+import TeamSummaryCard from "../components/home/TeamSummaryCard";
 import api from "../lib/api";
 import { useActiveTeam } from "../context/ActiveTeamContext";
 
@@ -121,6 +122,11 @@ export default function HomePage() {
     fetchDashboardData();
   }, [todayStr, activeTeamId]);
 
+  const teamPoints = userTeam.reduce((s, p) => s + (Number(p.points) || 0), 0);
+  const positiveCount = userTeam.filter((p) => (Number(p.points) || 0) > 0).length;
+  const negativeCount = userTeam.filter((p) => (Number(p.points) || 0) < 0).length;
+  const zeroCount = userTeam.filter((p) => (Number(p.points) || 0) === 0).length;
+
   return (
     <div className="flex h-screen bg-slate-50 text-slate-900">
       <Sidebar />
@@ -145,11 +151,14 @@ export default function HomePage() {
           </div>
         </header>
 
+
         {/* MAIN GRID */}
         <div className="grid grid-cols-1 lg:grid-cols-9 gap-8">
           {/* LEFT */}
           <div className="lg:col-span-4 flex flex-col gap-8">
             <BestPerformers team={optimalLineup} />
+            <MiniStandings leagueId={teamInfo.leagueId} teamId={teamInfo.teamId} />
+            
           </div>
 
           {/* RIGHT */}
@@ -167,8 +176,14 @@ export default function HomePage() {
                 } satisfies UpcomingMatchesProps)}
               />
             )}
-            <MiniStandings leagueId={teamInfo.leagueId} teamId={teamInfo.teamId} />
             <TeamList team={userTeam} />
+            <TeamSummaryCard
+              teamPoints={teamPoints}
+              positiveCount={positiveCount}
+              negativeCount={negativeCount}
+              zeroCount={zeroCount}
+              rosterSize={userTeam.length}
+            />
           </div>
         </div>
       </div>
