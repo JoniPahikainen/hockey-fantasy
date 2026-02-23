@@ -79,6 +79,11 @@ export const getCurrentPeriodStandings = async (league_id: number) => {
     return result.rows;
 };
 
+export const getStandingsWithLastNight = async (league_id: number) => {
+    const result = await repo.getStandingsWithLastNight(league_id);
+    return result.rows;
+};
+
 export const getLeaguesByUserId = async (user_id: number) => {
     const result = await repo.getLeaguesByUserId(user_id);
     return result.rows;

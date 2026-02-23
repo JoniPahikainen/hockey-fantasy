@@ -44,10 +44,7 @@ export const removeMember = (league_id: number, team_id: number) => {
 };
 
 export const deleteLeague = (league_id: number) => {
-  return pool.query(
-    "DELETE FROM leagues WHERE league_id = $1",
-    [league_id],
-  );
+  return pool.query("DELETE FROM leagues WHERE league_id = $1", [league_id]);
 };
 
 export const getFullStandings = (league_id: number) => {
@@ -146,5 +143,58 @@ export const getCurrentPeriod = () => {
         FROM scoring_periods
         WHERE CURRENT_DATE BETWEEN start_date AND end_date
         LIMIT 1;`,
+  );
+};
+
+export const getStandingsWithLastNight = (league_id: number) => {
+  return pool.query(
+    `
+    WITH target_window AS (
+      SELECT
+        (CURRENT_DATE + time '12:00:00' - interval '1 day') AS window_start,
+        (CURRENT_DATE + time '12:00:00') AS window_end
+    ),
+    full_totals AS (
+      SELECT
+        t.team_id,
+        t.team_name,
+        u.username AS owner_name,
+        ROUND(COALESCE(SUM(pgs.points_earned * CASE WHEN rh.is_captain THEN 1.3 ELSE 1 END), 0), 2) AS period_points
+      FROM league_members lm
+      JOIN fantasy_teams t ON lm.team_id = t.team_id
+      JOIN users u ON t.user_id = u.user_id
+      JOIN scoring_periods sp ON CURRENT_DATE BETWEEN sp.start_date AND sp.end_date
+      LEFT JOIN roster_history rh ON rh.team_id = t.team_id 
+        AND rh.game_date BETWEEN sp.start_date AND sp.end_date
+      LEFT JOIN matches m ON m.scheduled_at::date = rh.game_date
+      LEFT JOIN player_game_stats pgs ON (pgs.player_id = rh.player_id AND pgs.match_id = m.match_id)
+      WHERE lm.league_id = $1
+      GROUP BY t.team_id, t.team_name, u.username
+    ),
+    last_night AS (
+      SELECT
+        rh.team_id,
+        ROUND(COALESCE(SUM(pgs.points_earned * CASE WHEN rh.is_captain THEN 1.3 ELSE 1 END), 0), 2) AS last_night_points
+      FROM roster_history rh
+      JOIN league_members lm ON lm.team_id = rh.team_id AND lm.league_id = $1
+      JOIN matches m ON m.scheduled_at::date = rh.game_date
+      JOIN player_game_stats pgs ON pgs.player_id = rh.player_id AND pgs.match_id = m.match_id
+      CROSS JOIN target_window
+      WHERE m.scheduled_at >= target_window.window_start
+        AND m.scheduled_at < target_window.window_end
+      GROUP BY rh.team_id
+    )
+    SELECT
+      ft.team_id,
+      ft.team_name,
+      ft.owner_name,
+      ft.period_points,
+      COALESCE(ln.last_night_points, 0) AS last_night_points,
+      RANK() OVER (ORDER BY ft.period_points DESC) AS rank
+    FROM full_totals ft
+    LEFT JOIN last_night ln ON ln.team_id = ft.team_id
+    ORDER BY ft.period_points DESC;
+    `,
+    [league_id],
   );
 };

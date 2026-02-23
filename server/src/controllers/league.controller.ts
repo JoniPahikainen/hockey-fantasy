@@ -134,6 +134,29 @@ export const getCurrentPeriodStandings = async (
   }
 };
 
+// Get current period standings with last night points (for home page mini standings)
+export const getStandingsWithLastNight = async (
+  req: Request,
+  res: Response,
+) => {
+  try {
+    const { league_id } = req.params;
+    if (!league_id) {
+      return res
+        .status(400)
+        .json({ ok: false, error: "League ID is required" });
+    }
+    const standings = await service.getStandingsWithLastNight(Number(league_id));
+    return res.json({ ok: true, standings });
+  } catch (err) {
+    if (err instanceof ServiceError) {
+      return res.status(err.statusCode).json({ ok: false, error: err.message });
+    }
+    console.error("Error fetching standings with last night:", err);
+    return res.status(500).json({ ok: false, error: "Internal server error" });
+  }
+};
+
 // Get leagues by user ID
 export const getLeaguesByUserId = async (req: Request, res: Response) => {
   try {

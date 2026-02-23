@@ -12,14 +12,17 @@ export default function MiniStandings({ leagueId, teamId }: { leagueId?: number,
 
     const fetchMiniStandings = async () => {
       try {
-        const res = await api.get(`/leagues/${leagueId}/standings/current`);
+        const res = await api.get(`/leagues/${leagueId}/standings/with-last-night`);
         if (res.data.ok) {
+          console.log("res.data.standings", res.data.standings);
           const mappedData = res.data.standings.map((t: any) => ({
             rank: parseInt(t.rank),
             name: t.team_name,
             points: t.period_points,
+            lastNightPoints: t.last_night_points,
             isUser: t.team_id === teamId,
           }));
+          console.log("mappedData", mappedData);
           setStandings(mappedData);
         }
         } catch (err) {
@@ -60,6 +63,15 @@ export default function MiniStandings({ leagueId, teamId }: { leagueId?: number,
 
   const userIndex = standings.findIndex((t) => t.isUser);
   const leader = standings[0];
+
+  const formatPoints = (points: number, lastNightPoints: number | null) => {
+    const total = Number(points).toFixed(1);
+    const lastNight =
+      lastNightPoints != null && Number(lastNightPoints) > 0
+        ? Number(lastNightPoints).toFixed(1)
+        : null;
+    return lastNight !== null ? `${total} (${lastNight})` : `${total} (-)`;
+  };
   
   const displayIndex = userIndex === -1 ? 0 : userIndex;
 
@@ -87,7 +99,9 @@ export default function MiniStandings({ leagueId, teamId }: { leagueId?: number,
                 <span className="font-mono w-4 text-amber-500 font-bold">01</span>
                 <span className="font-bold tracking-tight uppercase">{leader.name}</span>
               </div>
-              <div className="font-mono text-slate-400">{leader.points}</div>
+              <div className="font-mono text-slate-400">
+                {formatPoints(leader.points, leader.lastNightPoints)}
+              </div>
             </div>
             <div className="h-[1px] bg-slate-100 mx-4 flex justify-center relative">
               <span className="bg-white px-2 absolute -top-1.5 text-[8px] text-slate-300 italic font-bold">GAP</span>
@@ -110,7 +124,7 @@ export default function MiniStandings({ leagueId, teamId }: { leagueId?: number,
               </span>
               <span className="font-black tracking-tight uppercase">{team.name}</span>
             </div>
-            <div className="font-mono font-bold">{team.points}</div>
+            <div className="font-mono font-bold">{formatPoints(team.points, team.lastNightPoints)}</div>
           </div>
         ))}
       </div>
