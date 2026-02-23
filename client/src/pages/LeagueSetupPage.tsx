@@ -59,7 +59,7 @@ export default function LeagueSetupPage() {
           passcode: createData.passcode,
           team_id: selectedTeamId,
         });
-        window.location.href = "/league";
+        navigate("/league");
       }
     } catch (err: any) {
       setError(err.response?.data?.error || "Failed to create league");
