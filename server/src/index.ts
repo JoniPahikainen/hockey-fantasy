@@ -1,32 +1,32 @@
-import * as dotenv from 'dotenv';
-import * as path from 'path';
-dotenv.config({ path: path.resolve(__dirname, '../../.env.local') });
+import * as dotenv from "dotenv";
+import * as path from "path";
+dotenv.config({ path: path.resolve(__dirname, "../../.env.local") });
 
-import express from 'express';
-import cors from 'cors';
-import userRouter from './routes/userRoutes';
-import matchRouter from './routes/matchRoutes';
-import playerRouter from './routes/nhlPlayerRoutes';
-import fantasyTeamRouter from './routes/fantasyTeamRoutes';
-import leagueRouter from './routes/leagueRoutes';
-import morgan from 'morgan';
+import express from "express";
+import cors from "cors";
+import userRouter from "./routes/userRoutes";
+import matchRouter from "./routes/matchRoutes";
+import playerRouter from "./routes/nhlPlayerRoutes";
+import fantasyTeamRouter from "./routes/fantasyTeamRoutes";
+import leagueRouter from "./routes/leagueRoutes";
+import adminRouter from "./routes/adminRoutes";
+import morgan from "morgan";
 
 const app = express();
 app.use(cors());
 app.use(express.json());
-app.use(morgan('dev'));
+app.use(morgan("dev"));
 
-app.get('/api/health', (_req, res) => {
-  res.json({ status: 'ok' });
+app.get("/api/health", (_req, res) => {
+  res.json({ status: "ok" });
 });
 
-app.use('/api', userRouter);
-app.use('/api', matchRouter);
-app.use('/api', playerRouter);
-app.use('/api', fantasyTeamRouter);
-app.use('/api', leagueRouter);
-
-
+app.use("/api", userRouter);
+app.use("/api", matchRouter);
+app.use("/api", playerRouter);
+app.use("/api", fantasyTeamRouter);
+app.use("/api", leagueRouter);
+app.use("/api", adminRouter);
 
 const port = process.env.PORT ? Number(process.env.PORT) : 4000;
 
