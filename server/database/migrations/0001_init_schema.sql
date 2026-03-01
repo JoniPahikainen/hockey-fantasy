@@ -7,12 +7,16 @@ CREATE TABLE IF NOT EXISTS real_teams (
     logo_url TEXT
 );
 
+-- User Roles
+CREATE TYPE user_role AS ENUM ('user', 'admin');
+
 -- 2. User Management
 CREATE TABLE IF NOT EXISTS users (
     user_id SERIAL PRIMARY KEY,
     username VARCHAR(50) UNIQUE NOT NULL,
     email VARCHAR(100) UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
+    role user_role NOT NULL DEFAULT 'user',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -25,6 +29,8 @@ CREATE TABLE IF NOT EXISTS players (
     position VARCHAR(2) CHECK (position IN ('G', 'D', 'F')),
     team_abbrev VARCHAR(10) REFERENCES real_teams(abbreviation),
     current_price INT NOT NULL,
+    start_price INT NOT NULL DEFAULT 0,
+    base_rating NUMERIC(6,2),
     is_injured BOOLEAN DEFAULT false
 );
 
