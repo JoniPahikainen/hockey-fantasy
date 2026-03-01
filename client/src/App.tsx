@@ -6,6 +6,7 @@ import DailyTeamPage from './pages/TeamPage'
 import LeagueStandingsPage from './pages/LeaguePage'
 import ProtectedRoute from './pages/auth/ProtectedRoute'
 import LeagueSetupPage from './pages/LeagueSetupPage'
+import AdminPage from './pages/AdminPage'
 
 function App() {
   return (
@@ -21,6 +22,11 @@ function App() {
           <Route path="/team" element={<DailyTeamPage />} />
           <Route path="/league" element={<LeagueStandingsPage />} />
           <Route path="/league/setup" element={<LeagueSetupPage />} />
+        </Route>
+
+        {/* ADMIN - Market control (admin role only) */}
+        <Route element={<ProtectedRoute adminOnly />}>
+          <Route path="/admin" element={<AdminPage />} />
         </Route>
 
         {/* FALLBACK */}

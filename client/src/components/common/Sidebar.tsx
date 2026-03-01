@@ -53,13 +53,9 @@ export default function Sidebar() {
     fetchTeams();
   }, []);
 
-  // Initialize active team from context/localStorage or default to first team
   useEffect(() => {
     if (!myTeams.length) return;
-    if (
-      activeTeamId &&
-      myTeams.some((t) => t.team_id === activeTeamId)
-    ) {
+    if (activeTeamId && myTeams.some((t) => t.team_id === activeTeamId)) {
       return;
     }
 
@@ -72,6 +68,17 @@ export default function Sidebar() {
   }, [myTeams, activeTeamId, setActiveTeam]);
 
   const isActive = (path: string) => location.pathname === path;
+
+  const userStr = localStorage.getItem("user");
+  let isAdmin = false;
+  try {
+    if (userStr) {
+      const user = JSON.parse(userStr);
+      isAdmin = user?.role === "admin";
+    }
+  } catch {
+    // ignore
+  }
 
   return (
     <aside className="fixed left-0 top-0 w-16 h-screen bg-slate-900 border-r border-white/10 flex flex-col items-center z-40">
@@ -91,8 +98,8 @@ export default function Sidebar() {
           {activeTeamName
             ? activeTeamName.charAt(0)
             : loadingTeams
-            ? "..."
-            : "?"}
+              ? "..."
+              : "?"}
         </button>
 
         {/* Dropdown */}
@@ -267,6 +274,31 @@ export default function Sidebar() {
           </svg>
           <span className={tooltip}>Leagues</span>
         </button>
+
+        {isAdmin && (
+          <button
+            onClick={() => navigate("/admin")}
+            className={isActive("/admin") ? activeBtn : iconBtn}
+          >
+            {isActive("/admin") && (
+              <div className="absolute -left-3 w-1 h-6 bg-white" />
+            )}
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeWidth={1.5}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+              />
+            </svg>
+            <span className={tooltip}>Admin</span>
+          </button>
+        )}
       </nav>
 
       <div className="flex-1" />
