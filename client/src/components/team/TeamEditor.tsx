@@ -115,7 +115,7 @@ export default function TeamEditor({ initialTeams, userId }: { initialTeams: any
   });
 
   const formatSalary = (num: number) =>
-    new Intl.NumberFormat("en-US").format(num);
+    (Math.floor(Number(num) / 1000) * 1000).toLocaleString("en-US").replace(/,/g, " ");
 
   const teamsList = useMemo(
     () => ["ALL", ...new Set(playerPool.map((p) => p.team))].sort(),

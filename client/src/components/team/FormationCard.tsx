@@ -36,7 +36,7 @@ export default function FormationCard({ player, label, onRemove, isGoalie }: {
         </div>
         <div className="mt-2 pt-2 border-t border-slate-300 w-full">
           <span className="text-[9px] font-mono text-slate-600 uppercase tracking-tighter">
-            ${Number(player.salary).toLocaleString()}
+            ${(Math.floor(Number(player.salary) / 1000) * 1000).toLocaleString("en-US").replace(/,/g, " ")}
           </span>
         </div>
       </div>
