@@ -1,5 +1,5 @@
 import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
+import { createToken } from "../middleware/auth";
 import * as repo from "../repositories/user.repository";
 import { ServiceError } from "../utils/errors";
 
@@ -24,11 +24,11 @@ export const login = async (email: string, password: string) => {
   const isMatch = await bcrypt.compare(password, user.password_hash);
   if (!isMatch) throw new ServiceError("Invalid email or password", 401);
 
-  const token = jwt.sign({ userId: user.user_id }, process.env.JWT_SECRET!, { expiresIn: "1h" });
-  
+  const token = createToken({ userId: user.user_id, role: user.role });
+
   return {
     token,
-    user: { id: user.user_id, username: user.username, email: user.email }
+    user: { id: user.user_id, username: user.username, email: user.email, role: user.role },
   };
 };
 
