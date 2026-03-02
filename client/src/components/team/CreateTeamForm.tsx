@@ -30,15 +30,15 @@ export default function CreateTeamForm({
   };
 
   return (
-    <div className="flex-1 flex items-center justify-center p-10 bg-slate-100">
-      <div className="max-w-md w-full bg-white border border-slate-200 rounded-xl p-10 shadow-xl">
-        <h1 className="text-2xl font-bold uppercase tracking-wide text-slate-900 mb-8">
+    <div className="flex-1 flex items-center justify-center p-10 bg-bg-tertiary">
+      <div className="max-w-md w-full bg-bg-primary border border-border-default rounded-xl p-10 shadow-xl">
+        <h1 className="text-2xl font-bold uppercase tracking-wide text-text-primary mb-8">
           Create Team
         </h1>
 
         <form onSubmit={handleCreate} className="space-y-8">
           <div>
-            <label className="block text-[10px] font-semibold uppercase tracking-widest text-slate-400 mb-3">
+            <label className="block text-[10px] font-semibold uppercase tracking-widest text-text-muted-subtle mb-3">
               Team Name
             </label>
             <input
@@ -46,13 +46,13 @@ export default function CreateTeamForm({
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Enter team name"
-              className="w-full rounded-md border border-slate-300 bg-white px-4 py-3 text-base font-semibold text-slate-900 outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900 transition"
+              className="w-full rounded-md border border-border-input bg-bg-primary px-4 py-3 text-base font-semibold text-text-primary outline-none focus:border-border-strong focus:ring-1 focus:ring-border-strong transition"
             />
           </div>
 
           <button
             disabled={isCreating || !name.trim()}
-            className="w-full px-5 py-3 rounded-md bg-slate-900 text-white font-semibold uppercase tracking-wide hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition"
+            className="w-full px-5 py-3 rounded-md bg-bg-sidebar text-text-inverse font-semibold uppercase tracking-wide hover:bg-bg-sidebar-hover disabled:opacity-50 disabled:cursor-not-allowed transition"
           >
             {isCreating ? "Creating..." : "Create Team"}
           </button>

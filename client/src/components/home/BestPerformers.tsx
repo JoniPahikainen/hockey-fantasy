@@ -11,21 +11,21 @@ export default function BestPerformers({ team }: { team: any[] }) {
   }, 0);
 
   return (
-    <div className="bg-white border border-slate-300 shadow-sm w-full">
-      <div className="px-6 py-4 bg-slate-900 flex justify-between items-center">
-        <h2 className="text-xs font-black text-white uppercase tracking-[0.2em]">
-          Optimal <span className="text-slate-400">Lineup</span>
+    <div className="bg-bg-primary border border-border-input shadow-sm w-full">
+      <div className="px-6 py-4 bg-bg-sidebar flex justify-between items-center">
+        <h2 className="text-xs font-black text-text-inverse uppercase tracking-[0.2em]">
+          Optimal <span className="text-text-muted-subtle">Lineup</span>
         </h2>
         <div className="text-right">
-          <span className="text-[10px] font-black text-slate-500 uppercase block leading-none mb-1">
+          <span className="text-[10px] font-black text-text-muted uppercase block leading-none mb-1">
             Total FP
           </span>
-          <span className="text-lg font-mono font-black text-white leading-none">
+          <span className="text-lg font-mono font-black text-text-inverse leading-none">
             {totalPoints.toFixed(1)}
           </span>
         </div>
       </div>
-      <div className="p-6 flex flex-col gap-4 bg-slate-50/30">
+      <div className="p-6 flex flex-col gap-4 bg-bg-secondary/30">
         <div className="grid grid-cols-3 gap-4 w-full">
           {forwards.map((p) => (
             <FormationCard key={p.name} player={p} />
@@ -45,10 +45,10 @@ export default function BestPerformers({ team }: { team: any[] }) {
         </div>
       </div>
 
-      <div className="bg-slate-50 px-4 py-3 border-t border-slate-200 flex justify-center gap-8">
-        <LegendItem color="bg-emerald-500" label="Gain" />
-        <LegendItem color="bg-rose-500" label="Loss" />
-        <LegendItem color="bg-slate-300" label="Even" />
+      <div className="bg-bg-secondary px-4 py-3 border-t border-border-default flex justify-center gap-8">
+        <LegendItem color="bg-accent-success" label="Gain" />
+        <LegendItem color="bg-accent-danger" label="Loss" />
+        <LegendItem color="bg-bg-tertiary" label="Even" />
       </div>
     </div>
   );
@@ -98,10 +98,10 @@ function FormationCard({
   };
 
   return (
-    <div className="group relative bg-white border border-slate-200 flex flex-col shadow-sm transition-all hover:border-slate-400">
+    <div className="group relative bg-bg-primary border border-border-default flex flex-col shadow-sm transition-all hover:border-border-focus">
       <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 w-48 hidden group-hover:block z-50 animate-in fade-in slide-in-from-bottom-2 duration-200">
-        <div className="bg-slate-900 rounded-lg p-3 shadow-2xl border border-slate-700">
-          <p className="text-[10px] font-black text-slate-500 uppercase mb-2 border-b border-slate-800 pb-1">
+        <div className="bg-bg-sidebar rounded-lg p-3 shadow-2xl border border-border-sidebar">
+          <p className="text-[10px] font-black text-text-muted uppercase mb-2 border-b border-border-sidebar pb-1">
             Point Breakdown
           </p>
           <div className="space-y-1.5">
@@ -110,7 +110,7 @@ function FormationCard({
                 key={idx}
                 className="flex justify-between items-center text-[10px] font-mono"
               >
-                <span className="text-slate-400">
+                <span className="text-text-muted-subtle">
                   {item.label === "Win" || item.label === "Loss"
                     ? item.label
                     : `${item.count}x ${item.label}`}
@@ -119,15 +119,15 @@ function FormationCard({
                 <span
                   className={
                     item.pts >= 0
-                      ? "text-emerald-400 font-bold"
-                      : "text-rose-400 font-bold"
+                      ? "text-accent-success font-bold"
+                      : "text-accent-danger font-bold"
                   }>
                   {item.pts > 0 ? `+${item.pts}` : item.pts}
                 </span>
               </div>
             ))}
           </div>
-          <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-slate-900" />
+          <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-border-strong" />
         </div>
       </div>
 
@@ -140,11 +140,11 @@ function FormationCard({
         >
           {player.abbrev}
         </span>
-        <h3 className="font-black text-slate-800 uppercase leading-tight text-[11px] lg:text-sm">
+        <h3 className="font-black text-text-secondary uppercase leading-tight text-[11px] lg:text-sm">
           {player.name.split(" ").pop()}
         </h3>
         <div
-          className={`font-mono mt-1 ${pts > 0 ? "text-emerald-600" : "text-rose-600"} font-bold`}
+          className={`font-mono mt-1 ${pts > 0 ? "text-accent-success" : "text-accent-danger"} font-bold`}
         >
           {pts > 0 ? `+${pts.toFixed(1)}` : pts.toFixed(1)}
         </div>
@@ -157,7 +157,7 @@ function LegendItem({ color, label }: { color: string; label: string }) {
   return (
     <div className="flex items-center gap-2">
       <div className={`w-2 h-2 ${color}`} />
-      <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
+      <span className="text-[10px] font-black text-text-muted uppercase tracking-widest">
         {label}
       </span>
     </div>

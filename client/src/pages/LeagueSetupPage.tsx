@@ -90,7 +90,7 @@ export default function LeagueSetupPage() {
   };
 
   return (
-    <div className="flex h-screen bg-slate-50 text-slate-900">
+    <div className="flex h-screen bg-bg-secondary text-text-primary">
       <Sidebar />
 
       <div className="flex-1 overflow-auto px-6 py-8 ml-16">
@@ -98,19 +98,19 @@ export default function LeagueSetupPage() {
           <h1 className="text-3xl font-black uppercase tracking-tighter italic">
             League Dashboard
           </h1>
-          <p className="text-slate-500 font-medium tracking-tight uppercase text-xs">
+          <p className="text-text-muted font-medium tracking-tight uppercase text-xs">
             Manage Teams & Leagues
           </p>
         </header>
 
         <main className="max-w-7xl mx-auto space-y-8">
           {/* TEAM SELECTOR SECTION */}
-          <div className="bg-white border border-slate-300 shadow-sm overflow-hidden">
-            <div className="px-4 py-3 bg-slate-900 flex justify-between items-center">
-              <h2 className="text-xs font-black text-white uppercase tracking-[0.2em]">
+          <div className="bg-bg-primary border border-border-input shadow-sm overflow-hidden">
+            <div className="px-4 py-3 bg-bg-sidebar flex justify-between items-center">
+              <h2 className="text-xs font-black text-text-inverse uppercase tracking-[0.2em]">
                 Select Active Franchise
               </h2>
-              <span className="text-[10px] font-bold text-indigo-200 uppercase italic">
+              <span className="text-[10px] font-bold text-text-muted-subtle uppercase italic">
                 Required
               </span>
             </div>
@@ -118,13 +118,13 @@ export default function LeagueSetupPage() {
             <div className="p-6">
               {userTeams.length > 0 ? (
                 <div>
-                  <label className="block text-[10px] font-black uppercase text-slate-400 mb-1">
+                  <label className="block text-[10px] font-black uppercase text-text-muted-subtle mb-1">
                     Current Team
                   </label>
                   <select
                     value={selectedTeamId}
                     onChange={(e) => setSelectedTeamId(Number(e.target.value))}
-                    className="w-full border-b-2 border-slate-200 bg-slate-50 px-4 py-3 text-sm font-black uppercase focus:border-indigo-600 outline-none cursor-pointer appearance-none"
+                    className="w-full border-b-2 border-border-default bg-bg-secondary px-4 py-3 text-sm font-black uppercase focus:border-accent-primary outline-none cursor-pointer appearance-none"
                   >
                     {userTeams.map((t) => (
                       <option key={t.team_id} value={t.team_id}>
@@ -132,19 +132,19 @@ export default function LeagueSetupPage() {
                       </option>
                     ))}
                   </select>
-                  <p className="mt-2 text-[9px] font-bold text-slate-400 uppercase italic">
+                  <p className="mt-2 text-[9px] font-bold text-text-muted-subtle uppercase italic">
                     This team will be used for the actions below
                   </p>
                 </div>
               ) : (
                 <div className="py-2 flex flex-col items-start">
-                  <p className="text-[10px] font-black uppercase text-rose-600 mb-3">
+                  <p className="text-[10px] font-black uppercase text-accent-danger mb-3">
                     No teams found. You must create a team before joining a
                     league.
                   </p>
                   <button
                     onClick={() => navigate("/teams")}
-                    className="bg-slate-900 text-white text-[9px] font-black uppercase px-6 py-2 tracking-widest hover:bg-indigo-600 transition-all"
+                    className="bg-bg-sidebar text-text-inverse text-[9px] font-black uppercase px-6 py-2 tracking-widest hover:bg-accent-primary transition-all"
                   >
                     Create Team
                   </button>
@@ -153,8 +153,8 @@ export default function LeagueSetupPage() {
             </div>
           </div>
           {error && (
-            <div className="bg-rose-50 border border-rose-200 px-4 py-3">
-              <span className="text-[10px] font-black uppercase text-rose-700">
+            <div className="bg-bg-danger-muted border border-border-danger-muted px-4 py-3">
+              <span className="text-[10px] font-black uppercase text-text-danger-muted">
                 {error}
               </span>
             </div>
@@ -162,21 +162,21 @@ export default function LeagueSetupPage() {
 
           {/* JOIN LEAGUE SECTION */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <div className="bg-white border border-slate-300 shadow-sm overflow-hidden">
-              <div className="px-4 py-3 bg-slate-900 flex justify-between items-center">
-                <h2 className="text-xs font-black text-white uppercase tracking-[0.2em]">
+            <div className="bg-bg-primary border border-border-input shadow-sm overflow-hidden">
+              <div className="px-4 py-3 bg-bg-sidebar flex justify-between items-center">
+                <h2 className="text-xs font-black text-text-inverse uppercase tracking-[0.2em]">
                   Join League
                 </h2>
               </div>
               <form onSubmit={handleJoinLeague} className="p-6 space-y-6">
                 <div>
-                  <label className="block text-[10px] font-black uppercase text-slate-400 mb-1">
+                  <label className="block text-[10px] font-black uppercase text-text-muted-subtle mb-1">
                     League ID
                   </label>
                   <input
                     type="number"
                     required
-                    className="w-full border-b-2 border-slate-200 bg-slate-50 px-4 py-3 text-sm font-black focus:border-indigo-600 outline-none"
+                    className="w-full border-b-2 border-border-default bg-bg-secondary px-4 py-3 text-sm font-black focus:border-accent-primary outline-none"
                     value={joinData.leagueId}
                     onChange={(e) =>
                       setJoinData({ ...joinData, leagueId: e.target.value })
@@ -184,13 +184,13 @@ export default function LeagueSetupPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-black uppercase text-slate-400 mb-1">
+                  <label className="block text-[10px] font-black uppercase text-text-muted-subtle mb-1">
                     Passcode
                   </label>
                   <input
                     type="password"
                     required
-                    className="w-full border-b-2 border-slate-200 bg-slate-50 px-4 py-3 text-sm font-mono focus:border-indigo-600 outline-none"
+                    className="w-full border-b-2 border-border-default bg-bg-secondary px-4 py-3 text-sm font-mono focus:border-accent-primary outline-none"
                     value={joinData.passcode}
                     onChange={(e) =>
                       setJoinData({ ...joinData, passcode: e.target.value })
@@ -199,7 +199,7 @@ export default function LeagueSetupPage() {
                 </div>
                 <button
                   disabled={loading || !selectedTeamId}
-                  className="w-full bg-slate-900 text-white text-[10px] font-black uppercase py-4 tracking-[0.2em] hover:bg-indigo-600 disabled:opacity-50"
+                  className="w-full bg-bg-sidebar text-text-inverse text-[10px] font-black uppercase py-4 tracking-[0.2em] hover:bg-accent-primary disabled:opacity-50"
                 >
                   {loading ? "Verifying..." : "Enter League"}
                 </button>
@@ -207,21 +207,21 @@ export default function LeagueSetupPage() {
             </div>
 
             {/* CREATE LEAGUE SECTION */}
-            <div className="bg-white border border-slate-300 shadow-sm overflow-hidden">
-              <div className="px-4 py-3 bg-slate-900 flex justify-between items-center">
-                <h2 className="text-xs font-black text-white uppercase tracking-[0.2em]">
+            <div className="bg-bg-primary border border-border-input shadow-sm overflow-hidden">
+              <div className="px-4 py-3 bg-bg-sidebar flex justify-between items-center">
+                <h2 className="text-xs font-black text-text-inverse uppercase tracking-[0.2em]">
                   Create League
                 </h2>
               </div>
               <form onSubmit={handleCreateLeague} className="p-6 space-y-6">
                 <div>
-                  <label className="block text-[10px] font-black uppercase text-slate-400 mb-1">
+                  <label className="block text-[10px] font-black uppercase text-text-muted-subtle mb-1">
                     League Name
                   </label>
                   <input
                     type="text"
                     required
-                    className="w-full border-b-2 border-slate-200 bg-slate-50 px-4 py-3 text-sm font-black focus:border-indigo-600 outline-none"
+                    className="w-full border-b-2 border-border-default bg-bg-secondary px-4 py-3 text-sm font-black focus:border-accent-primary outline-none"
                     value={createData.name}
                     onChange={(e) =>
                       setCreateData({ ...createData, name: e.target.value })
@@ -229,13 +229,13 @@ export default function LeagueSetupPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-black uppercase text-slate-400 mb-1">
+                  <label className="block text-[10px] font-black uppercase text-text-muted-subtle mb-1">
                     Passcode
                   </label>
                   <input
                     type="password"
                     required
-                    className="w-full border-b-2 border-slate-200 bg-slate-50 px-4 py-3 text-sm font-mono focus:border-indigo-600 outline-none"
+                    className="w-full border-b-2 border-border-default bg-bg-secondary px-4 py-3 text-sm font-mono focus:border-accent-primary outline-none"
                     value={createData.passcode}
                     onChange={(e) =>
                       setCreateData({ ...createData, passcode: e.target.value })
@@ -244,7 +244,7 @@ export default function LeagueSetupPage() {
                 </div>
                 <button
                   disabled={loading || !selectedTeamId}
-                  className="w-full bg-slate-900 text-white text-[10px] font-black uppercase py-4 tracking-[0.2em] hover:bg-indigo-600 disabled:opacity-50"
+                  className="w-full bg-bg-sidebar text-text-inverse text-[10px] font-black uppercase py-4 tracking-[0.2em] hover:bg-accent-primary disabled:opacity-50"
                 >
                   {loading ? "Generating..." : "Establish League"}
                 </button>

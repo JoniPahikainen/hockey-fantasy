@@ -30,7 +30,7 @@ export default function DailyTeamPage() {
   if (loading) return <div className="ml-16 p-8">Loading Console...</div>;
 
   return (
-    <div className="flex h-screen bg-slate-50 text-slate-900">
+    <div className="flex h-screen bg-bg-secondary text-text-primary">
       <Sidebar />
       <div className="flex-1 flex flex-col ml-16 overflow-hidden">
         {userTeams.length > 0 ? (

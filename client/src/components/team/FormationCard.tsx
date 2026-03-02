@@ -6,8 +6,8 @@ export default function FormationCard({ player, label, onRemove, isGoalie }: {
 }) {
   if (!player) {
     return (
-      <div className="border-2 border-dashed border-slate-200 bg-slate-50/50 flex flex-col items-center justify-center p-6 min-h-[120px]">
-        <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">{label}</span>
+      <div className="border-2 border-dashed border-border-default bg-bg-secondary/50 flex flex-col items-center justify-center p-6 min-h-[120px]">
+        <span className="text-[10px] font-black text-text-muted-subtle uppercase tracking-widest">{label}</span>
       </div>
     );
   }
@@ -16,11 +16,11 @@ export default function FormationCard({ player, label, onRemove, isGoalie }: {
   const pts = Number(player.points) || 0;
 
   return (
-    <div className="bg-white border border-slate-200 flex flex-col shadow-sm transition-all hover:border-slate-400 group relative">
+    <div className="bg-bg-primary border border-border-default flex flex-col shadow-sm transition-all hover:border-border-focus group relative">
       <div style={{ backgroundColor: playerColor }} className="h-1.5 w-full" />
       <button
         onClick={() => onRemove(player.id)}
-        className="absolute -top-2 -right-2 bg-black text-white w-6 h-6 text-[10px] flex items-center justify-center hover:bg-rose-600 transition-colors z-30 shadow-md"
+        className="absolute -top-2 -right-2 bg-bg-sidebar text-text-inverse w-6 h-6 text-[10px] flex items-center justify-center hover:bg-accent-danger transition-colors z-30 shadow-md"
       >
         ×
       </button>
@@ -28,14 +28,14 @@ export default function FormationCard({ player, label, onRemove, isGoalie }: {
         <span style={{ color: playerColor }} className="font-bold text-[9px] uppercase tracking-tighter">
           {player.team}
         </span>
-        <h3 className={`font-black text-slate-800 uppercase leading-tight ${isGoalie ? "text-base" : "text-[12px]"}`}>
+        <h3 className={`font-black text-text-secondary uppercase leading-tight ${isGoalie ? "text-base" : "text-[12px]"}`}>
           {player.name.split(" ").pop()}
         </h3>
-        <div className={`font-mono mt-1 text-xs ${pts > 0 ? "text-emerald-600 font-bold" : pts < 0 ? "text-rose-600 font-bold" : "text-slate-400"}`}>
+        <div className={`font-mono mt-1 text-xs ${pts > 0 ? "text-accent-success font-bold" : pts < 0 ? "text-accent-danger font-bold" : "text-text-muted-subtle"}`}>
           {pts > 0 ? `+${pts.toFixed(1)}` : pts.toFixed(1)}
         </div>
-        <div className="mt-2 pt-2 border-t border-slate-300 w-full">
-          <span className="text-[9px] font-mono text-slate-600 uppercase tracking-tighter">
+        <div className="mt-2 pt-2 border-t border-border-input w-full">
+          <span className="text-[9px] font-mono text-text-secondary uppercase tracking-tighter">
             ${(Math.floor(Number(player.salary) / 1000) * 1000).toLocaleString("en-US").replace(/,/g, " ")}
           </span>
         </div>

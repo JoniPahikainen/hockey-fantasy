@@ -45,54 +45,54 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
+    <div className="min-h-screen bg-bg-secondary flex items-center justify-center p-6">
       <div className="max-w-[400px] w-full">
         <div className="mb-12 text-center">
-          <h1 className="text-6xl font-black uppercase italic tracking-tighter leading-none text-slate-900">
-            FANTASY <span className="text-slate-400">LEAGUE</span>
+          <h1 className="text-6xl font-black uppercase italic tracking-tighter leading-none text-text-primary">
+            FANTASY <span className="text-text-muted-subtle">LEAGUE</span>
           </h1>
-          <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 mt-2">
+          <p className="text-[10px] font-black uppercase tracking-[0.3em] text-text-muted mt-2">
             Competitive Hockey Management
           </p>
         </div>
 
-        <div className="bg-white border border-slate-300 shadow-sm overflow-hidden">
+        <div className="bg-bg-primary border border-border-input shadow-sm overflow-hidden">
           
           {/* HEADER SECTION */}
-          <div className="px-8 py-6 bg-slate-900 flex justify-between items-center">
-            <h2 className="text-xs font-black text-white uppercase tracking-[0.2em]">
-              New <span className="text-slate-400">Manager</span>
+          <div className="px-8 py-6 bg-bg-sidebar flex justify-between items-center">
+            <h2 className="text-xs font-black text-text-inverse uppercase tracking-[0.2em]">
+              New <span className="text-text-muted-subtle">Manager</span>
             </h2>
             <div className="text-right">
-              <span className="text-[10px] font-black text-slate-500 uppercase block leading-none mb-1">
+              <span className="text-[10px] font-black text-text-muted uppercase block leading-none mb-1">
                 System
               </span>
-              <span className="text-sm font-mono font-black text-white leading-none">
+              <span className="text-sm font-mono font-black text-text-inverse leading-none">
                 REG_v1
               </span>
             </div>
           </div>
 
           {/* FORM SECTION */}
-          <div className="p-8 bg-white">
+          <div className="p-8 bg-bg-primary">
             <form onSubmit={handleRegister} className="flex flex-col gap-5">
               
               {/* ERROR DISPLAY */}
               {error && (
-                <div className="bg-rose-50 border border-rose-200 px-4 py-3 text-[10px] font-black text-rose-600 uppercase tracking-widest">
+                <div className="bg-bg-danger-muted border border-border-danger-muted px-4 py-3 text-[10px] font-black text-accent-danger uppercase tracking-widest">
                   {error}
                 </div>
               )}
 
               <div className="flex flex-col gap-1.5">
-                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                <label className="text-[10px] font-black text-text-muted uppercase tracking-widest">
                   Username
                 </label>
                 <input
                   type="text"
                   required
                   disabled={isLoading}
-                  className="bg-slate-50 border border-slate-200 p-3 text-[12px] font-bold outline-none focus:border-slate-400 transition-all disabled:opacity-50"
+                  className="bg-bg-secondary border border-border-default p-3 text-[12px] font-bold outline-none focus:border-border-focus transition-all disabled:opacity-50"
                   placeholder="Manager_Name"
                   value={formData.username}
                   onChange={(e) => setFormData({ ...formData, username: e.target.value })}
@@ -100,14 +100,14 @@ export default function RegisterPage() {
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                <label className="text-[10px] font-black text-text-muted uppercase tracking-widest">
                   Email Address
                 </label>
                 <input
                   type="email"
                   required
                   disabled={isLoading}
-                  className="bg-slate-50 border border-slate-200 p-3 text-[12px] font-bold outline-none focus:border-slate-400 transition-all disabled:opacity-50"
+                  className="bg-bg-secondary border border-border-default p-3 text-[12px] font-bold outline-none focus:border-border-focus transition-all disabled:opacity-50"
                   placeholder="name@league.com"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
@@ -115,14 +115,14 @@ export default function RegisterPage() {
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                <label className="text-[10px] font-black text-text-muted uppercase tracking-widest">
                   Password
                 </label>
                 <input
                   type="password"
                   required
                   disabled={isLoading}
-                  className="bg-slate-50 border border-slate-200 p-3 text-[12px] font-bold outline-none focus:border-slate-400 transition-all disabled:opacity-50"
+                  className="bg-bg-secondary border border-border-default p-3 text-[12px] font-bold outline-none focus:border-border-focus transition-all disabled:opacity-50"
                   placeholder="••••••••"
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
@@ -134,8 +134,8 @@ export default function RegisterPage() {
                 disabled={isLoading}
                 className={`mt-2 py-4 text-[10px] font-black uppercase tracking-[0.2em] transition-all shadow-sm
                   ${isLoading 
-                    ? "bg-slate-400 text-white cursor-not-allowed" 
-                    : "bg-slate-900 text-white hover:bg-slate-800"
+                    ? "bg-bg-disabled text-text-inverse cursor-not-allowed" 
+                    : "bg-bg-sidebar text-text-inverse hover:bg-bg-sidebar-hover"
                   }`}
               >
                 {isLoading ? "Creating Account..." : "Initialize Profile"}
@@ -144,13 +144,13 @@ export default function RegisterPage() {
           </div>
 
           {/* FOOTER */}
-          <div className="bg-slate-50 px-8 py-4 border-t border-slate-200 flex justify-between items-center">
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+          <div className="bg-bg-secondary px-8 py-4 border-t border-border-default flex justify-between items-center">
+            <span className="text-[10px] font-black text-text-muted-subtle uppercase tracking-widest">
               Member?
             </span>
             <Link 
               to="/login" 
-              className="text-[10px] font-black text-slate-900 uppercase underline underline-offset-4 hover:text-slate-600"
+              className="text-[10px] font-black text-text-primary uppercase underline underline-offset-4 hover:text-text-secondary"
             >
               Sign In
             </Link>

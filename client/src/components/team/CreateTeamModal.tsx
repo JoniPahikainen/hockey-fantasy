@@ -44,16 +44,16 @@ export default function CreateTeamModal({
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
-            <div className="w-full max-w-md bg-white border border-slate-200 rounded-xl p-8 shadow-xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-bg-sidebar/40 backdrop-blur-sm">
+            <div className="w-full max-w-md bg-bg-primary border border-border-default rounded-xl p-8 shadow-xl">
                 <div className="flex justify-between items-center mb-8">
-                    <h2 className="text-xl font-bold uppercase tracking-wide text-slate-900">
+                    <h2 className="text-xl font-bold uppercase tracking-wide text-text-primary">
                         Create New Team
                     </h2>
 
                     <button
                         onClick={onClose}
-                        className="text-slate-400 hover:text-slate-900 transition-colors"
+                        className="text-text-muted-subtle hover:text-text-primary transition-colors"
                     >
                         <svg
                             xmlns="http://www.w3.org/2000/svg"
@@ -74,7 +74,7 @@ export default function CreateTeamModal({
 
                 <form onSubmit={handleCreate} className="space-y-8">
                     <div>
-                        <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-3">
+                        <label className="block text-[10px] font-bold uppercase tracking-widest text-text-muted-subtle mb-3">
                             Team Name
                         </label>
                         <input
@@ -83,7 +83,7 @@ export default function CreateTeamModal({
                             value={name}
                             onChange={(e) => setName(e.target.value)}
                             placeholder="Enter team name"
-                            className="w-full rounded-md border border-slate-300 bg-white px-4 py-3 text-base font-semibold text-slate-900 outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900 transition"
+                            className="w-full rounded-md border border-border-input bg-bg-primary px-4 py-3 text-base font-semibold text-text-primary outline-none focus:border-border-strong focus:ring-1 focus:ring-border-strong transition"
                         />
                     </div>
 
@@ -91,7 +91,7 @@ export default function CreateTeamModal({
                         <button
                             type="button"
                             onClick={onClose}
-                            className="flex-1 px-5 py-3 rounded-md bg-white text-slate-700 border border-slate-300 font-semibold uppercase tracking-wide hover:bg-slate-100 transition"
+                            className="flex-1 px-5 py-3 rounded-md bg-bg-primary text-text-secondary border border-border-input font-semibold uppercase tracking-wide hover:bg-bg-tertiary transition"
                         >
                             Cancel
                         </button>
@@ -99,7 +99,7 @@ export default function CreateTeamModal({
                         <button
                             type="submit"
                             disabled={isCreating || !name.trim()}
-                            className="flex-1 px-5 py-3 rounded-md bg-slate-900 text-white font-semibold uppercase tracking-wide hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                            className="flex-1 px-5 py-3 rounded-md bg-bg-sidebar text-text-inverse font-semibold uppercase tracking-wide hover:bg-bg-sidebar-hover disabled:opacity-50 disabled:cursor-not-allowed transition"
                         >
                             {isCreating ? "Creating..." : "Create Team"}
                         </button>

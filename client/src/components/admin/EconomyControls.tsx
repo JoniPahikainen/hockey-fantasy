@@ -35,11 +35,11 @@ export default function EconomyControls() {
   return (
     <div className="max-w-2xl space-y-8">
       {/* Actions */}
-      <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 className="mb-1 text-sm font-semibold uppercase tracking-wider text-slate-700">
+      <section className="rounded-xl border border-border-default bg-bg-primary p-6 shadow-sm">
+        <h2 className="mb-1 text-sm font-semibold uppercase tracking-wider text-text-secondary">
           Actions
         </h2>
-        <p className="mb-5 text-sm text-slate-600">
+        <p className="mb-5 text-sm text-text-secondary">
           Recalculate base ratings, regenerate start prices, reset prices to
           start, or process period price update.
         </p>
@@ -52,7 +52,7 @@ export default function EconomyControls() {
               )
             }
             disabled={!!actionLoading}
-            className="rounded-lg bg-slate-700 px-4 py-2.5 text-xs font-semibold uppercase tracking-wider text-white shadow-sm transition hover:bg-indigo-700 disabled:opacity-50"
+            className="rounded-lg bg-bg-sidebar-active px-4 py-2.5 text-xs font-semibold uppercase tracking-wider text-text-inverse shadow-sm transition hover:bg-accent-primary-hover disabled:opacity-50"
           >
             {actionLoading === "Recalculate base ratings"
               ? "Running…"
@@ -66,7 +66,7 @@ export default function EconomyControls() {
               )
             }
             disabled={!!actionLoading}
-            className="rounded-lg bg-slate-700 px-4 py-2.5 text-xs font-semibold uppercase tracking-wider text-white shadow-sm transition hover:bg-indigo-700 disabled:opacity-50"
+            className="rounded-lg bg-bg-sidebar-active px-4 py-2.5 text-xs font-semibold uppercase tracking-wider text-text-inverse shadow-sm transition hover:bg-accent-primary-hover disabled:opacity-50"
           >
             {actionLoading === "Regenerate start prices"
               ? "Running…"
@@ -80,7 +80,7 @@ export default function EconomyControls() {
               )
             }
             disabled={!!actionLoading}
-            className="rounded-lg bg-slate-700 px-4 py-2.5 text-xs font-semibold uppercase tracking-wider text-white shadow-sm transition hover:bg-amber-700 disabled:opacity-50"
+            className="rounded-lg bg-bg-sidebar-active px-4 py-2.5 text-xs font-semibold uppercase tracking-wider text-text-inverse shadow-sm transition hover:bg-accent-warning-hover disabled:opacity-50"
           >
             {actionLoading === "Reset season prices"
               ? "Running…"
@@ -94,7 +94,7 @@ export default function EconomyControls() {
               )
             }
             disabled={!!actionLoading}
-            className="rounded-lg bg-slate-700 px-4 py-2.5 text-xs font-semibold uppercase tracking-wider text-white shadow-sm transition hover:bg-slate-600 disabled:opacity-50"
+            className="rounded-lg bg-bg-sidebar-active px-4 py-2.5 text-xs font-semibold uppercase tracking-wider text-text-inverse shadow-sm transition hover:bg-bg-sidebar-hover disabled:opacity-50"
           >
             {actionLoading === "Process period prices"
               ? "Running…"
@@ -103,7 +103,7 @@ export default function EconomyControls() {
         </div>
         {message && (
           <p
-            className={`mt-4 text-sm ${message.type === "ok" ? "text-emerald-600" : "text-red-600"}`}
+            className={`mt-4 text-sm ${message.type === "ok" ? "text-accent-success" : "text-accent-danger"}`}
             role="status"
           >
             {message.text}
@@ -112,22 +112,22 @@ export default function EconomyControls() {
       </section>
 
       {/* How calculations work */}
-      <section className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+      <section className="rounded-xl border border-border-default bg-bg-primary shadow-sm overflow-hidden">
         <details className="group">
           <summary className="list-none cursor-pointer">
-            <div className="flex items-center justify-between bg-slate-50 px-5 py-4 transition hover:bg-slate-100">
-              <span className="text-sm font-semibold uppercase tracking-wider text-slate-700">
+            <div className="flex items-center justify-between bg-bg-secondary px-5 py-4 transition hover:bg-bg-tertiary">
+              <span className="text-sm font-semibold uppercase tracking-wider text-text-secondary">
                 How calculations work
               </span>
-              <span className="text-slate-400 transition-transform group-open:rotate-180 select-none">
+              <span className="text-text-muted-subtle transition-transform group-open:rotate-180 select-none">
                 ▼
               </span>
             </div>
           </summary>
-          <div className="border-t border-slate-200 bg-white px-5 py-5 text-sm text-slate-700 space-y-4">
+          <div className="border-t border-border-default bg-bg-primary px-5 py-5 text-sm text-text-secondary space-y-4">
             <div>
-              <h3 className="font-semibold text-slate-800 mb-1">Base rating</h3>
-              <p className="text-slate-600 leading-relaxed">
+              <h3 className="font-semibold text-text-secondary mb-1">Base rating</h3>
+              <p className="text-text-secondary leading-relaxed">
                 We look at this season and last season. Each player gets a score
                 based on their stats (goals, assists, saves, etc.), and we turn
                 that into a rating from 40–95. The more games they’ve played
@@ -136,8 +136,8 @@ export default function EconomyControls() {
               </p>
             </div>
             <div>
-              <h3 className="font-semibold text-slate-800 mb-1">Start price</h3>
-              <p className="text-slate-600 leading-relaxed">
+              <h3 className="font-semibold text-text-secondary mb-1">Start price</h3>
+              <p className="text-text-secondary leading-relaxed">
                 Everyone gets a price between a floor and a ceiling (goalies in
                 a smaller band than skaters). Better ratings mean higher prices.
                 We tune the curve so the two most expensive players together sit
@@ -146,10 +146,10 @@ export default function EconomyControls() {
               </p>
             </div>
             <div>
-              <h3 className="font-semibold text-slate-800 mb-1">
+              <h3 className="font-semibold text-text-secondary mb-1">
                 Current price
               </h3>
-              <p className="text-slate-600 leading-relaxed">
+              <p className="text-text-secondary leading-relaxed">
                 As players earn fantasy points in the current period, their
                 price goes up; if they don’t perform, it can go down. “Process
                 period prices” applies those changes (with caps so nothing
@@ -157,9 +157,9 @@ export default function EconomyControls() {
                 back to their start price.
               </p>
             </div>
-            <p className="text-xs text-slate-500 pt-1">
+            <p className="text-xs text-text-muted pt-1">
               For formulas and numbers, see{" "}
-              <code className="bg-slate-100 px-1 rounded">
+              <code className="bg-bg-tertiary px-1 rounded">
                 docs/economy-calculations.md
               </code>{" "}
               in the repo.

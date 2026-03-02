@@ -37,7 +37,7 @@ export default function TeamPerformanceGraph({ teamId, periodId }: Props) {
   if (loading) return <div className="p-8 text-center text-[10px] font-bold uppercase animate-pulse">Loading Chart Data...</div>;
 
   return (
-    <div className="h-64 w-full p-4 bg-slate-50 border-t border-slate-200">
+    <div className="h-64 w-full p-4 bg-bg-secondary border-t border-border-default">
       <ResponsiveContainer width="100%" height="100%">
         <ComposedChart data={data}>
           <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />

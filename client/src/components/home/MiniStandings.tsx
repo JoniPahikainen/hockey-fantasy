@@ -37,13 +37,13 @@ export default function MiniStandings({ leagueId, teamId }: { leagueId?: number,
 
   if (!leagueId) {
     return (
-      <div className="bg-white border-2 border-dashed border-slate-200 p-6 text-center">
-        <p className="text-xs font-black text-slate-400 uppercase italic">
+      <div className="bg-bg-primary border-2 border-dashed border-border-default p-6 text-center">
+        <p className="text-xs font-black text-text-muted-subtle uppercase italic">
           No League Assigned
         </p>
         <button 
            onClick={() => navigate("/league")}
-           className="mt-2 text-[10px] bg-slate-900 text-white px-3 py-1 uppercase font-bold"
+           className="mt-2 text-[10px] bg-bg-sidebar text-text-inverse px-3 py-1 uppercase font-bold"
         >
           Join a League
         </button>
@@ -53,7 +53,7 @@ export default function MiniStandings({ leagueId, teamId }: { leagueId?: number,
 
   if (loading) {
     return (
-      <div className="bg-white border border-slate-900 p-4 font-black italic text-slate-300 animate-pulse">
+      <div className="bg-bg-primary border border-border-strong p-4 font-black italic text-text-muted-subtle animate-pulse">
         LOADING STANDINGS...
       </div>
     );
@@ -83,28 +83,28 @@ export default function MiniStandings({ leagueId, teamId }: { leagueId?: number,
   const showLeaderSeparately = !neighbors.find(n => n.rank === 1);
 
   return (
-    <div className="bg-white border border-slate-900 overflow-hidden shadow-[4px_4px_0px_0px_rgba(0,0,0,0.05)]">
-      <div className="px-4 py-3 bg-slate-900 flex justify-between items-center">
-        <h2 className="text-xs font-black text-white uppercase tracking-widest">
+    <div className="bg-bg-primary border border-border-strong overflow-hidden shadow-[4px_4px_0px_0px_rgba(0,0,0,0.05)]">
+      <div className="px-4 py-3 bg-bg-sidebar flex justify-between items-center">
+        <h2 className="text-xs font-black text-text-inverse uppercase tracking-widest">
           League Standings
         </h2>
-        <span className="text-[9px] text-slate-400 font-bold uppercase">ID: #{leagueId}</span>
+        <span className="text-[9px] text-text-muted-subtle font-bold uppercase">ID: #{leagueId}</span>
       </div>
 
       <div className="flex flex-col">
         {showLeaderSeparately && (
           <>
-            <div className="flex items-center justify-between px-4 py-2 text-[11px] text-slate-600 bg-slate-50/50">
+            <div className="flex items-center justify-between px-4 py-2 text-[11px] text-text-secondary bg-bg-secondary/50">
               <div className="flex items-center gap-3">
-                <span className="font-mono w-4 text-amber-500 font-bold">01</span>
+                <span className="font-mono w-4 text-accent-warning font-bold">01</span>
                 <span className="font-bold tracking-tight uppercase">{leader.name}</span>
               </div>
-              <div className="font-mono text-slate-400">
+              <div className="font-mono text-text-muted-subtle">
                 {formatPoints(leader.points, leader.lastNightPoints)}
               </div>
             </div>
-            <div className="h-[1px] bg-slate-100 mx-4 flex justify-center relative">
-              <span className="bg-white px-2 absolute -top-1.5 text-[8px] text-slate-300 italic font-bold">GAP</span>
+            <div className="h-[1px] bg-bg-tertiary mx-4 flex justify-center relative">
+              <span className="bg-bg-primary px-2 absolute -top-1.5 text-[8px] text-text-muted-subtle italic font-bold">GAP</span>
             </div>
           </>
         )}
@@ -114,12 +114,12 @@ export default function MiniStandings({ leagueId, teamId }: { leagueId?: number,
             key={team.rank}
             className={`flex items-center justify-between px-4 py-3 text-[11px] ${
               team.isUser
-                ? "text-indigo-600 bg-indigo-50 font-bold border-l-4 border-indigo-600"
-                : "text-slate-600 border-t border-slate-50"
+                ? "text-accent-primary bg-bg-secondary font-bold border-l-4 border-accent-primary"
+                : "text-text-secondary border-t border-border-subtle"
             }`}
           >
             <div className="flex items-center gap-3">
-              <span className={`font-mono w-4 ${team.isUser ? "text-indigo-600" : "text-slate-400"}`}>
+              <span className={`font-mono w-4 ${team.isUser ? "text-accent-primary" : "text-text-muted-subtle"}`}>
                 {team.rank.toString().padStart(2, "0")}
               </span>
               <span className="font-black tracking-tight uppercase">{team.name}</span>
@@ -129,10 +129,10 @@ export default function MiniStandings({ leagueId, teamId }: { leagueId?: number,
         ))}
       </div>
 
-      <div className="bg-slate-50 px-4 py-2 border-t border-slate-200">
+      <div className="bg-bg-secondary px-4 py-2 border-t border-border-default">
         <button 
           onClick={() => navigate("/league")} 
-          className="w-full text-[9px] font-black text-slate-500 uppercase hover:text-slate-900 transition-colors"
+          className="w-full text-[9px] font-black text-text-muted uppercase hover:text-text-primary transition-colors"
         >
           Show Full Rankings
         </button>

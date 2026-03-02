@@ -125,7 +125,7 @@ export default function HomePage() {
   const zeroCount = userTeam.filter((p) => (Number(p.points) || 0) === 0).length;
 
   return (
-    <div className="flex h-screen bg-slate-50 text-slate-900">
+    <div className="flex h-screen bg-bg-secondary text-text-primary">
       <Sidebar />
 
       <div className="flex-1 overflow-auto px-6 py-8 ml-16">
@@ -135,16 +135,16 @@ export default function HomePage() {
             <h1 className="text-3xl font-black uppercase tracking-tighter italic">
               Welcome, {userName}!
             </h1>
-            <p className="text-slate-500 font-medium tracking-tight">
+            <p className="text-text-muted font-medium tracking-tight">
               GM DASHBOARD // SEASON STATS
             </p>
           </div>
           <div className="flex items-center gap-4">
             <input
               placeholder="Search"
-              className="border border-slate-300 bg-white px-4 py-2 text-sm focus:ring-2 focus:ring-slate-400 outline-none"
+              className="border border-border-input bg-bg-primary px-4 py-2 text-sm focus:ring-2 focus:ring-border-focus outline-none"
             />
-            <div className="w-10 h-10 bg-slate-900 shadow-lg" />
+            <div className="w-10 h-10 bg-bg-sidebar shadow-lg" />
           </div>
         </header>
 
@@ -161,7 +161,7 @@ export default function HomePage() {
           {/* RIGHT */}
           <div className="lg:col-span-5 flex flex-col gap-6">
             {loading ? (
-              <div className="p-4 bg-white border border-slate-900 italic">
+              <div className="p-4 bg-bg-primary border border-border-strong italic">
                 Loading tonight's action...
               </div>
             ) : (

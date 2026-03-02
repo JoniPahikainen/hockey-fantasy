@@ -131,11 +131,11 @@ export default function MarketOverviewTable() {
   };
 
   const SortTh = ({ colKey, label }: { colKey: SortKey; label: string }) => (
-    <th className="p-3 font-bold uppercase tracking-wider text-slate-600">
+    <th className="p-3 font-bold uppercase tracking-wider text-text-secondary">
       <button
         type="button"
         onClick={() => handleSort(colKey)}
-        className="text-left hover:text-slate-900 flex items-center gap-1"
+        className="text-left hover:text-text-primary flex items-center gap-1"
       >
         {label}
         {sortKey === colKey && (
@@ -198,21 +198,21 @@ export default function MarketOverviewTable() {
 
   if (loading)
     return (
-      <div className="text-slate-500 text-sm font-bold uppercase tracking-wider py-12">
+      <div className="text-text-muted text-sm font-bold uppercase tracking-wider py-12">
         Loading market data…
       </div>
     );
 
   return (
     <div className="space-y-4">
-      <p className="text-xs text-slate-500 uppercase tracking-wider">
+      <p className="text-xs text-text-muted uppercase tracking-wider">
         Current price is system-generated; only base rating, start price, and
         injury are editable.
       </p>
 
       <div className="flex flex-wrap items-center gap-4">
         <div className="flex items-center gap-2">
-          <label className="text-xs font-bold uppercase text-slate-600">
+          <label className="text-xs font-bold uppercase text-text-secondary">
             Data
           </label>
           <select
@@ -223,7 +223,7 @@ export default function MarketOverviewTable() {
                 v === "period" ? "period" : v === "current" ? "current" : "all",
               );
             }}
-            className="border border-slate-300 px-2 py-1.5 text-sm bg-white min-w-[140px]"
+            className="border border-border-input px-2 py-1.5 text-sm bg-bg-primary min-w-[140px]"
           >
             <option value="all">All data</option>
             <option value="current">Current season</option>
@@ -231,13 +231,13 @@ export default function MarketOverviewTable() {
           </select>
         </div>
         <div className="flex items-center gap-2">
-          <label className="text-xs font-bold uppercase text-slate-600">
+          <label className="text-xs font-bold uppercase text-text-secondary">
             Team
           </label>
           <select
             value={filterTeam}
             onChange={(e) => setFilterTeam(e.target.value)}
-            className="border border-slate-300 px-2 py-1.5 text-sm bg-white min-w-[100px]"
+            className="border border-border-input px-2 py-1.5 text-sm bg-bg-primary min-w-[100px]"
           >
             <option value="">All</option>
             {teams.map((t) => (
@@ -248,13 +248,13 @@ export default function MarketOverviewTable() {
           </select>
         </div>
         <div className="flex items-center gap-2">
-          <label className="text-xs font-bold uppercase text-slate-600">
+          <label className="text-xs font-bold uppercase text-text-secondary">
             Pos
           </label>
           <select
             value={filterPos}
             onChange={(e) => setFilterPos(e.target.value)}
-            className="border border-slate-300 px-2 py-1.5 text-sm bg-white min-w-[80px]"
+            className="border border-border-input px-2 py-1.5 text-sm bg-bg-primary min-w-[80px]"
           >
             <option value="">All</option>
             <option value="F">F</option>
@@ -262,16 +262,16 @@ export default function MarketOverviewTable() {
             <option value="G">G</option>
           </select>
         </div>
-        <span className="text-xs text-slate-500">
+        <span className="text-xs text-text-muted">
           {filteredAndSorted.length} player
           {filteredAndSorted.length !== 1 ? "s" : ""}
         </span>
       </div>
 
-      <div className="overflow-x-auto border border-slate-200 bg-white">
+      <div className="overflow-x-auto border border-border-default bg-bg-primary">
         <table className="w-full text-left text-sm">
           <thead>
-            <tr className="border-b border-slate-200 bg-slate-50">
+            <tr className="border-b border-border-default bg-bg-secondary">
               <SortTh colKey="name" label="Name" />
               <SortTh colKey="position" label="Pos" />
               <SortTh colKey="team" label="Team" />
@@ -281,7 +281,7 @@ export default function MarketOverviewTable() {
               <SortTh colKey="season_total_fantasy_points" label="Season Pts" />
               <SortTh colKey="avg_points_per_game" label="Avg/G" />
               <SortTh colKey="games_played" label="GP" />
-              <th className="p-3 font-bold uppercase tracking-wider text-slate-600">
+              <th className="p-3 font-bold uppercase tracking-wider text-text-secondary">
                 Actions
               </th>
             </tr>
@@ -290,7 +290,7 @@ export default function MarketOverviewTable() {
             {filteredAndSorted.map((p) => (
               <tr
                 key={p.id}
-                className="border-b border-slate-100 hover:bg-slate-50/50"
+                className="border-b border-border-subtle hover:bg-bg-secondary/50"
               >
                 <td className="p-3 font-medium">{p.name}</td>
                 <td className="p-3">{p.position}</td>
@@ -300,7 +300,7 @@ export default function MarketOverviewTable() {
                     <input
                       type="number"
                       step="0.01"
-                      className="w-20 border border-slate-300 px-2 py-1 text-xs"
+                      className="w-20 border border-border-input px-2 py-1 text-xs"
                       value={draft.base_rating ?? ""}
                       onChange={(e) =>
                         setDraft((d) => ({
@@ -320,7 +320,7 @@ export default function MarketOverviewTable() {
                   {editing === p.id ? (
                     <input
                       type="number"
-                      className="w-24 border border-slate-300 px-2 py-1 text-xs"
+                      className="w-24 border border-border-input px-2 py-1 text-xs"
                       value={draft.start_price ?? ""}
                       onChange={(e) =>
                         setDraft((d) => ({
@@ -336,7 +336,7 @@ export default function MarketOverviewTable() {
                     formatPrice(p.start_price)
                   )}
                 </td>
-                <td className="p-3 text-slate-600">
+                <td className="p-3 text-text-secondary">
                   {formatPrice(p.current_price)}
                 </td>
                 <td className="p-3">
@@ -348,14 +348,14 @@ export default function MarketOverviewTable() {
                   {editing === p.id ? (
                     <span className="flex gap-2">
                       <button
-                        className="text-xs font-bold uppercase bg-slate-900 text-white px-2 py-1"
+                        className="text-xs font-bold uppercase bg-bg-sidebar text-text-inverse px-2 py-1"
                         onClick={() => saveEdit(p.id)}
                         disabled={saving === p.id}
                       >
                         {saving === p.id ? "Saving…" : "Save"}
                       </button>
                       <button
-                        className="text-xs font-bold uppercase text-slate-500 hover:text-slate-800"
+                        className="text-xs font-bold uppercase text-text-muted hover:text-text-primary"
                         onClick={cancelEdit}
                       >
                         Cancel
@@ -364,13 +364,13 @@ export default function MarketOverviewTable() {
                   ) : (
                     <span className="flex gap-2">
                       <button
-                        className="text-xs font-bold uppercase text-indigo-600 hover:underline"
+                        className="text-xs font-bold uppercase text-accent-primary hover:underline"
                         onClick={() => setDetailId(p.id)}
                       >
                         View
                       </button>
                       <button
-                        className="text-xs font-bold uppercase text-slate-500 hover:underline"
+                        className="text-xs font-bold uppercase text-text-muted hover:underline"
                         onClick={() => startEdit(p)}
                       >
                         Edit

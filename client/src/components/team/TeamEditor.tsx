@@ -175,7 +175,7 @@ export default function TeamEditor({ initialTeams, userId }: { initialTeams: any
       />
 
       {/* FORMATION AREA */}
-      <div className="p-8 bg-slate-100 border-b border-slate-300">
+      <div className="p-8 bg-bg-tertiary border-b border-border-input">
         <div className="flex flex-col gap-6 max-w-4xl mx-auto">
           <div className="grid grid-cols-3 gap-4">
             {[...Array(3)].map((_, i) => (
@@ -209,25 +209,25 @@ export default function TeamEditor({ initialTeams, userId }: { initialTeams: any
       </div>
 
       {/* PLAYER POOL TABLE */}
-      <section className="p-8 bg-white min-h-[600px]">
+      <section className="p-8 bg-bg-primary min-h-[600px]">
         <div className="flex flex-wrap gap-4 mb-6 items-end">
           <div className="flex flex-col gap-1">
-            <span className="text-[9px] font-black text-slate-400 uppercase">
+            <span className="text-[9px] font-black text-text-muted-subtle uppercase">
               Search
             </span>
             <input
               type="text"
               placeholder="PLAYER NAME..."
-              className="bg-slate-50 border border-slate-200 text-[10px] py-2.5 px-4 font-bold uppercase w-64 outline-none focus:border-black"
+              className="bg-bg-secondary border border-border-default text-[10px] py-2.5 px-4 font-bold uppercase w-64 outline-none focus:border-border-strong"
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
           <div className="flex flex-col gap-1">
-            <span className="text-[9px] font-black text-slate-400 uppercase">
+            <span className="text-[9px] font-black text-text-muted-subtle uppercase">
               Position
             </span>
             <select
-              className="bg-slate-50 border border-slate-200 text-[10px] py-2.5 px-4 font-bold uppercase outline-none min-w-[120px]"
+              className="bg-bg-secondary border border-border-default text-[10px] py-2.5 px-4 font-bold uppercase outline-none min-w-[120px]"
               onChange={(e) => setPosFilter(e.target.value)}
             >
               <option value="FORWARDS">FORWARDS</option>
@@ -236,11 +236,11 @@ export default function TeamEditor({ initialTeams, userId }: { initialTeams: any
             </select>
           </div>
           <div className="flex flex-col gap-1">
-            <span className="text-[9px] font-black text-slate-400 uppercase">
+            <span className="text-[9px] font-black text-text-muted-subtle uppercase">
               Team
             </span>
             <select
-              className="bg-slate-50 border border-slate-200 text-[10px] py-2.5 px-4 font-bold uppercase outline-none min-w-[120px]"
+              className="bg-bg-secondary border border-border-default text-[10px] py-2.5 px-4 font-bold uppercase outline-none min-w-[120px]"
               onChange={(e) => setTeamFilter(e.target.value)}
             >
               {teamsList.map((team) => (
@@ -252,9 +252,9 @@ export default function TeamEditor({ initialTeams, userId }: { initialTeams: any
           </div>
         </div>
 
-        <div className="flex-1 overflow-auto border border-slate-200">
+        <div className="flex-1 overflow-auto border border-border-default">
           <table className="w-full text-left border-collapse">
-            <thead className="sticky top-0 bg-slate-900 text-white z-20">
+            <thead className="sticky top-0 bg-bg-sidebar text-text-inverse z-20">
               <tr className="text-[9px] font-black uppercase tracking-widest cursor-pointer">
                 <th className="px-6 py-4" onClick={() => requestSort("name")}>
                   Player
@@ -280,39 +280,39 @@ export default function TeamEditor({ initialTeams, userId }: { initialTeams: any
                 <th className="px-6 py-4 text-center">Action</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-border-subtle">
               {processedPool.map((player) => {
                 const playerId = player.player_id || player.id;
                 const isSelected = lineup.find((p) => (p.player_id || p.id) === playerId);
                 return (
                   <tr
                     key={player.id}
-                    className={`hover:bg-slate-50 transition-colors ${isSelected ? "opacity-30" : ""
+                    className={`hover:bg-bg-secondary transition-colors ${isSelected ? "opacity-30" : ""
                       }`}
                   >
                     <td className="px-6 py-4 font-black text-xs uppercase">
                       {player.name}
                     </td>
-                    <td className="px-6 py-4 text-[10px] font-bold text-slate-400">
+                    <td className="px-6 py-4 text-[10px] font-bold text-text-muted-subtle">
                       {player.pos}
                     </td>
                     <td
                       style={{ color: player.color }}
-                      className="px-6 py-4 text-[10px] font-bold text-slate-400"
+                      className="px-6 py-4 text-[10px] font-bold text-text-muted-subtle"
                     >
                       {player.team}
                     </td>
                     <td className="px-6 py-4 text-right font-mono text-xs font-bold">
                       {Number(player.points).toFixed(1)}
                     </td>
-                    <td className="px-6 py-4 text-right font-mono text-xs font-bold text-slate-900">
+                    <td className="px-6 py-4 text-right font-mono text-xs font-bold text-text-primary">
                       ${formatSalary(player.salary)}
                     </td>
                     <td className="px-6 py-4 text-center">
                       <button
                         onClick={() => addToLineup(player)}
                         disabled={isSelected}
-                        className="text-[9px] font-black uppercase px-6 py-2 border border-black hover:bg-black hover:text-white disabled:opacity-0 transition-all"
+                        className="text-[9px] font-black uppercase px-6 py-2 border border-border-strong hover:bg-bg-sidebar hover:text-text-inverse disabled:opacity-0 transition-all"
                       >
                         Select
                       </button>

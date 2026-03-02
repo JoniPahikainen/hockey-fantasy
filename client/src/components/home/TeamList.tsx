@@ -5,13 +5,13 @@ export default function TeamList({ team }: { team: any[] }) {
 
   if (team.length === 0) {
     return (
-      <div className="bg-white border-2 border-dashed border-slate-200 p-6 text-center">
-        <p className="text-xs font-black text-slate-400 uppercase italic">
+      <div className="bg-bg-primary border-2 border-dashed border-border-default p-6 text-center">
+        <p className="text-xs font-black text-text-muted-subtle uppercase italic">
           No Team Built Yet
         </p>
         <button 
            onClick={() => navigate("/team")}
-            className="mt-2 text-[10px] bg-slate-900 text-white px-3 py-1 uppercase font-bold"
+            className="mt-2 text-[10px] bg-bg-sidebar text-text-inverse px-3 py-1 uppercase font-bold"
         >
           Build Your Team
         </button>
@@ -32,39 +32,39 @@ export default function TeamList({ team }: { team: any[] }) {
   });
 
   return (
-    <div className="bg-white border border-slate-300 shadow-sm overflow-hidden">
-      <div className="px-4 py-3 bg-slate-900 flex justify-between items-center">
-        <h2 className="text-xs font-black text-white uppercase tracking-[0.2em]">
+    <div className="bg-bg-primary border border-border-input shadow-sm overflow-hidden">
+      <div className="px-4 py-3 bg-bg-sidebar flex justify-between items-center">
+        <h2 className="text-xs font-black text-text-inverse uppercase tracking-[0.2em]">
           My Team
         </h2>
       </div>
-      <div className="flex flex-col divide-y divide-slate-200">
+      <div className="flex flex-col divide-y divide-border-default">
         {sortedTeam.map((player) => {
           const safePoints = Number(player.points || 0);
           const pointsColor =
             safePoints < 0
-              ? "text-red-600"
+              ? "text-accent-danger"
               : safePoints > 0
-                ? "text-emerald-600"
-                : "text-slate-500";
+                ? "text-accent-success"
+                : "text-text-muted";
 
           return (
             <div
               key={player.player_id || player.id || player.name}
-              className="flex items-center justify-between px-4 py-3 hover:bg-slate-50 cursor-pointer group transition-colors"
+              className="flex items-center justify-between px-4 py-3 hover:bg-bg-secondary cursor-pointer group transition-colors"
             >
               <div className="flex items-center space-x-3">
                 <div
                   style={{ backgroundColor: player.color }}
-                  className="h-10 w-10 flex items-center justify-center border-r-4 border-black/20 font-black text-white text-[10px]"
+                  className="h-10 w-10 flex items-center justify-center border-r-4 border-border-strong/20 font-black text-text-inverse text-[10px]"
                 >
                   {player.abbrev}
                 </div>
                 <div className="flex items-center space-x-2">
-                  <span className="text-xs font-black text-slate-400 w-4">
+                  <span className="text-xs font-black text-text-muted-subtle w-4">
                     {player.pos}
                   </span>
-                  <span className="text-sm font-bold text-slate-800 uppercase">
+                  <span className="text-sm font-bold text-text-secondary uppercase">
                     {player.name}
                   </span>
                 </div>
@@ -78,10 +78,10 @@ export default function TeamList({ team }: { team: any[] }) {
         })}
       </div>
 
-      <div className="bg-slate-50 px-4 py-2 border-t border-slate-200">
+      <div className="bg-bg-secondary px-4 py-2 border-t border-border-default">
         <button
           onClick={() => navigate("/team")}
-          className="w-full text-[9px] font-black text-slate-500 uppercase hover:text-slate-900"
+          className="w-full text-[9px] font-black text-text-muted uppercase hover:text-text-primary"
         >
           Edit Team
         </button>

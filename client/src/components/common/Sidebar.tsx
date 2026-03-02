@@ -11,13 +11,13 @@ const handleLogout = () => {
 };
 
 const iconBtn =
-  "relative flex items-center justify-center w-10 h-10 text-slate-500 hover:text-white hover:bg-white/10 transition-colors duration-75 group mb-4";
+  "relative flex items-center justify-center w-10 h-10 text-text-muted hover:text-text-inverse hover:bg-bg-primary/10 transition-colors duration-75 group mb-4";
 
 const activeBtn =
-  "relative flex items-center justify-center w-10 h-10 bg-white text-black group mb-4";
+  "relative flex items-center justify-center w-10 h-10 bg-bg-primary text-text-primary group mb-4";
 
 const tooltip =
-  "absolute left-full ml-4 px-2 py-1 bg-white text-black text-[10px] font-bold uppercase tracking-widest whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none z-50 transition-opacity";
+  "absolute left-full ml-4 px-2 py-1 bg-bg-primary text-text-primary text-[10px] font-bold uppercase tracking-widest whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none z-50 transition-opacity";
 
 export default function Sidebar() {
   const navigate = useNavigate();
@@ -81,8 +81,8 @@ export default function Sidebar() {
   }
 
   return (
-    <aside className="fixed left-0 top-0 w-16 h-screen bg-slate-900 border-r border-white/10 flex flex-col items-center z-40">
-      <div className="relative flex flex-col items-center py-6 border-b border-slate-800 mb-4 w-full">
+    <aside className="fixed left-0 top-0 w-16 h-screen bg-bg-sidebar border-r border-text-inverse/10 flex flex-col items-center z-40">
+      <div className="relative flex flex-col items-center py-6 border-b border-border-sidebar mb-4 w-full">
         {/* Active Team Button */}
         <button
           onClick={() => {
@@ -90,9 +90,9 @@ export default function Sidebar() {
               setIsSwitcherOpen((prev) => !prev);
             }
           }}
-          className="w-11 h-11 rounded-full bg-slate-700 text-white flex items-center justify-center text-sm font-bold 
-               hover:bg-slate-600 transition-colors duration-150 
-               ring-1 ring-slate-600 hover:ring-slate-400 disabled:opacity-50"
+          className="w-11 h-11 rounded-full bg-bg-sidebar-active text-text-inverse flex items-center justify-center text-sm font-bold 
+               hover:bg-bg-sidebar-hover transition-colors duration-150 
+               ring-1 ring-border-strong hover:ring-border-focus disabled:opacity-50"
           disabled={loadingTeams || myTeams.length === 0}
         >
           {activeTeamName
@@ -105,11 +105,11 @@ export default function Sidebar() {
         {/* Dropdown */}
         {isSwitcherOpen && (
           <div
-            className="absolute left-16 top-6 w-56 bg-slate-900 border border-slate-800 
+            className="absolute left-16 top-6 w-56 bg-bg-sidebar border border-border-sidebar 
                     rounded-xl shadow-2xl z-[60] py-2 overflow-hidden"
           >
             {/* Header */}
-            <div className="px-4 py-2 text-[10px] font-bold tracking-widest uppercase text-slate-500">
+            <div className="px-4 py-2 text-[10px] font-bold tracking-widest uppercase text-text-muted">
               My Teams
             </div>
 
@@ -131,8 +131,8 @@ export default function Sidebar() {
                     className={`w-full flex items-center gap-3 px-4 py-2 text-sm transition-colors
                 ${
                   isCurrent
-                    ? "bg-slate-800 text-white"
-                    : "text-slate-300 hover:bg-slate-800 hover:text-white"
+                    ? "bg-bg-sidebar-hover text-text-inverse"
+                    : "text-text-muted-subtle hover:bg-bg-sidebar-hover hover:text-text-inverse"
                 }
               `}
                   >
@@ -140,8 +140,8 @@ export default function Sidebar() {
                       className={`w-7 h-7 rounded-md flex items-center justify-center text-[11px] font-bold
                   ${
                     isCurrent
-                      ? "bg-white text-slate-900"
-                      : "bg-slate-700 text-slate-300"
+                      ? "bg-bg-primary text-text-primary"
+                      : "bg-bg-sidebar-active text-text-muted-subtle"
                   }
                 `}
                     >
@@ -153,14 +153,14 @@ export default function Sidebar() {
               })}
 
               {myTeams.length === 0 && !loadingTeams && (
-                <div className="px-4 py-3 text-[11px] text-slate-400">
+                <div className="px-4 py-3 text-[11px] text-text-muted-subtle">
                   No teams yet. Create one to get started.
                 </div>
               )}
             </div>
 
             {/* Divider */}
-            <div className="my-2 border-t border-slate-800" />
+            <div className="my-2 border-t border-border-sidebar" />
 
             {/* Create Team */}
             <button
@@ -169,7 +169,7 @@ export default function Sidebar() {
                 setIsSwitcherOpen(false);
               }}
               className="w-full text-left px-4 py-2 text-sm font-semibold 
-                   text-indigo-400 hover:bg-indigo-500/10 transition-colors"
+                   text-accent-primary hover:bg-accent-primary/10 transition-colors"
             >
               + Create New Team
             </button>
@@ -211,7 +211,7 @@ export default function Sidebar() {
           className={isActive("/") ? activeBtn : iconBtn}
         >
           {isActive("/") && (
-            <div className="absolute -left-3 w-1 h-6 bg-white" />
+            <div className="absolute -left-3 w-1 h-6 bg-bg-primary" />
           )}
           <svg
             className="w-5 h-5"
@@ -234,7 +234,7 @@ export default function Sidebar() {
           className={isActive("/team") ? activeBtn : iconBtn}
         >
           {isActive("/team") && (
-            <div className="absolute -left-3 w-1 h-6 bg-white" />
+            <div className="absolute -left-3 w-1 h-6 bg-bg-primary" />
           )}
           <svg
             className="w-5 h-5"
@@ -257,7 +257,7 @@ export default function Sidebar() {
           className={isActive("/league") ? activeBtn : iconBtn}
         >
           {isActive("/league") && (
-            <div className="absolute -left-3 w-1 h-6 bg-white" />
+            <div className="absolute -left-3 w-1 h-6 bg-bg-primary" />
           )}
           <svg
             className="w-5 h-5"
@@ -281,7 +281,7 @@ export default function Sidebar() {
             className={isActive("/admin") ? activeBtn : iconBtn}
           >
             {isActive("/admin") && (
-              <div className="absolute -left-3 w-1 h-6 bg-white" />
+              <div className="absolute -left-3 w-1 h-6 bg-bg-primary" />
             )}
             <svg
               className="w-5 h-5"
@@ -303,7 +303,13 @@ export default function Sidebar() {
 
       <div className="flex-1" />
       <div className="flex flex-col items-center gap-2 pb-8">
-        <button onClick={() => navigate("/settings")} className={iconBtn}>
+        <button
+          onClick={() => navigate("/settings")}
+          className={isActive("/settings") ? activeBtn : iconBtn}
+        >
+          {isActive("/settings") && (
+            <div className="absolute -left-3 w-1 h-6 bg-bg-primary" />
+          )}
           <svg
             className="w-5 h-5"
             fill="none"

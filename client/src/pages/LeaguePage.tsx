@@ -99,14 +99,14 @@ export default function LeagueStandingsPage() {
   }, [activePeriod, isFullSeason, selectedLeagueId]);
 
   const getMovement = (curr: number, prev: number) => {
-    if (curr < prev) return <span className="text-emerald-500">▲</span>;
-    if (curr > prev) return <span className="text-rose-500">▼</span>;
-    return <span className="text-slate-300 text-[8px]">●</span>;
+    if (curr < prev) return <span className="text-accent-success">▲</span>;
+    if (curr > prev) return <span className="text-accent-danger">▼</span>;
+    return <span className="text-text-muted-subtle text-[8px]">●</span>;
   };
 
   if (!hasCheckedLeague) {
     return (
-      <div className="flex h-screen items-center justify-center bg-slate-50">
+      <div className="flex h-screen items-center justify-center bg-bg-secondary">
         Loading...
       </div>
     );
@@ -146,7 +146,7 @@ export default function LeagueStandingsPage() {
 
 
   return (
-    <div className="flex h-screen bg-slate-50 text-slate-900">
+    <div className="flex h-screen bg-bg-secondary text-text-primary">
       <Sidebar />
 
       <div className="flex-1 overflow-auto px-6 py-8 ml-16">
@@ -158,7 +158,7 @@ export default function LeagueStandingsPage() {
               <h1 className="text-3xl font-black uppercase tracking-tighter italic">
                 {selectedLeague?.name || "League"} Standings
               </h1>
-              <p className="text-slate-500 font-medium tracking-tight uppercase text-xs">
+              <p className="text-text-muted font-medium tracking-tight uppercase text-xs">
                 {isFullSeason ? "Overall Rankings" : `Period ${activePeriod}`}
               </p>
             </div>
@@ -167,7 +167,7 @@ export default function LeagueStandingsPage() {
               <select
                 value={selectedLeagueId || ""}
                 onChange={(e) => setSelectedLeagueId(Number(e.target.value))}
-                className="w-64 bg-white border border-slate-300 px-3 py-2 text-xs font-bold uppercase"
+                className="w-64 bg-bg-primary border border-border-input px-3 py-2 text-xs font-bold uppercase"
               >
                 {userLeagues.map((league) => (
                   <option key={league.league_id} value={league.league_id}>
@@ -180,18 +180,18 @@ export default function LeagueStandingsPage() {
 
           {/* RIGHT SIDE */}
           <div className="flex flex-col items-start lg:items-end gap-3">
-            <div className="bg-slate-100 border border-slate-300 px-4 py-2">
-              <span className="block text-[9px] font-black uppercase text-slate-400 tracking-widest">
+            <div className="bg-bg-tertiary border border-border-input px-4 py-2">
+              <span className="block text-[9px] font-black uppercase text-text-muted-subtle tracking-widest">
                 League ID
               </span>
-              <span className="font-mono font-black text-sm text-slate-900">
+              <span className="font-mono font-black text-sm text-text-primary">
                 {selectedLeagueId}
               </span>
             </div>
 
             <button
               onClick={handleLeaveLeague}
-              className="bg-rose-600 text-white text-[9px] font-black uppercase px-3 py-2 hover:bg-rose-700 transition-colors"
+              className="bg-accent-danger text-text-inverse text-[9px] font-black uppercase px-3 py-2 hover:bg-accent-danger-hover transition-colors"
             >
               Leave League
             </button>
@@ -201,7 +201,7 @@ export default function LeagueStandingsPage() {
 
 
         <main className="max-w-7xl mx-auto space-y-8">
-          <div className="flex gap-1 border-b border-slate-200 pb-4 overflow-x-auto">
+          <div className="flex gap-1 border-b border-border-default pb-4 overflow-x-auto">
             {LEAGUE_PERIODS.map((p) => {
               const isActive = activePeriod === p.id;
               const isLocked =
@@ -212,7 +212,7 @@ export default function LeagueStandingsPage() {
                   disabled={isLocked}
                   onClick={() => setActivePeriod(p.id)}
                   className={`px-4 py-2 text-[10px] font-black uppercase tracking-widest transition-colors
-                    ${isActive ? "bg-slate-900 text-white" : "text-slate-400 hover:text-slate-900"}
+                    ${isActive ? "bg-bg-sidebar text-text-inverse" : "text-text-muted-subtle hover:text-text-primary"}
                     ${isLocked ? "opacity-20 cursor-not-allowed" : ""}
                   `}
                 >
@@ -222,12 +222,12 @@ export default function LeagueStandingsPage() {
             })}
           </div>
 
-          <div className="bg-white border border-slate-300 shadow-sm overflow-hidden">
-            <div className="px-4 py-3 bg-slate-900 flex justify-between items-center">
-              <h2 className="text-xs font-black text-white uppercase tracking-[0.2em]">
+          <div className="bg-bg-primary border border-border-input shadow-sm overflow-hidden">
+            <div className="px-4 py-3 bg-bg-sidebar flex justify-between items-center">
+              <h2 className="text-xs font-black text-text-inverse uppercase tracking-[0.2em]">
                 Rankings
               </h2>
-              <span className="text-[10px] font-bold text-slate-400 uppercase italic">
+              <span className="text-[10px] font-bold text-text-muted-subtle uppercase italic">
                 Updated Live
               </span>
             </div>
@@ -235,25 +235,25 @@ export default function LeagueStandingsPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="border-b border-slate-200 bg-slate-50">
-                    <th className="px-6 py-3 text-[10px] font-black uppercase text-slate-400">
+                  <tr className="border-b border-border-default bg-bg-secondary">
+                    <th className="px-6 py-3 text-[10px] font-black uppercase text-text-muted-subtle">
                       Rank
                     </th>
-                    <th className="px-6 py-3 text-[10px] font-black uppercase text-slate-400">
+                    <th className="px-6 py-3 text-[10px] font-black uppercase text-text-muted-subtle">
                       Team / Manager
                     </th>
-                    <th className="px-6 py-3 text-[10px] font-black uppercase text-slate-400 text-right">
+                    <th className="px-6 py-3 text-[10px] font-black uppercase text-text-muted-subtle text-right">
                       Points
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-200">
+                <tbody className="divide-y divide-border-default">
                   {standings.map((team) => (
                     <Fragment key={team.teamId}>
                       <tr
                         onClick={() => toggleTeam(team.teamId)}
                         className={`cursor-pointer transition-colors group ${
-                          expandedTeamId === team.teamId ? "bg-slate-100" : "hover:bg-slate-50"
+                          expandedTeamId === team.teamId ? "bg-bg-tertiary" : "hover:bg-bg-secondary"
                         }`}
                       >
                         <td className="px-6 py-4">
@@ -264,16 +264,16 @@ export default function LeagueStandingsPage() {
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex flex-col">
-                            <span className="text-sm font-black uppercase text-slate-800 group-hover:text-indigo-600 transition-colors">
+                            <span className="text-sm font-black uppercase text-text-secondary group-hover:text-accent-primary transition-colors">
                               {team.name} {expandedTeamId === team.teamId ? '▴' : '▾'}
                             </span>
-                            <span className="text-[10px] font-bold text-slate-400 uppercase italic">
+                            <span className="text-[10px] font-bold text-text-muted-subtle uppercase italic">
                               {team.manager}
                             </span>
                           </div>
                         </td>
                         <td className="px-6 py-4 text-right">
-                          <span className="font-mono font-black text-lg text-slate-900">
+                          <span className="font-mono font-black text-lg text-text-primary">
                             {Number(team.points || 0).toFixed(1)}
                           </span>
                         </td>
@@ -282,7 +282,7 @@ export default function LeagueStandingsPage() {
                       {/* THE GRAPH SECTION */}
                       {expandedTeamId === team.teamId && (
                         <tr>
-                          <td colSpan={3} className="p-0 border-b border-slate-300">
+                          <td colSpan={3} className="p-0 border-b border-border-input">
                             <TeamPerformanceGraph 
                               teamId={team.teamId} 
                               periodId={activePeriod} 
@@ -300,12 +300,12 @@ export default function LeagueStandingsPage() {
             <RecordTable
               title="Matchday Bests"
               data={LEAGUE_RECORDS.lastNight}
-              accent="text-indigo-600"
+              accent="text-accent-primary"
             />
             <RecordTable
               title="Season Records"
               data={LEAGUE_RECORDS.seasonBest}
-              accent="text-amber-500"
+              accent="text-accent-warning"
             />
           </div>
         </main>
@@ -316,23 +316,23 @@ export default function LeagueStandingsPage() {
 
 function RecordTable({ title, data, accent }: any) {
   return (
-    <div className="bg-white border border-slate-300 shadow-sm overflow-hidden">
-      <div className="px-4 py-2 bg-slate-100 border-b border-slate-200">
-        <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-600">
+    <div className="bg-bg-primary border border-border-input shadow-sm overflow-hidden">
+      <div className="px-4 py-2 bg-bg-tertiary border-b border-border-default">
+        <h3 className="text-[10px] font-black uppercase tracking-widest text-text-secondary">
           {title}
         </h3>
       </div>
-      <div className="flex flex-col divide-y divide-slate-100">
+      <div className="flex flex-col divide-y divide-border-subtle">
         {data.map((row: any, i: number) => (
           <div
             key={i}
-            className="flex justify-between items-center px-4 py-3 hover:bg-slate-50"
+            className="flex justify-between items-center px-4 py-3 hover:bg-bg-secondary"
           >
             <div className="flex flex-col">
-              <span className="text-[9px] font-black uppercase text-slate-400">
+              <span className="text-[9px] font-black uppercase text-text-muted-subtle">
                 {row.label}
               </span>
-              <span className="text-xs font-bold uppercase text-slate-800">
+              <span className="text-xs font-bold uppercase text-text-secondary">
                 {row.team}
               </span>
             </div>

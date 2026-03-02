@@ -98,14 +98,14 @@ export default function PlayerDetailModal({
   if (loading || !detail) {
     return (
       <div
-        className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+        className="fixed inset-0 z-50 flex items-center justify-center bg-bg-sidebar/50"
         onClick={onClose}
       >
         <div
-          className="bg-white p-8 rounded-lg shadow-xl"
+          className="bg-bg-primary p-8 rounded-lg shadow-xl"
           onClick={(e) => e.stopPropagation()}
         >
-          <p className="text-sm font-bold uppercase text-slate-500">Loading…</p>
+          <p className="text-sm font-bold uppercase text-text-muted">Loading…</p>
         </div>
       </div>
     );
@@ -165,20 +165,20 @@ export default function PlayerDetailModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 overflow-y-auto bg-black/50 flex items-start justify-center p-4"
+      className="fixed inset-0 z-50 overflow-y-auto bg-bg-sidebar/50 flex items-start justify-center p-4"
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-xl shadow-2xl max-w-5xl w-full my-8"
+        className="bg-bg-primary rounded-xl shadow-2xl max-w-5xl w-full my-8"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="p-6 border-b border-slate-200 flex justify-between items-start gap-4">
+        <div className="p-6 border-b border-border-default flex justify-between items-start gap-4">
           <div className="min-w-0">
             <h2 className="text-xl font-black uppercase tracking-tight">
               {detail.name}{" "}
-              <span className="text-slate-400">({detail.position})</span>
+              <span className="text-text-muted-subtle">({detail.position})</span>
             </h2>
-            <p className="text-sm text-slate-500 mt-1">
+            <p className="text-sm text-text-muted mt-1">
               {detail.team} • Base {detail.base_rating ?? "—"} • Start{" "}
               {(Math.floor(detail.start_price / 1000) * 1000)
                 .toLocaleString("en-US")
@@ -196,8 +196,8 @@ export default function PlayerDetailModal({
                   onClick={() => setScope(opt.value)}
                   className={`px-3 py-1.5 text-xs font-semibold rounded-md transition ${
                     scope === opt.value
-                      ? "bg-indigo-600 text-white"
-                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                      ? "bg-accent-primary text-text-inverse"
+                      : "bg-bg-tertiary text-text-secondary hover:bg-bg-tertiary"
                   }`}
                 >
                   {opt.label}
@@ -207,7 +207,7 @@ export default function PlayerDetailModal({
           </div>
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-slate-800 font-bold text-lg leading-none shrink-0"
+            className="text-text-muted-subtle hover:text-text-primary font-bold text-lg leading-none shrink-0"
           >
             ×
           </button>
@@ -216,12 +216,12 @@ export default function PlayerDetailModal({
         <div className="p-6 space-y-8">
           {/* Summary & usage */}
           <section>
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-text-muted mb-3">
               Summary & usage
             </h3>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              <div className="bg-slate-50 p-3 rounded-lg">
-                <p className="text-[10px] uppercase text-slate-500">
+              <div className="bg-bg-secondary p-3 rounded-lg">
+                <p className="text-[10px] uppercase text-text-muted">
                   {scope === "period"
                     ? "Period"
                     : scope === "current"
@@ -235,14 +235,14 @@ export default function PlayerDetailModal({
                     .toFixed(2)}
                 </p>
               </div>
-              <div className="bg-slate-50 p-3 rounded-lg">
-                <p className="text-[10px] uppercase text-slate-500">
+              <div className="bg-bg-secondary p-3 rounded-lg">
+                <p className="text-[10px] uppercase text-text-muted">
                   Avg Pts/Game
                 </p>
                 <p className="text-lg font-bold">{avgPts}</p>
               </div>
-              <div className="bg-slate-50 p-3 rounded-lg">
-                <p className="text-[10px] uppercase text-slate-500">
+              <div className="bg-bg-secondary p-3 rounded-lg">
+                <p className="text-[10px] uppercase text-text-muted">
                   Performance vs expected
                 </p>
                 <p className="text-lg font-bold">
@@ -252,8 +252,8 @@ export default function PlayerDetailModal({
                 </p>
               </div>
               {Object.entries(detail.usage || {}).map(([k, v]) => (
-                <div key={k} className="bg-slate-50 p-3 rounded-lg">
-                  <p className="text-[10px] uppercase text-slate-500">
+                <div key={k} className="bg-bg-secondary p-3 rounded-lg">
+                  <p className="text-[10px] uppercase text-text-muted">
                     {k.replace(/_/g, " ")}
                   </p>
                   <p className="text-lg font-bold">{String(v)}</p>
@@ -265,13 +265,13 @@ export default function PlayerDetailModal({
           {/* Period breakdown */}
           {detail.period_breakdown?.length > 0 && (
             <section>
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-text-muted mb-3">
                 Period-by-period fantasy points
               </h3>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-slate-200">
+                    <tr className="border-b border-border-default">
                       <th className="text-left p-2 font-bold">Period</th>
                       <th className="text-right p-2 font-bold">Points</th>
                       <th className="text-right p-2 font-bold">Games</th>
@@ -281,7 +281,7 @@ export default function PlayerDetailModal({
                     {detail.period_breakdown.map((pr) => (
                       <tr
                         key={pr.period_name}
-                        className="border-b border-slate-100"
+                        className="border-b border-border-subtle"
                       >
                         <td className="p-2">{pr.period_name}</td>
                         <td className="p-2 text-right">
@@ -299,7 +299,7 @@ export default function PlayerDetailModal({
           {/* Price history */}
           {priceHistoryData.length > 0 && (
             <section>
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-text-muted mb-3">
                 Price history
               </h3>
               <div className="h-56">
@@ -334,7 +334,7 @@ export default function PlayerDetailModal({
           {/* Game-by-game & rolling average */}
           {gameChartData.length > 0 && (
             <section>
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-text-muted mb-3">
                 Game-by-game points & rolling average (5 / 10)
               </h3>
               <div className="h-64">
@@ -379,7 +379,7 @@ export default function PlayerDetailModal({
           {detail.position === "F" && (
             <>
               <section>
-                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-text-muted mb-3">
                   Goals vs assists contribution
                 </h3>
                 {goalsAssistsData.length > 0 ? (
@@ -405,13 +405,13 @@ export default function PlayerDetailModal({
                     </ResponsiveContainer>
                   </div>
                 ) : (
-                  <p className="text-slate-400 text-sm">
+                  <p className="text-text-muted-subtle text-sm">
                     No goal/assist data yet.
                   </p>
                 )}
               </section>
               <section>
-                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-text-muted mb-3">
                   Shot volume trend
                 </h3>
                 <div className="h-48">
@@ -432,7 +432,7 @@ export default function PlayerDetailModal({
           {detail.position === "D" && (
             <>
               <section>
-                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-text-muted mb-3">
                   Blocked shots trend
                 </h3>
                 <div className="h-48">
@@ -448,7 +448,7 @@ export default function PlayerDetailModal({
                 </div>
               </section>
               <section>
-                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-text-muted mb-3">
                   TOI trend (minutes)
                 </h3>
                 <div className="h-48">
@@ -474,7 +474,7 @@ export default function PlayerDetailModal({
           {detail.position === "G" && (
             <>
               <section>
-                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-text-muted mb-3">
                   Saves per game trend
                 </h3>
                 <div className="h-48">
@@ -490,7 +490,7 @@ export default function PlayerDetailModal({
                 </div>
               </section>
               <section>
-                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-text-muted mb-3">
                   Goals against trend
                 </h3>
                 <div className="h-48">
@@ -511,7 +511,7 @@ export default function PlayerDetailModal({
                 </div>
               </section>
               <section>
-                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-text-muted mb-3">
                   Fantasy points volatility (game-by-game)
                 </h3>
                 <div className="h-48">
