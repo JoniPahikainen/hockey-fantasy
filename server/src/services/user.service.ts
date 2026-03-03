@@ -37,3 +37,30 @@ export const removeUser = async (id: number) => {
   if (result.rowCount === 0) throw new ServiceError("User not found", 404);
   return true;
 };
+
+export const updateUsername = async (userId: number, username: string) => {
+  const trimmed = username.trim();
+  if (!trimmed) throw new ServiceError("Username is required", 400);
+  const taken = await repo.isUsernameTaken(trimmed, userId);
+  if (taken) throw new ServiceError("Username already taken", 409);
+  const updated = await repo.updateUsername(userId, trimmed);
+  if (!updated) throw new ServiceError("User not found", 404);
+  return { username: updated.username, email: updated.email, role: updated.role };
+};
+
+export const changePassword = async (
+  userId: number,
+  oldPassword: string,
+  newPassword: string
+) => {
+  const user = await repo.findById(userId);
+  if (!user) throw new ServiceError("User not found", 404);
+  const isMatch = await bcrypt.compare(oldPassword, user.password_hash);
+  if (!isMatch) throw new ServiceError("Current password is incorrect", 401);
+  if (!newPassword || newPassword.length < 1)
+    throw new ServiceError("New password is required", 400);
+  const saltRounds = 10;
+  const passwordHash = await bcrypt.hash(newPassword, saltRounds);
+  await repo.updatePassword(userId, passwordHash);
+  return true;
+};

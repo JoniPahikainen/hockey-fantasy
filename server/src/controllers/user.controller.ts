@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { z } from "zod";
 import * as service from "../services/user.service";
 import { ServiceError } from "../utils/errors";
+import { AuthRequest } from "../middleware/auth";
 
 const UserSchema = z.object({
   username: z.string().min(1),
@@ -50,6 +51,45 @@ export const deleteUser = async (req: Request, res: Response) => {
 
     await service.removeUser(id);
     return res.json({ ok: true, message: "User deleted successfully" });
+  } catch (err: any) {
+    if (err instanceof ServiceError) {
+      return res.status(err.statusCode).json({ ok: false, error: err.message });
+    }
+    return res.status(500).json({ ok: false, error: "Internal server error" });
+  }
+};
+
+export const updateProfile = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user!.userId;
+    const { username } = req.body;
+    if (typeof username !== "string") {
+      return res.status(400).json({ ok: false, error: "Username is required" });
+    }
+    const updated = await service.updateUsername(userId, username);
+    return res.json({ ok: true, user: updated });
+  } catch (err: any) {
+    if (err instanceof ServiceError) {
+      return res.status(err.statusCode).json({ ok: false, error: err.message });
+    }
+    return res.status(500).json({ ok: false, error: "Internal server error" });
+  }
+};
+
+export const updatePassword = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user!.userId;
+    const { oldPassword, newPassword, confirmPassword } = req.body;
+    if (typeof oldPassword !== "string" || typeof newPassword !== "string") {
+      return res
+        .status(400)
+        .json({ ok: false, error: "Current password and new password are required" });
+    }
+    if (newPassword !== confirmPassword) {
+      return res.status(400).json({ ok: false, error: "New passwords do not match" });
+    }
+    await service.changePassword(userId, oldPassword, newPassword);
+    return res.json({ ok: true, message: "Password updated" });
   } catch (err: any) {
     if (err instanceof ServiceError) {
       return res.status(err.statusCode).json({ ok: false, error: err.message });
