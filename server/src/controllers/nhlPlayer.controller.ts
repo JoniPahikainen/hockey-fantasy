@@ -10,3 +10,13 @@ export const getPlayerPool = async (req: Request, res: Response) => {
     return res.status(500).json({ ok: false, error: "Database error" });
   }
 };
+
+export const getPlayerPoolWithPeriodPoints = async (req: Request, res: Response) => {
+  try {
+    const players = await service.getPlayerPoolWithPeriodPoints();
+    return res.json({ ok: true, players });
+  } catch (err) {
+    console.error("Controller Error:", err);
+    return res.status(500).json({ ok: false, error: "Database error" });
+  }
+};

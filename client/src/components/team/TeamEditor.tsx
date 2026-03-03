@@ -23,7 +23,7 @@ export default function TeamEditor({ initialTeams, userId }: { initialTeams: any
   useEffect(() => {
     const initPage = async () => {
       try {
-        const poolRes = await api.get("/players");
+        const poolRes = await api.get("/players/period");
         if (poolRes.data.ok) setPlayerPool(poolRes.data.players);
       } catch (err) {
         console.error("Initialization Error:", err);
@@ -32,7 +32,6 @@ export default function TeamEditor({ initialTeams, userId }: { initialTeams: any
     initPage();
   }, [userId]);
 
-  // Keep selected team in sync with global active team
   useEffect(() => {
     if (activeTeamId) {
       setSelectedTeamId(activeTeamId);
