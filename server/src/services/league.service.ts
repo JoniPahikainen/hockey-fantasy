@@ -74,11 +74,6 @@ export const getLeagueStandingsByPeriod = async (
     return result.rows;
 };
 
-export const getCurrentPeriodStandings = async (league_id: number) => {
-    const result = await repo.getCurrentPeriodStandings(league_id);
-    return result.rows;
-};
-
 export const getStandingsWithLastNight = async (league_id: number) => {
     const result = await repo.getStandingsWithLastNight(league_id);
     return result.rows;

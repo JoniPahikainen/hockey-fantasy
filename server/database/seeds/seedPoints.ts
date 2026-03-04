@@ -108,12 +108,19 @@ export async function seedPoints() {
       SET total_points = COALESCE(sub.total_earned, 0)
       FROM (
         SELECT 
-            rh.team_id, 
-            SUM(pgs.points_earned * CASE WHEN rh.is_captain THEN 1.3 ELSE 1 END) as total_earned
-        FROM roster_history rh
-        JOIN matches m ON m.scheduled_at::date = rh.game_date
-        JOIN player_game_stats pgs ON (pgs.player_id = rh.player_id AND pgs.match_id = m.match_id)
-        GROUP BY rh.team_id
+          r.team_id,
+          SUM(
+            pgs.points_earned *
+            CASE WHEN r.is_captain THEN 1.3 ELSE 1 END
+          ) AS total_earned
+        FROM fantasy_team_roster r
+        JOIN player_game_stats pgs 
+          ON pgs.player_id = r.player_id
+        JOIN matches m 
+          ON m.match_id = pgs.match_id
+        WHERE m.scheduled_at >= r.added_at
+          AND (r.removed_at IS NULL OR m.scheduled_at < r.removed_at)
+        GROUP BY r.team_id
       ) sub
       WHERE ft.team_id = sub.team_id;
     `);

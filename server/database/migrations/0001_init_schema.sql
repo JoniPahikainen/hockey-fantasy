@@ -108,15 +108,18 @@ CREATE TABLE IF NOT EXISTS fantasy_team_players (
 );
 
 -- 8. Roster History (For calculating points on specific dates)
-CREATE TABLE IF NOT EXISTS roster_history (
-    history_id SERIAL PRIMARY KEY,
-    team_id INT REFERENCES fantasy_teams(team_id) ON DELETE CASCADE,
-    player_id INT REFERENCES players(player_id) ON DELETE CASCADE,
-    game_date DATE NOT NULL,
+CREATE TABLE IF NOT EXISTS fantasy_team_roster (
+    roster_id SERIAL PRIMARY KEY,
+    team_id INT NOT NULL REFERENCES fantasy_teams(team_id) ON DELETE CASCADE,
+    player_id INT NOT NULL REFERENCES players(player_id) ON DELETE CASCADE,
+    added_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    removed_at TIMESTAMP NULL,
     is_captain BOOLEAN DEFAULT false,
-    UNIQUE(team_id, player_id, game_date)
+    CHECK (removed_at IS NULL OR removed_at > added_at)
 );
 
+CREATE INDEX IF NOT EXISTS idx_roster_team_player_active ON fantasy_team_roster(team_id, player_id) WHERE removed_at IS NULL;
+    
 -- 9. Trade Log
 CREATE TABLE IF NOT EXISTS trade_history (
     trade_id SERIAL PRIMARY KEY,

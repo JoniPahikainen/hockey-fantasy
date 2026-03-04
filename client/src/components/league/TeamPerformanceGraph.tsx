@@ -15,7 +15,7 @@ export default function TeamPerformanceGraph({ teamId, periodId }: Props) {
     const fetchPerformance = async () => {
       setLoading(true);
       try {
-        const { data } = await api.get(`/teams/${teamId}/performance/period/${periodId}`);
+        const { data } = await api.get(`/leagues/${teamId}/performance/period/${periodId}`);
         if (data.ok && Array.isArray(data.performance)) {
           const formatted = data.performance.map((d: any) => ({
             ...d,

@@ -13,7 +13,6 @@ export default function TeamEditor({ initialTeams, userId }: { initialTeams: any
   const [lineup, setLineup] = useState<any[]>([]);
   const [savedLineupIds, setSavedLineupIds] = useState<number[]>([]);
   const [isSaving, setIsSaving] = useState(false);
-  const [isCreatingTeam, setIsCreatingTeam] = useState(false);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [posFilter, setPosFilter] = useState("FORWARDS");

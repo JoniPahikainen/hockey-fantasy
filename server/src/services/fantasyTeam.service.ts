@@ -46,58 +46,23 @@ export const getTeamsByUserId = async (userId: number) => {
   return result.rows;
 };
 
-export const updateLineupProcess = async (
-  teamId: number,
-  playerIds: number[],
-) => {
+export const updateLineupProcess = async (teamId: number, playerIds: number[]) => {
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
 
-    await repo.deleteTeamPlayers(client, teamId);
-
-    if (playerIds.length > 0) {
-      await repo.insertTeamPlayers(client, teamId, playerIds);
-    }
-
-    const newBudget = await repo.updateTeamBudget(client, teamId, playerIds);
-
+    await repo.markRemovedPlayers(client, teamId, playerIds);
+    await repo.insertOrReactivatePlayers(client, teamId, playerIds);
+    const totalSpent = await repo.getTeamBudgetSpent(client, teamId);
+    
     await client.query("COMMIT");
-    return newBudget;
+    return totalSpent;
   } catch (err) {
     await client.query("ROLLBACK");
     throw err;
   } finally {
     client.release();
   }
-};
-
-export const getUserTeamDetails = async (userId: number) => {
-  const result = await repo.getTeamAndPlayersRaw(userId);
-
-  if (result.rows.length === 0) {
-    return null;
-  }
-  const firstRow = result.rows[0];
-
-  return {
-    team_id: firstRow.team_id,
-    team_name: firstRow.team_name,
-    budget_remaining: firstRow.budget_remaining,
-    total_points: firstRow.team_total_points,
-    players: result.rows
-      .filter((row: any) => row.player_id !== null)
-      .map((row: any) => ({
-        id: row.player_id,
-        name: row.name,
-        pos: row.pos,
-        team: row.team,
-        abbrev: row.abbrev,
-        color: row.color,
-        salary: row.salary,
-        points: parseFloat(row.points),
-      })),
-  };
 };
 
 export const getOptimalAndWorstLineups = async () => {

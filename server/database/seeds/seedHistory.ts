@@ -13,10 +13,12 @@ export async function seedHistory() {
       m.scheduled_at::date, 
       ftp.is_captain
     FROM fantasy_team_players ftp
+    JOIN fantasy_teams ft ON ftp.team_id = ft.team_id
     JOIN players p ON ftp.player_id = p.player_id
     JOIN matches m ON (p.team_abbrev = m.home_team_abbrev OR p.team_abbrev = m.away_team_abbrev)
     WHERE m.scheduled_at < NOW()
-    ON CONFLICT DO NOTHING
+      AND m.scheduled_at::date >= ft.created_at::date
+    ON CONFLICT (team_id, player_id, game_date) DO NOTHING
   `);
 
   tracker.finish();

@@ -103,53 +103,23 @@ export const saveLineup = async (req: Request, res: Response) => {
   const { team_id, playerIds } = req.body;
 
   if (!team_id || !Array.isArray(playerIds)) {
-    return res
-      .status(400)
-      .json({ ok: false, error: "Missing team_id or players" });
+    return res.status(400).json({ ok: false, error: "Missing team_id or players" });
   }
 
   try {
-    const budgetRemaining = await service.updateLineupProcess(
-      team_id,
-      playerIds,
-    );
+    const newBudget = await service.updateLineupProcess(team_id, playerIds);
 
     return res.json({
       ok: true,
       message: "Lineup saved and budget updated",
-      budget_remaining: budgetRemaining,
+      budget_remaining: newBudget,
     });
   } catch (err: any) {
-    if (err instanceof ServiceError) {
-      return res.status(err.statusCode).json({ ok: false, error: err.message });
-    }
     console.error("Error in saveLineup Controller:", err);
     return res.status(500).json({ ok: false, error: "Internal server error" });
   }
 };
 
-export const getUserTeamWithPlayers = async (req: Request, res: Response) => {
-  try {
-    const userId = Number(req.params.user_id);
-
-    if (isNaN(userId)) {
-      return res.status(400).json({ ok: false, error: "Invalid User ID" });
-    }
-
-    const teamInfo = await service.getUserTeamDetails(userId);
-
-    return res.json({
-      ok: true,
-      team: teamInfo,
-    });
-  } catch (err: any) {
-    if (err instanceof ServiceError) {
-      return res.status(err.statusCode).json({ ok: false, error: err.message });
-    }
-    console.error("Dashboard error:", err);
-    return res.status(500).json({ ok: false, error: "Internal server error" });
-  }
-};
 
 export const getOptimalLineups = async (req: Request, res: Response) => {
   try {

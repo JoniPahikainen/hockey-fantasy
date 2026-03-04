@@ -93,22 +93,7 @@ export default function HomePage() {
           }
 
           setTeamInfo({ leagueId: leagueIdForTeam, teamId: activeTeamId });
-        } else {
-          try {
-            const dashRes = await api.get(
-              `/fantasy-teams/user-dashboard/${userId}`,
-            );
-            if (dashRes.data.ok && dashRes.data.team) {
-              setUserTeam(dashRes.data.team.players);
-              setTeamInfo({
-                leagueId: dashRes.data.team.league_id,
-                teamId: dashRes.data.team.id,
-              });
-            }
-          } catch (err) {
-            console.error("Dashboard Load Error (fallback):", err);
-          }
-        }
+        } 
       } catch (err) {
         console.error("Dashboard Load Error:", err);
       } finally {
