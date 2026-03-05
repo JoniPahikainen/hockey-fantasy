@@ -108,17 +108,31 @@ export const getTeamsByOwner = (userId: number) => {
 };
 
 
-export const insertOrReactivatePlayers = async (client: any, teamId: number, playerIds: number[]) => {
+export const insertOrReactivatePlayers = async (
+  client: any,
+  teamId: number,
+  playerIds: number[]
+) => {
   if (playerIds.length === 0) return;
 
-  await client.query(
-    `
-    INSERT INTO fantasy_team_roster (team_id, player_id, added_at)
-    VALUES ${playerIds.map((pid) => `(${teamId}, ${pid}, CURRENT_TIMESTAMP)`).join(",")}
-    ON CONFLICT (team_id, player_id) DO UPDATE 
-      SET removed_at = NULL
-    `
-  );
+  for (const pid of playerIds) {
+
+    const res = await client.query(
+      `
+      UPDATE fantasy_team_roster SET removed_at = NULL
+      WHERE team_id = $1 AND player_id = $2 AND removed_at IS NOT NULL
+      RETURNING roster_id
+      `,
+      [teamId, pid]
+    );
+
+    if (res.rowCount === 0) {
+      await client.query(
+        `INSERT INTO fantasy_team_roster (team_id, player_id, added_at) VALUES ($1,$2,NOW())`,
+        [teamId, pid]
+      );
+    }
+  }
 };
 
 export const markRemovedPlayers = async (client: any, teamId: number, playerIds: number[]) => {
@@ -136,10 +150,17 @@ export const markRemovedPlayers = async (client: any, teamId: number, playerIds:
 
 export const getTeamBudgetSpent = async (client: any, teamId: number) => {
   const result = await client.query(
-    "SELECT SUM(current_price) as total_spent FROM fantasy_team_players WHERE team_id = $1",
+    `
+    SELECT COALESCE(SUM(p.current_price),0) AS total_spent
+    FROM fantasy_team_players ftp
+    JOIN players p ON p.player_id = ftp.player_id
+    WHERE ftp.team_id = $1
+    AND ftp.is_active = true
+    `,
     [teamId]
   );
-  return result.rows[0].total_spent;
+
+  return Number(result.rows[0].total_spent);
 };
 
 
