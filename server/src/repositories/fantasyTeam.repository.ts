@@ -219,33 +219,40 @@ export const getRankedLineup = async (order: "DESC" | "ASC") => {
 export const getDailyTeamPerformance = (team_id: number, period_id: number) => {
   return pool.query(
     `
-      WITH current_period AS (
-        SELECT start_date, end_date 
-        FROM scoring_periods 
-        WHERE period_id = $2
-        LIMIT 1
-      )
-      SELECT 
-        days.game_date,
-        COALESCE(SUM(pgs.points_earned * CASE WHEN r.is_captain THEN 1.3 ELSE 1 END), 0) AS points,
-        COUNT(DISTINCT pgs.player_id) AS active_players_count
-      FROM (
-        SELECT generate_series(start_date, end_date, '1 day')::date AS game_date
-        FROM current_period
-      ) days
-      LEFT JOIN fantasy_team_roster r
-        ON r.team_id = $1
-        AND r.added_at::date <= days.game_date
-        AND (r.removed_at IS NULL OR r.removed_at::date > days.game_date)
-      LEFT JOIN player_game_stats pgs
-        ON pgs.player_id = r.player_id
-      LEFT JOIN matches m
-        ON m.match_id = pgs.match_id
-        AND m.scheduled_at::date = days.game_date
-      GROUP BY days.game_date
-      ORDER BY days.game_date ASC;
-      `,
-    [team_id, period_id],
+    WITH current_period AS (
+      SELECT start_date, end_date
+      FROM scoring_periods
+      WHERE period_id = $2
+      LIMIT 1
+    ),
+    days AS (
+      SELECT generate_series(start_date, LEAST(end_date, CURRENT_DATE), '1 day')::date AS game_date
+      FROM current_period
+    )
+    SELECT
+      d.game_date,
+      ROUND(
+        COALESCE(SUM(
+          pgs.points_earned *
+          CASE WHEN r.is_captain THEN 1.3 ELSE 1 END
+        ),0)::numeric
+      ,2) AS points,
+      COUNT(DISTINCT r.player_id) AS active_players_count
+    FROM days d
+    LEFT JOIN fantasy_team_roster r
+      ON r.team_id = $1
+      AND r.added_at::date <= d.game_date
+      AND (r.removed_at IS NULL OR r.removed_at::date > d.game_date)
+    LEFT JOIN matches m
+      ON (m.scheduled_at - INTERVAL '6 hours')::date = d.game_date
+      AND m.is_processed = true
+    LEFT JOIN player_game_stats pgs
+      ON pgs.match_id = m.match_id
+      AND pgs.player_id = r.player_id
+    GROUP BY d.game_date
+    ORDER BY d.game_date;
+    `,
+    [team_id, period_id]
   );
 };
 
