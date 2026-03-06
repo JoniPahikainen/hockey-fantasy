@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS real_teams (
 -- User Roles
 CREATE TYPE user_role AS ENUM ('user', 'admin');
 
--- 2. User Management
+-- User Management
 CREATE TABLE IF NOT EXISTS users (
     user_id SERIAL PRIMARY KEY,
     username VARCHAR(50) UNIQUE NOT NULL,
@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS users (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- 3. Players
+-- Players
 CREATE TABLE IF NOT EXISTS players (
     player_id SERIAL PRIMARY KEY,
     api_id INT UNIQUE,
@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS players (
     is_injured BOOLEAN DEFAULT false
 );
 
--- 4. User fantasy_teams
+-- User fantasy_teams
 CREATE TABLE IF NOT EXISTS fantasy_teams (
     team_id SERIAL PRIMARY KEY,
     user_id INT REFERENCES users(user_id) ON DELETE CASCADE,
@@ -46,7 +46,7 @@ CREATE TABLE IF NOT EXISTS fantasy_teams (
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- 5. Matches (Real NHL Schedule)
+-- Matches (Real NHL Schedule)
 CREATE TABLE IF NOT EXISTS matches (
     api_id INT UNIQUE,
     match_id SERIAL PRIMARY KEY,
@@ -58,7 +58,7 @@ CREATE TABLE IF NOT EXISTS matches (
     is_processed BOOLEAN DEFAULT false
 );
 
--- 6. Player Performance (Stats per Match)
+-- Player Performance (Stats per Match)
 CREATE TABLE IF NOT EXISTS player_game_stats (
     stat_id SERIAL PRIMARY KEY,
     player_id INT REFERENCES players(player_id) ON DELETE CASCADE,
@@ -97,7 +97,7 @@ CREATE TABLE IF NOT EXISTS player_game_stats (
     CONSTRAINT unique_player_match UNIQUE (player_id, match_id)
 );
 
--- 7. Current Active Roster
+-- Current Active Roster
 CREATE TABLE IF NOT EXISTS fantasy_team_players (
     team_id INT REFERENCES fantasy_teams(team_id) ON DELETE CASCADE,
     player_id INT REFERENCES players(player_id) ON DELETE CASCADE,
@@ -107,7 +107,7 @@ CREATE TABLE IF NOT EXISTS fantasy_team_players (
     is_active BOOLEAN DEFAULT true
 );
 
--- 8. Roster History (For calculating points on specific dates)
+-- Roster History (For calculating points on specific dates)
 CREATE TABLE IF NOT EXISTS fantasy_team_roster (
     roster_id SERIAL PRIMARY KEY,
     team_id INT NOT NULL REFERENCES fantasy_teams(team_id) ON DELETE CASCADE,
@@ -119,18 +119,8 @@ CREATE TABLE IF NOT EXISTS fantasy_team_roster (
 );
 
 CREATE INDEX IF NOT EXISTS idx_roster_team_player_active ON fantasy_team_roster(team_id, player_id) WHERE removed_at IS NULL;
-    
--- 9. Trade Log
-CREATE TABLE IF NOT EXISTS trade_history (
-    trade_id SERIAL PRIMARY KEY,
-    team_id INT REFERENCES fantasy_teams(team_id) ON DELETE CASCADE,
-    player_out_id INT REFERENCES players(player_id) ON DELETE CASCADE,
-    player_in_id INT REFERENCES players(player_id) ON DELETE CASCADE,
-    trade_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    price_at_trade INT
-);
 
--- 10. Private Leagues
+-- Private Leagues
 CREATE TABLE IF NOT EXISTS leagues (
     league_id SERIAL PRIMARY KEY,
     name VARCHAR(50) NOT NULL,
@@ -144,14 +134,14 @@ CREATE TABLE IF NOT EXISTS league_members (
     PRIMARY KEY (league_id, team_id)
 );
 
--- 11. User Settings
+-- User Settings
 CREATE TABLE IF NOT EXISTS settings (
     user_id INT PRIMARY KEY REFERENCES users(user_id) ON DELETE CASCADE,
     email_notifications BOOLEAN DEFAULT true,
     dark_mode BOOLEAN DEFAULT false
 );
 
--- 12. Scoring System
+-- Scoring System
 CREATE TABLE IF NOT EXISTS scoring_periods (
     period_id SERIAL PRIMARY KEY,
     period_name VARCHAR(50),
@@ -159,7 +149,7 @@ CREATE TABLE IF NOT EXISTS scoring_periods (
     end_date DATE NOT NULL
 );
 
---- 13. Scoring Rules
+-- Scoring Rules
 CREATE TABLE IF NOT EXISTS scoring_rules (
     rule_key TEXT PRIMARY KEY,
     goalie NUMERIC,
@@ -167,18 +157,34 @@ CREATE TABLE IF NOT EXISTS scoring_rules (
     forward NUMERIC
 );
 
---- 14. Goalie Specific Scoring
+-- Goalie Specific Scoring
 CREATE TABLE IF NOT EXISTS goalie_save_points (
     min_saves INT,
     max_saves INT,
     points INT
 );
---- 15. Goalie Goals Against Penalties
+
+-- Goalie Goals Against Penalties
 CREATE TABLE IF NOT EXISTS goalie_goals_against_penalty (
     goals_against INT PRIMARY KEY,
     points INT
 );
 
+-- Daily Player Points
+CREATE TABLE IF NOT EXISTS daily_player_points (
+    day DATE,
+    player_id INT REFERENCES players(player_id),
+    total_points_earned NUMERIC(10, 2),
+    PRIMARY KEY (day, player_id)
+);
+
+-- Daily Team Points
+CREATE TABLE IF NOT EXISTS daily_team_points (
+    day DATE,
+    team_id INT REFERENCES fantasy_teams(team_id),
+    points_earned NUMERIC(10, 2),
+    PRIMARY KEY (day, team_id)
+);
 
 -- Initial Data Insertion for Scoring Rules
 INSERT INTO scoring_rules VALUES
