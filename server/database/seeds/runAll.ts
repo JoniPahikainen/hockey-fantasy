@@ -3,8 +3,8 @@ import { seedPlayers } from "./seedPlayers";
 import { seedMatches } from "./seedMatches";
 import { seedRawStats } from "./seedScores";
 import { seedPoints } from "./seedPoints";
+import { seedDailyPoints } from "./seedDailyPoints";
 import { Logger } from "../../src/utils/logger";
-import { seedHistory } from "./seedHistory";
 
 async function runAll() {
   const masterTracker = new Logger("MASTER_SYNC");
@@ -15,8 +15,8 @@ async function runAll() {
     { name: "PLAYERS", fn: seedPlayers },
     { name: "MATCHES", fn: seedMatches },
     { name: "SCORES", fn: seedRawStats },
-    { name: "HISTORY", fn: seedHistory },
-    { name: "POINTS", fn: seedPoints }
+    { name: "POINTS", fn: seedPoints },
+    { name: "DAILY_POINTS", fn: seedDailyPoints }
   ];
 
   try {
