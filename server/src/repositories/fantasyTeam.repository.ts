@@ -248,3 +248,26 @@ export const getDailyTeamPerformance = (team_id: number, period_id: number) => {
 export const deleteTeam = (teamId: number) => {
   return pool.query("DELETE FROM fantasy_teams WHERE team_id = $1 RETURNING team_id", [teamId]);
 };
+
+export const getTeamLastNightPoints = (teamId: number) => {
+  return pool.query(
+    `
+    WITH last_gameday AS (
+      SELECT MAX(scheduled_at)::date AS game_day
+      FROM matches
+      WHERE is_processed = true
+    )
+    SELECT COALESCE(SUM(pgs.points_earned), 0) AS last_night_points
+    FROM player_game_stats pgs
+    JOIN matches m ON pgs.match_id = m.match_id
+    WHERE m.scheduled_at::date = (SELECT game_day FROM last_gameday)
+      AND pgs.player_id IN (
+        SELECT player_id
+        FROM fantasy_team_roster
+        WHERE team_id = $1
+          AND removed_at IS NULL
+      )
+    `,
+    [teamId]
+  );
+};

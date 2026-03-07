@@ -81,3 +81,8 @@ export const deleteTeam = async (teamId: number) => {
   }
   return result.rows[0];
 };
+
+export const getTeamLastNightPoints = async (teamId: number) => {
+  const result = await repo.getTeamLastNightPoints(teamId);
+  return result.rows[0];
+};

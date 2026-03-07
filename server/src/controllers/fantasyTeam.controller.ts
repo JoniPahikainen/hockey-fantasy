@@ -155,3 +155,20 @@ export const deleteTeam = async (req: Request, res: Response) => {
     return res.status(500).json({ ok: false, error: "Internal server error" });
   }
 };
+
+export const getTeamLastNightPoints = async (req: Request, res: Response) => {
+  try {
+    const teamId = Number(req.params.team_id);
+    if (!Number.isInteger(teamId)) {
+      return res.status(400).json({ ok: false, error: "Invalid team id" });
+    }
+    const points = await service.getTeamLastNightPoints(teamId);
+    return res.json({ ok: true, points });
+  } catch (err: any) {
+    if (err instanceof ServiceError) {
+      return res.status(err.statusCode).json({ ok: false, error: err.message });
+    }
+    console.error("Error fetching team last night points:", err);
+    return res.status(500).json({ ok: false, error: "Internal server error" });
+  }
+};

@@ -85,6 +85,7 @@ export default function LeagueStandingsPage() {
             name: s.team_name,
             manager: s.owner_name,
             points: isFullSeason ? s.total_points : s.period_points,
+            lastNightPoints: s.last_night_points != null ? Number(s.last_night_points) : 0,
             lastDayPoints: 0,
             isUser: false,
           }));
@@ -274,7 +275,9 @@ export default function LeagueStandingsPage() {
                         </td>
                         <td className="px-6 py-4 text-right">
                           <span className="font-mono font-black text-lg text-text-primary">
-                            {Number(team.points || 0).toFixed(1)}
+                            {isFullSeason
+                              ? Number(team.points || 0).toFixed(1)
+                              : `${Number(team.points || 0).toFixed(1)}(${Number(team.lastNightPoints ?? 0).toFixed(0)})`}
                           </span>
                         </td>
                       </tr>

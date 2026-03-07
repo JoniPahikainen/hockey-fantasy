@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import * as service from "../services/league.service";
+import * as fantasyTeamService from "../services/fantasyTeam.service";
 import { ServiceError } from "../utils/errors";
 
 // Create a new private league
@@ -99,7 +100,15 @@ export const getLeagueStandingsByPeriod = async (
       Number(league_id),
       Number(period_id),
     );
-    return res.json({ ok: true, standings });
+    const standingsWithLastNight = await Promise.all(
+      standings.map(async (row: { team_id: number; [key: string]: unknown }) => {
+        const lastNight = await fantasyTeamService.getTeamLastNightPoints(row.team_id);
+        const last_night_points =
+          lastNight?.last_night_points != null ? Number(lastNight.last_night_points) : 0;
+        return { ...row, last_night_points };
+      }),
+    );
+    return res.json({ ok: true, standings: standingsWithLastNight });
   } catch (err) {
     if (err instanceof ServiceError) {
       return res.status(err.statusCode).json({ ok: false, error: err.message });
