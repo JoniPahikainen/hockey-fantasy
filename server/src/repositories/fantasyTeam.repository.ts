@@ -37,51 +37,40 @@ export const removePlayerFromTeam = (teamId: number, playerId: number) => {
 export const getTeamPlayers = (teamId: number) => {
   return pool.query(
     `
-      WITH last_match_info AS (
-          SELECT MAX(scheduled_at)::date AS last_gameday
-          FROM matches 
-          WHERE is_processed = true
-      ),
-      target_window AS (
-          SELECT 
-            (last_gameday + time '12:00:00' - interval '1 day') AS window_start,
-            (last_gameday + time '12:00:00') AS window_end
-          FROM last_match_info
-      )
-      SELECT 
-        p.player_id, 
-        (p.first_name || ' ' || p.last_name) AS name, 
-        p.position AS pos, 
-        p.team_abbrev AS team,
-        p.current_price AS salary,
-        rt.primary_color AS color,
-        COALESCE(
-          SUM(
-            CASE 
-              WHEN m.scheduled_at >= target_window.window_start 
-               AND m.scheduled_at < target_window.window_end 
-               AND r.roster_id IS NOT NULL
-              THEN pgs.points_earned 
-              ELSE 0
-            END
-          ), 0
-        ) AS points
-      FROM players p
-      JOIN real_teams rt ON p.team_abbrev = rt.abbreviation
-      JOIN fantasy_team_players ftp ON p.player_id = ftp.player_id
-      LEFT JOIN player_game_stats pgs ON p.player_id = pgs.player_id
-      LEFT JOIN matches m ON pgs.match_id = m.match_id
-      LEFT JOIN fantasy_team_roster r
-        ON r.team_id = $1
-        AND r.player_id = p.player_id
-        AND r.added_at <= m.scheduled_at
-        AND (r.removed_at IS NULL OR r.removed_at > m.scheduled_at)
-      CROSS JOIN target_window
-      WHERE ftp.team_id = $1
-      GROUP BY 
-        p.player_id, p.first_name, p.last_name, p.position, 
-        p.team_abbrev, p.current_price, rt.primary_color,
-        target_window.window_start, target_window.window_end;
+    WITH last_gameday AS (
+        SELECT MAX(scheduled_at)::date AS game_day
+        FROM matches
+        WHERE is_processed = true
+    )
+    SELECT 
+      p.player_id,
+      (p.first_name || ' ' || p.last_name) AS name,
+      p.position AS pos,
+      p.team_abbrev AS team,
+      p.current_price AS salary,
+      rt.primary_color AS color,
+      COALESCE(
+        SUM(
+          CASE
+            WHEN m.scheduled_at::date = last_gameday.game_day
+            THEN pgs.points_earned
+            ELSE 0
+          END
+        ),0
+      ) AS points
+    FROM fantasy_team_roster r
+    JOIN players p ON p.player_id = r.player_id
+    JOIN real_teams rt ON p.team_abbrev = rt.abbreviation
+    LEFT JOIN player_game_stats pgs ON p.player_id = pgs.player_id
+    LEFT JOIN matches m ON pgs.match_id = m.match_id
+    CROSS JOIN last_gameday
+    WHERE r.team_id = $1
+      AND r.removed_at IS NULL
+    GROUP BY
+      p.player_id, p.first_name, p.last_name, p.position,
+      p.team_abbrev, p.current_price, rt.primary_color,
+      last_gameday.game_day
+    ORDER BY name;
     `,
     [teamId],
   );
