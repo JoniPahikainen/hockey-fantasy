@@ -228,9 +228,6 @@ export default function LeagueStandingsPage() {
               <h2 className="text-xs font-black text-text-inverse uppercase tracking-[0.2em]">
                 Rankings
               </h2>
-              <span className="text-[10px] font-bold text-text-muted-subtle uppercase italic">
-                Updated Live
-              </span>
             </div>
 
             <div className="overflow-x-auto">
@@ -241,9 +238,12 @@ export default function LeagueStandingsPage() {
                       Rank
                     </th>
                     <th className="px-6 py-3 text-[10px] font-black uppercase text-text-muted-subtle">
-                      Team / Manager
+                      Team
                     </th>
-                    <th className="px-6 py-3 text-[10px] font-black uppercase text-text-muted-subtle text-right">
+                    <th className="px-6 py-3 text-[10px] font-black uppercase text-text-muted-subtle">
+                      Manager
+                    </th>
+                    <th className="px-6 py-3 text-[10px] font-black uppercase text-text-muted-subtle text-center w-28">
                       Points
                     </th>
                   </tr>
@@ -259,33 +259,42 @@ export default function LeagueStandingsPage() {
                       >
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-3">
-                            <span className="font-mono font-black text-lg">{team.rank}</span>
+                            <span className="font-black font-black text-lg">{team.rank}</span>
                             <span className="text-[8px]">{getMovement(team.rank, team.previousRank)}</span>
                           </div>
                         </td>
                         <td className="px-6 py-4">
-                          <div className="flex flex-col">
-                            <span className="text-sm font-black uppercase text-text-secondary group-hover:text-accent-primary transition-colors">
-                              {team.name} {expandedTeamId === team.teamId ? '▴' : '▾'}
-                            </span>
-                            <span className="text-[10px] font-bold text-text-muted-subtle uppercase italic">
-                              {team.manager}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                          <span className="font-mono font-black text-lg text-text-primary">
-                            {isFullSeason
-                              ? Number(team.points || 0).toFixed(1)
-                              : `${Number(team.points || 0).toFixed(1)}(${Number(team.lastNightPoints ?? 0).toFixed(0)})`}
+                          <span className="text-sm font-black uppercase text-text-secondary group-hover:text-accent-primary transition-colors">
+                            {team.name} {expandedTeamId === team.teamId ? '▴' : '▾'}
                           </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className="text-sm font-black uppercase text-text-secondary">
+                            {team.manager}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 w-28 text-center">
+                          {isFullSeason ? (
+                            <span className="text-sm font-black text-text-primary">
+                              {Number(team.points || 0).toFixed(1)}
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-baseline justify-center gap-1">
+                              <span className="font-black text-text-primary">
+                                {Number(team.points ?? 0).toFixed(0)}
+                              </span>
+                              <span className="font-black text-sm text-text-muted-subtle">
+                                ({Number(team.lastNightPoints || 0).toFixed(1)})
+                              </span>
+                            </span>
+                          )}
                         </td>
                       </tr>
                       
                       {/* THE GRAPH SECTION */}
                       {expandedTeamId === team.teamId && (
                         <tr>
-                          <td colSpan={3} className="p-0 border-b border-border-input">
+                          <td colSpan={4} className="p-0 border-b border-border-input">
                             <TeamPerformanceGraph 
                               teamId={team.teamId} 
                               periodId={activePeriod} 
