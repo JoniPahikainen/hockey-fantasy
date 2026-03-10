@@ -99,10 +99,10 @@ export default function LeagueStandingsTable({
                     ) : (
                       <span className="inline-flex items-baseline justify-center gap-1">
                         <span className="font-mono font-black text-lg text-text-primary">
-                          {Number(team.lastNightPoints ?? 0).toFixed(0)}
+                          {Number(team.points ?? 0).toFixed(0)}
                         </span>
                         <span className="font-mono text-sm text-text-muted-subtle">
-                          ({Number(team.points || 0).toFixed(1)})
+                          ({Number(team.lastNightPoints || 0).toFixed(1)})
                         </span>
                       </span>
                     )}
