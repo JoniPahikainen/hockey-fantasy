@@ -9,6 +9,7 @@ import {
   getLeaguesByUserId,
   getCurrentPeriod,
   getDailyTeamPerformance,
+  getDailyPlayerBreakdown,
 } from "../controllers/league.controller";
 
 const router = Router();
@@ -22,4 +23,5 @@ router.get("/leagues/:league_id/standings/with-last-night", getStandingsWithLast
 router.get("/leagues/user/:user_id", getLeaguesByUserId);
 router.get("/leagues/current-period", getCurrentPeriod);
 router.get("/leagues/:team_id/performance/period/:period_id", getDailyTeamPerformance);
+router.get("/leagues/:team_id/performance/day/:date", getDailyPlayerBreakdown);
 export default router;

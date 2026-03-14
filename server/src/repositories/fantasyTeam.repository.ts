@@ -249,6 +249,46 @@ export const deleteTeam = (teamId: number) => {
   return pool.query("DELETE FROM fantasy_teams WHERE team_id = $1 RETURNING team_id", [teamId]);
 };
 
+export const getDailyPlayerBreakdown = (
+  team_id: number,
+  game_date: string,
+) => {
+  return pool.query(
+    `
+    WITH roster_on_day AS (
+      SELECT r.player_id, r.is_captain
+      FROM fantasy_team_roster r
+      WHERE r.team_id = $1
+        AND r.added_at::date <= $2::date
+        AND (r.removed_at IS NULL OR r.removed_at::date > $2::date)
+    ),
+    day_matches AS (
+      SELECT m.match_id
+      FROM matches m
+      WHERE (m.scheduled_at - INTERVAL '6 hours')::date = $2::date
+        AND m.is_processed = true
+    )
+    SELECT
+      (p.first_name || ' ' || p.last_name) AS player_name,
+      ROUND(
+        (
+          COALESCE(SUM(pgs.points_earned), 0) *
+          CASE WHEN r.is_captain THEN 1.3 ELSE 1 END
+        )::numeric,
+        1
+      ) AS points
+    FROM roster_on_day r
+    JOIN players p ON p.player_id = r.player_id
+    LEFT JOIN player_game_stats pgs
+      ON pgs.player_id = r.player_id
+      AND pgs.match_id IN (SELECT match_id FROM day_matches)
+    GROUP BY p.player_id, p.first_name, p.last_name, r.is_captain
+    ORDER BY points DESC;
+    `,
+    [team_id, game_date],
+  );
+};
+
 export const getTeamLastNightPoints = (teamId: number) => {
   return pool.query(
     `

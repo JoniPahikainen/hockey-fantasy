@@ -1,6 +1,9 @@
 import bcrypt from "bcrypt";
 import * as repo from "../repositories/league.repository";
-import { getDailyTeamPerformance as fetchTeamPerformance } from "../repositories/fantasyTeam.repository";
+import {
+  getDailyTeamPerformance as fetchTeamPerformance,
+  getDailyPlayerBreakdown as fetchDailyPlayerBreakdown,
+} from "../repositories/fantasyTeam.repository";
 import { ServiceError } from "../utils/errors";
 
 export const createLeague = async (
@@ -97,5 +100,13 @@ export const getDailyTeamPerformance = async (
   period_id: number,
 ) => {
     const result = await fetchTeamPerformance(team_id, period_id);
+    return result.rows;
+};
+
+export const getDailyPlayerBreakdown = async (
+  team_id: number,
+  game_date: string,
+) => {
+    const result = await fetchDailyPlayerBreakdown(team_id, game_date);
     return result.rows;
 };

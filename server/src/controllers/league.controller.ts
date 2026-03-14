@@ -195,3 +195,26 @@ export const getDailyTeamPerformance = async (req: Request, res: Response) => {
     return res.status(500).json({ ok: false, error: "Internal server error" });
   }
 };
+
+// Get daily player breakdown (players and points for one day)
+export const getDailyPlayerBreakdown = async (req: Request, res: Response) => {
+  try {
+    const { team_id, date } = req.params;
+    if (!team_id || !date) {
+      return res
+        .status(400)
+        .json({ ok: false, error: "Team ID and date (YYYY-MM-DD) are required" });
+    }
+    const breakdown = await service.getDailyPlayerBreakdown(
+      Number(team_id),
+      date,
+    );
+    return res.json({ ok: true, breakdown });
+  } catch (err) {
+    if (err instanceof ServiceError) {
+      return res.status(err.statusCode).json({ ok: false, error: err.message });
+    }
+    console.error("Error fetching daily player breakdown:", err);
+    return res.status(500).json({ ok: false, error: "Internal server error" });
+  }
+};
