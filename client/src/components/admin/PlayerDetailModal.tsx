@@ -23,6 +23,8 @@ interface PlayerDetailModalProps {
   onClose: () => void;
   onUpdated?: () => void;
   initialScope?: DataScope;
+  /** When true, use GET /players/:id (for team page). When false, use GET /admin/players/:id (admin only). */
+  usePublicApi?: boolean;
 }
 
 interface PlayerDetail {
@@ -70,6 +72,7 @@ export default function PlayerDetailModal({
   playerId,
   onClose,
   initialScope = "all",
+  usePublicApi = false,
 }: PlayerDetailModalProps) {
   const [scope, setScope] = useState<DataScope>(initialScope);
   const [detail, setDetail] = useState<PlayerDetail | null>(null);
@@ -77,10 +80,11 @@ export default function PlayerDetailModal({
 
   useEffect(() => {
     let cancelled = false;
+    const url = usePublicApi ? `/players/${playerId}` : `/admin/players/${playerId}`;
     (async () => {
       setLoading(true);
       try {
-        const res = await api.get(`/admin/players/${playerId}`, {
+        const res = await api.get(url, {
           params: { season: scope },
         });
         if (res.data.ok && !cancelled) setDetail(res.data.player);
@@ -93,7 +97,7 @@ export default function PlayerDetailModal({
     return () => {
       cancelled = true;
     };
-  }, [playerId, scope]);
+  }, [playerId, scope, usePublicApi]);
 
   if (loading || !detail) {
     return (

@@ -172,3 +172,42 @@ export const getTeamLastNightPoints = async (req: Request, res: Response) => {
     return res.status(500).json({ ok: false, error: "Internal server error" });
   }
 };
+
+export const setCaptain = async (req: Request, res: Response) => {
+  try {
+    const teamId = Number(req.params.team_id);
+    const playerId = req.body.player_id != null ? Number(req.body.player_id) : null;
+    if (!Number.isInteger(teamId)) {
+      return res.status(400).json({ ok: false, error: "Invalid team id" });
+    }
+    await service.setCaptain(teamId, playerId);
+    return res.json({ ok: true });
+  } catch (err: any) {
+    if (err instanceof ServiceError) {
+      return res.status(err.statusCode).json({ ok: false, error: err.message });
+    }
+    console.error("Error setting captain:", err);
+    return res.status(500).json({ ok: false, error: "Internal server error" });
+  }
+};
+
+export const getCaptainForDate = async (req: Request, res: Response) => {
+  try {
+    const teamId = Number(req.params.team_id);
+    const date = req.query.date as string;
+    if (!Number.isInteger(teamId)) {
+      return res.status(400).json({ ok: false, error: "Invalid team id" });
+    }
+    if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      return res.status(400).json({ ok: false, error: "Query param date required (YYYY-MM-DD)" });
+    }
+    const playerId = await service.getCaptainForDate(teamId, date);
+    return res.json({ ok: true, captain_player_id: playerId });
+  } catch (err: any) {
+    if (err instanceof ServiceError) {
+      return res.status(err.statusCode).json({ ok: false, error: err.message });
+    }
+    console.error("Error fetching captain for date:", err);
+    return res.status(500).json({ ok: false, error: "Internal server error" });
+  }
+};

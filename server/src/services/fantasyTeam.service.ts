@@ -54,7 +54,7 @@ export const updateLineupProcess = async (teamId: number, playerIds: number[]) =
     await repo.markRemovedPlayers(client, teamId, playerIds);
     await repo.insertOrReactivatePlayers(client, teamId, playerIds);
     const totalSpent = await repo.getTeamBudgetSpent(client, teamId);
-    
+
     await client.query("COMMIT");
     return totalSpent;
   } catch (err) {
@@ -63,6 +63,28 @@ export const updateLineupProcess = async (teamId: number, playerIds: number[]) =
   } finally {
     client.release();
   }
+};
+
+export const setCaptain = async (
+  teamId: number,
+  playerId: number | null,
+) => {
+  const teamCheck = await repo.teamExists(teamId);
+  if (teamCheck.rowCount === 0) {
+    throw new ServiceError("Team not found", 404);
+  }
+  await repo.setTeamCaptainStandalone(teamId, playerId);
+};
+
+export const getCaptainForDate = async (
+  teamId: number,
+  date: string,
+): Promise<number | null> => {
+  const teamCheck = await repo.teamExists(teamId);
+  if (teamCheck.rowCount === 0) {
+    throw new ServiceError("Team not found", 404);
+  }
+  return repo.getCaptainForDate(teamId, date);
 };
 
 export const getOptimalAndWorstLineups = async () => {

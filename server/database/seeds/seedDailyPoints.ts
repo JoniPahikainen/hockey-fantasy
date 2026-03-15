@@ -23,20 +23,25 @@ export async function seedDailyPoints() {
       SET total_points_earned = EXCLUDED.total_points_earned;
     `);
 
-    tracker.log("INFO", "Upserting daily_team_points from roster history...");
+    tracker.log("INFO", "Upserting daily_team_points from roster history (captain per day from captain_history)...");
     await client.query(`
       INSERT INTO daily_team_points (day, team_id, points_earned)
       SELECT
         ld.day,
         ld.team_id,
         ROUND(SUM(dpp.total_points_earned *
-            CASE WHEN ld.is_captain THEN 1.3 ELSE 1 END)::numeric,2)
+            CASE WHEN ld.is_captain_on_day THEN 1.3 ELSE 1 END)::numeric,2)
       FROM (
         SELECT
           r.team_id,
           r.player_id,
-          r.is_captain,
-          d.day
+          d.day,
+          EXISTS (
+            SELECT 1 FROM captain_history ch
+            WHERE ch.team_id = r.team_id AND ch.player_id = r.player_id
+              AND ch.from_date <= d.day
+              AND (ch.to_date IS NULL OR ch.to_date >= d.day)
+          ) AS is_captain_on_day
         FROM fantasy_team_roster r
         JOIN (
           SELECT DISTINCT (scheduled_at - INTERVAL '6 hours')::date AS day

@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import TeamHeader from "./TeamHeader";
 import FormationCard from "./FormationCard";
+import PlayerDetailModal from "../admin/PlayerDetailModal";
 import api from "../../lib/api";
 import { useActiveTeam } from "../../context/ActiveTeamContext";
 
@@ -12,6 +13,8 @@ export default function TeamEditor({ initialTeams, userId }: { initialTeams: any
   const [selectedTeamId, setSelectedTeamId] = useState<number | null>(null);
   const [lineup, setLineup] = useState<any[]>([]);
   const [savedLineupIds, setSavedLineupIds] = useState<number[]>([]);
+  const [captainId, setCaptainId] = useState<number | null>(null);
+  const [detailPlayerId, setDetailPlayerId] = useState<number | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
   const [searchTerm, setSearchTerm] = useState("");
@@ -47,6 +50,8 @@ export default function TeamEditor({ initialTeams, userId }: { initialTeams: any
         const p = res.data.players.map((x: any) => ({ ...x, id: x.player_id }));
         setLineup(p);
         setSavedLineupIds(p.map((x: any) => x.id));
+        const cap = p.find((x: any) => x.is_captain);
+        setCaptainId(cap ? cap.id : null);
       }
     };
     fetchLineup();
@@ -90,8 +95,10 @@ export default function TeamEditor({ initialTeams, userId }: { initialTeams: any
     setIsSaving(false);
   };
 
-  const removeFromLineup = (id: number) =>
+  const removeFromLineup = (id: number) => {
     setLineup((prev) => prev.filter((p) => p.id !== id));
+    if (captainId === id) setCaptainId(null);
+  };
 
   const addToLineup = (player: any) => {
     if (lineup.find((p) => p.id === player.id)) return;
@@ -101,6 +108,19 @@ export default function TeamEditor({ initialTeams, userId }: { initialTeams: any
       limits[player.pos as keyof typeof limits]
     ) {
       setLineup([...lineup, player]);
+    }
+  };
+
+  const setCaptain = async (playerId: number) => {
+    const newId = captainId === playerId ? null : playerId;
+    if (selectedTeamId == null) return;
+    try {
+      await api.patch(`/fantasy-teams/${selectedTeamId}/captain`, {
+        player_id: newId,
+      });
+      setCaptainId(newId);
+    } catch (err) {
+      console.error(err);
     }
   };
 
@@ -181,6 +201,8 @@ export default function TeamEditor({ initialTeams, userId }: { initialTeams: any
                 key={`f-${i}`}
                 label="FWD"
                 onRemove={removeFromLineup}
+                onSetCaptain={setCaptain}
+                isCaptain={lineup.filter((p) => p.pos === "F")[i]?.id === captainId}
                 player={lineup.filter((p) => p.pos === "F")[i]}
               />
             ))}
@@ -191,6 +213,8 @@ export default function TeamEditor({ initialTeams, userId }: { initialTeams: any
                 key={`d-${i}`}
                 label="DEF"
                 onRemove={removeFromLineup}
+                onSetCaptain={setCaptain}
+                isCaptain={lineup.filter((p) => p.pos === "D")[i]?.id === captainId}
                 player={lineup.filter((p) => p.pos === "D")[i]}
               />
             ))}
@@ -200,6 +224,8 @@ export default function TeamEditor({ initialTeams, userId }: { initialTeams: any
               label="GOALIE"
               isGoalie
               onRemove={removeFromLineup}
+              onSetCaptain={setCaptain}
+              isCaptain={lineup.find((p) => p.pos === "G")?.id === captainId}
               player={lineup.find((p) => p.pos === "G")}
             />
           </div>
@@ -275,7 +301,7 @@ export default function TeamEditor({ initialTeams, userId }: { initialTeams: any
                 >
                   Salary
                 </th>
-                <th className="px-6 py-4 text-center">Action</th>
+                <th className="px-6 py-4 text-center w-32">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border-subtle">
@@ -307,13 +333,22 @@ export default function TeamEditor({ initialTeams, userId }: { initialTeams: any
                       ${formatSalary(player.salary)}
                     </td>
                     <td className="px-6 py-4 text-center">
-                      <button
-                        onClick={() => addToLineup(player)}
-                        disabled={isSelected}
-                        className="text-[9px] font-black uppercase px-6 py-2 border border-border-strong hover:bg-bg-sidebar hover:text-text-inverse disabled:opacity-0 transition-all"
-                      >
-                        Select
-                      </button>
+                      <span className="flex items-center justify-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setDetailPlayerId(playerId)}
+                          className="text-[9px] font-black uppercase text-accent-primary hover:underline"
+                        >
+                          View
+                        </button>
+                        <button
+                          onClick={() => addToLineup(player)}
+                          disabled={isSelected}
+                          className="text-[9px] font-black uppercase px-6 py-2 border border-border-strong hover:bg-bg-sidebar hover:text-text-inverse disabled:opacity-0 transition-all"
+                        >
+                          Select
+                        </button>
+                      </span>
                     </td>
                   </tr>
                 );
@@ -322,6 +357,15 @@ export default function TeamEditor({ initialTeams, userId }: { initialTeams: any
           </table>
         </div>
       </section>
+
+      {detailPlayerId != null && (
+        <PlayerDetailModal
+          playerId={detailPlayerId}
+          onClose={() => setDetailPlayerId(null)}
+          usePublicApi
+          initialScope="period"
+        />
+      )}
     </div>
   );
 }

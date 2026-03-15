@@ -5,6 +5,7 @@ import { seedRawStats } from "./seedScores";
 import { seedPoints } from "./seedPoints";
 import { seedDailyPoints } from "./seedDailyPoints";
 import { Logger } from "../../src/utils/logger";
+import { processPeriodPriceUpdate } from "../../src/services/price.service";
 
 async function runAll() {
   const masterTracker = new Logger("MASTER_SYNC");
@@ -16,7 +17,8 @@ async function runAll() {
     { name: "MATCHES", fn: seedMatches },
     { name: "SCORES", fn: seedRawStats },
     { name: "POINTS", fn: seedPoints },
-    { name: "DAILY_POINTS", fn: seedDailyPoints }
+    { name: "DAILY_POINTS", fn: seedDailyPoints },
+    { name: "PROCESS_PERIOD_PRICES", fn: async () => await processPeriodPriceUpdate(0) },
   ];
 
   try {
