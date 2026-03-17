@@ -1,15 +1,14 @@
 import { useState, useMemo, useEffect } from "react";
 import TeamHeader from "./TeamHeader";
 import FormationCard from "./FormationCard";
-import PlayerDetailModal from "../admin/PlayerDetailModal";
+import PlayerDetailModal from "./PlayerDetailModal";
 import api from "../../lib/api";
 import { useActiveTeam } from "../../context/ActiveTeamContext";
 
 type SortKey = "name" | "pos" | "team" | "points" | "salary";
 
-export default function TeamEditor({ initialTeams, userId }: { initialTeams: any[], userId: number }) {
+export default function TeamEditor({ userId }: { userId: number }) {
   const [playerPool, setPlayerPool] = useState<any[]>([]);
-  const [userTeams, setUserTeams] = useState(initialTeams);
   const [selectedTeamId, setSelectedTeamId] = useState<number | null>(null);
   const [lineup, setLineup] = useState<any[]>([]);
   const [savedLineupIds, setSavedLineupIds] = useState<number[]>([]);
@@ -81,13 +80,6 @@ export default function TeamEditor({ initialTeams, userId }: { initialTeams: any
       });
       if (res.data.ok) {
         setSavedLineupIds(lineup.map((p) => p.id));
-        setUserTeams((prev) =>
-          prev.map((t) =>
-            t.team_id === selectedTeamId
-              ? { ...t, budget_remaining: res.data.budget_remaining }
-              : t
-          )
-        );
       }
     } catch (err) {
       console.error(err);
@@ -362,7 +354,6 @@ export default function TeamEditor({ initialTeams, userId }: { initialTeams: any
         <PlayerDetailModal
           playerId={detailPlayerId}
           onClose={() => setDetailPlayerId(null)}
-          usePublicApi
           initialScope="period"
         />
       )}

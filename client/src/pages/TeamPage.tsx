@@ -35,7 +35,6 @@ export default function DailyTeamPage() {
       <div className="flex-1 flex flex-col ml-16 overflow-hidden">
         {userTeams.length > 0 ? (
           <TeamEditor 
-            initialTeams={userTeams} 
             userId={user.id} 
           />
         ) : (

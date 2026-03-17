@@ -1,5 +1,4 @@
 import { Router } from "express";
-import { authenticate } from "../middleware/auth";
 import {
   getPlayerPool,
   getPlayerPoolWithPeriodPoints,
@@ -10,6 +9,6 @@ const router = Router();
 
 router.get("/players", getPlayerPool);
 router.get("/players/period", getPlayerPoolWithPeriodPoints);
-router.get("/players/:id", authenticate, getPlayerDetail);
+router.get("/players/:id", getPlayerDetail);
 
 export default router;

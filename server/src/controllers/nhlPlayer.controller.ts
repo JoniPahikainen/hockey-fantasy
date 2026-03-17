@@ -30,7 +30,7 @@ export const getPlayerDetail = async (req: Request, res: Response) => {
     const raw = (req.query.season as string)?.toLowerCase();
     const scope =
       raw === "period" ? "period" : raw === "current" ? "current" : "all";
-    const detail = await adminService.getPlayerDetail(id, scope);
+    const detail = await service.getPlayerDetail(id, scope);
     if (!detail)
       return res.status(404).json({ ok: false, error: "Player not found" });
     return res.json({ ok: true, player: detail });
