@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import api from "../../lib/api";
-import PlayerDetailModal from "./PlayerDetailModal";
+import PlayerDetailModal from "../team/PlayerDetailModal";
 
 interface PlayerRow {
   id: number;

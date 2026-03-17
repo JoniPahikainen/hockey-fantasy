@@ -17,23 +17,15 @@ export const getMarketOverview = async (req: AuthRequest, res: Response) => {
   }
 };
 
-export const getPlayerDetail = async (req: AuthRequest, res: Response) => {
+export const getScoringRules = async (_req: AuthRequest, res: Response) => {
   try {
-    const id = parseInt(req.params.id ?? "", 10);
-    if (isNaN(id))
-      return res.status(400).json({ ok: false, error: "Invalid player ID" });
-    const raw = (req.query.season as string)?.toLowerCase();
-    const scope =
-      raw === "period" ? "period" : raw === "current" ? "current" : "all";
-    const detail = await service.getPlayerDetail(id, scope);
-    if (!detail)
-      return res.status(404).json({ ok: false, error: "Player not found" });
-    return res.json({ ok: true, player: detail });
+    const data = await service.getScoringRules();
+    return res.json({ ok: true, ...data });
   } catch (err) {
-    console.error("Admin getPlayerDetail:", err);
+    console.error("Admin getScoringRules:", err);
     return res
       .status(500)
-      .json({ ok: false, error: "Failed to load player detail" });
+      .json({ ok: false, error: "Failed to load scoring rules" });
   }
 };
 

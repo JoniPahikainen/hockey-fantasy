@@ -2,7 +2,7 @@ import { Router } from "express";
 import { authenticate, requireAdmin } from "../middleware/auth";
 import {
   getMarketOverview,
-  getPlayerDetail,
+  getScoringRules,
   updatePlayer,
 } from "../controllers/admin.controller";
 import {
@@ -18,7 +18,7 @@ router.use(authenticate);
 router.use(requireAdmin);
 
 router.get("/admin/players", getMarketOverview);
-router.get("/admin/players/:id", getPlayerDetail);
+router.get("/admin/scoring-rules", getScoringRules);
 router.patch("/admin/players/:id", updatePlayer);
 
 router.post("/admin/economy/regenerate-start-prices", actionRegenerateStartPrices);

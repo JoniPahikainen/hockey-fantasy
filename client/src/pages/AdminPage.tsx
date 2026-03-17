@@ -2,8 +2,9 @@ import { useState } from "react";
 import Sidebar from "../components/common/Sidebar";
 import MarketOverviewTable from "../components/admin/MarketOverviewTable";
 import EconomyControls from "../components/admin/EconomyControls";
+import BalanceView from "../components/admin/BalanceView";
 
-type Tab = "players" | "economy";
+type Tab = "players" | "economy" | "balance";
 
 export default function AdminPage() {
   const [activeTab, setActiveTab] = useState<Tab>("players");
@@ -11,6 +12,7 @@ export default function AdminPage() {
   const tabs: { id: Tab; label: string }[] = [
     { id: "players", label: "Players – Market Overview" },
     { id: "economy", label: "Economy Controls" },
+    { id: "balance", label: "Balance" },
   ];
 
   return (
@@ -44,6 +46,7 @@ export default function AdminPage() {
 
         {activeTab === "players" && <MarketOverviewTable />}
         {activeTab === "economy" && <EconomyControls />}
+        {activeTab === "balance" && <BalanceView />}
       </div>
     </div>
   );

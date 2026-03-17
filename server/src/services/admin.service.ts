@@ -3,10 +3,6 @@ import * as repo from "../repositories/admin.repository";
 export const getMarketOverview = (scope?: "current" | "all" | "period") =>
   repo.findAllPlayersForMarket(scope ?? "all");
 
-export const getPlayerDetail = (
-  playerId: number,
-  scope?: "current" | "all" | "period",
-) => repo.getPlayerDetail(playerId, scope ?? "all");
 
 export const updatePlayerMarket = async (
   userId: number,
@@ -27,3 +23,5 @@ export const updatePlayerMarket = async (
   }
   return updated;
 };
+
+export const getScoringRules = () => repo.getScoringRules();
