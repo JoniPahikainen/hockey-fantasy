@@ -453,3 +453,43 @@ export const getTeamLastNightPoints = (teamId: number) => {
     [teamId]
   );
 };
+
+export const getTradeLockConfig = () => {
+  return pool.query(
+    `
+    SELECT id, is_enabled, lock_window_minutes, manual_lock, manual_unlock_until
+    FROM trade_lock_config
+    WHERE id = 1
+    LIMIT 1
+    `,
+  );
+};
+
+export const getFirstUnprocessedMatchTime = () => {
+  return pool.query(
+    `
+    SELECT MIN(scheduled_at) AS next_match_at
+    FROM matches
+    WHERE is_processed = false
+    `,
+  );
+};
+
+export const markTradeOpenAfterSeed = () => {
+  return pool.query(
+    `
+    UPDATE trade_lock_config c
+    SET
+      manual_lock = false,
+      manual_unlock_until = (
+        SELECT m.scheduled_at - make_interval(mins => c.lock_window_minutes)
+        FROM matches m
+        WHERE m.is_processed = false
+        ORDER BY m.scheduled_at
+        LIMIT 1
+      ),
+      updated_at = CURRENT_TIMESTAMP
+    WHERE c.id = 1
+    `,
+  );
+};

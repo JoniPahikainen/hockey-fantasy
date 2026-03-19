@@ -115,6 +115,9 @@ export const saveLineup = async (req: Request, res: Response) => {
       budget_remaining: newBudget,
     });
   } catch (err: any) {
+    if (err instanceof ServiceError) {
+      return res.status(err.statusCode).json({ ok: false, error: err.message });
+    }
     console.error("Error in saveLineup Controller:", err);
     return res.status(500).json({ ok: false, error: "Internal server error" });
   }
@@ -208,6 +211,19 @@ export const getCaptainForDate = async (req: Request, res: Response) => {
       return res.status(err.statusCode).json({ ok: false, error: err.message });
     }
     console.error("Error fetching captain for date:", err);
+    return res.status(500).json({ ok: false, error: "Internal server error" });
+  }
+};
+
+export const getTradeLockStatus = async (_req: Request, res: Response) => {
+  try {
+    const status = await service.getTradeLockStatus();
+    return res.json({ ok: true, status });
+  } catch (err: any) {
+    if (err instanceof ServiceError) {
+      return res.status(err.statusCode).json({ ok: false, error: err.message });
+    }
+    console.error("Error fetching trade lock status:", err);
     return res.status(500).json({ ok: false, error: "Internal server error" });
   }
 };
