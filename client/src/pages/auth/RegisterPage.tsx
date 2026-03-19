@@ -92,7 +92,7 @@ export default function RegisterPage() {
                   type="text"
                   required
                   disabled={isLoading}
-                  className="bg-bg-secondary border border-border-default p-3 text-[12px] font-bold outline-none focus:border-border-focus transition-all disabled:opacity-50"
+                  className="bg-bg-secondary text-text-primary border border-border-default p-3 text-[12px] font-bold outline-none focus:border-border-focus transition-all disabled:opacity-50"
                   placeholder="Manager_Name"
                   value={formData.username}
                   onChange={(e) => setFormData({ ...formData, username: e.target.value })}
@@ -107,7 +107,7 @@ export default function RegisterPage() {
                   type="email"
                   required
                   disabled={isLoading}
-                  className="bg-bg-secondary border border-border-default p-3 text-[12px] font-bold outline-none focus:border-border-focus transition-all disabled:opacity-50"
+                  className="bg-bg-secondary text-text-primary border border-border-default p-3 text-[12px] font-bold outline-none focus:border-border-focus transition-all disabled:opacity-50"
                   placeholder="name@league.com"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
@@ -122,7 +122,7 @@ export default function RegisterPage() {
                   type="password"
                   required
                   disabled={isLoading}
-                  className="bg-bg-secondary border border-border-default p-3 text-[12px] font-bold outline-none focus:border-border-focus transition-all disabled:opacity-50"
+                  className="bg-bg-secondary text-text-primary border border-border-default p-3 text-[12px] font-bold outline-none focus:border-border-focus transition-all disabled:opacity-50"
                   placeholder="••••••••"
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}

@@ -26,6 +26,13 @@ export default function LoginPage() {
       if (res.data.token) {
         localStorage.setItem("token", res.data.token);
         localStorage.setItem("user", JSON.stringify(res.data.user));
+        const darkMode = Boolean(res.data.user?.dark_mode);
+        localStorage.setItem("theme", darkMode ? "dark" : "light");
+        if (darkMode) {
+          document.documentElement.dataset.theme = "dark";
+        } else {
+          document.documentElement.removeAttribute("data-theme");
+        }
         
         navigate("/", { replace: true });
       }
@@ -85,7 +92,7 @@ export default function LoginPage() {
                   type="email"
                   required
                   disabled={isLoading}
-                  className="bg-bg-secondary border border-border-default p-3 text-[12px] font-bold outline-none focus:border-border-focus transition-all disabled:opacity-50"
+                  className="bg-bg-secondary text-text-primary border border-border-default p-3 text-[12px] font-bold outline-none focus:border-border-focus transition-all disabled:opacity-50"
                   placeholder="name@league.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -94,13 +101,13 @@ export default function LoginPage() {
 
               <div className="flex flex-col gap-1.5">
                 <label className="text-[10px] font-black text-text-muted uppercase tracking-widest">
-                  Access Key
+                  Password
                 </label>
                 <input
                   type="password"
                   required
                   disabled={isLoading}
-                  className="bg-bg-secondary border border-border-default p-3 text-[12px] font-bold outline-none focus:border-border-focus transition-all disabled:opacity-50"
+                  className="bg-bg-secondary text-text-primary border border-border-default p-3 text-[12px] font-bold outline-none focus:border-border-focus transition-all disabled:opacity-50"
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
