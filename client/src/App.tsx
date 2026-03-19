@@ -3,6 +3,7 @@ import RegisterPage from './pages/auth/RegisterPage'
 import LoginPage from './pages/auth/LoginPage'
 import HomePage from './pages/HomePage'
 import DailyTeamPage from './pages/TeamPage'
+import TeamViewPage from './pages/TeamViewPage'
 import LeagueStandingsPage from './pages/LeaguePage'
 import ProtectedRoute from './pages/auth/ProtectedRoute'
 import LeagueSetupPage from './pages/LeagueSetupPage'
@@ -21,6 +22,7 @@ function App() {
         <Route element={<ProtectedRoute />}>
           <Route path="/" element={<HomePage />} />
           <Route path="/team" element={<DailyTeamPage />} />
+          <Route path="/team/view/:teamId" element={<TeamViewPage />} />
           <Route path="/league" element={<LeagueStandingsPage />} />
           <Route path="/league/setup" element={<LeagueSetupPage />} />
           <Route path="/settings" element={<SettingsPage />} />

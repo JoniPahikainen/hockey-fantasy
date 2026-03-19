@@ -79,6 +79,24 @@ export const getTeamPlayers = async (req: Request, res: Response) => {
   }
 };
 
+export const getTeamPlayersAtLastTradeLock = async (req: Request, res: Response) => {
+  try {
+    const teamId = Number(req.params.team_id);
+    if (!Number.isInteger(teamId)) {
+      return res.status(400).json({ ok: false, error: "Invalid team id" });
+    }
+
+    const players = await service.getTeamPlayersAtLastTradeLock(teamId);
+    return res.json({ ok: true, players });
+  } catch (err: any) {
+    if (err instanceof ServiceError) {
+      return res.status(err.statusCode).json({ ok: false, error: err.message });
+    }
+    console.error("Controller Error:", err);
+    return res.status(500).json({ ok: false, error: "Internal server error" });
+  }
+};
+
 export const getTeamsByOwner = async (req: Request, res: Response) => {
   try {
     const { user_id } = req.params;

@@ -4,6 +4,7 @@ import {
   addPlayerToTeam,
   removePlayerFromTeam,
   getTeamPlayers,
+  getTeamPlayersAtLastTradeLock,
   getTeamsByOwner,
   saveLineup,
   setCaptain,
@@ -19,6 +20,7 @@ router.post("/fantasy-teams", createTeam);
 router.post("/fantasy-teams/add-player", addPlayerToTeam);
 router.post("/fantasy-teams/remove-player", removePlayerFromTeam);
 router.get("/fantasy-teams/:team_id/players", getTeamPlayers);
+router.get("/fantasy-teams/:team_id/players/last-trade-lock", getTeamPlayersAtLastTradeLock);
 router.get("/fantasy-teams/owner/:user_id", getTeamsByOwner);
 router.post("/fantasy-teams/save-lineup", saveLineup);
 router.patch("/fantasy-teams/:team_id/captain", setCaptain);

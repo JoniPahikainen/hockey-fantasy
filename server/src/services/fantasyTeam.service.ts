@@ -52,6 +52,22 @@ export const getTeamPlayers = async (teamId: number) => {
   return result.rows;
 };
 
+export const getTeamPlayersAtLastTradeLock = async (teamId: number) => {
+  const teamCheck = await repo.teamExists(teamId);
+  if (teamCheck.rowCount === 0) {
+    throw new ServiceError("Team not found", 404);
+  }
+
+  const status = await getTradeLockStatus();
+  if (!status.lock_starts_at) {
+    const current = await repo.getTeamPlayers(teamId);
+    return current.rows;
+  }
+
+  const result = await repo.getTeamPlayersAtTimestamp(teamId, status.lock_starts_at);
+  return result.rows;
+};
+
 export const getTeamsByUserId = async (userId: number) => {
   const result = await repo.getTeamsByOwner(userId);
   return result.rows;

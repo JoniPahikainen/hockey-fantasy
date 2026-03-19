@@ -5,13 +5,15 @@ export default function FormationCard({
   onSetCaptain,
   isCaptain,
   isGoalie,
+  readOnly,
 }: {
   player?: any;
   label: string;
-  onRemove: (id: number) => void;
+  onRemove?: (id: number) => void;
   onSetCaptain?: (id: number) => void;
   isCaptain?: boolean;
   isGoalie?: boolean;
+  readOnly?: boolean;
 }) {
   if (!player) {
     return (
@@ -23,17 +25,18 @@ export default function FormationCard({
 
   const playerColor = player.color || "#000000ff";
   const pts = Number(player.points) || 0;
-  const displayPts = isCaptain ? (pts * 1.3).toFixed(1) : pts.toFixed(1);
-
+  const displayPts = Math.round(isCaptain ? pts * 1.3 : pts);
   return (
     <div className="bg-bg-primary border border-border-default flex flex-col shadow-sm transition-all hover:border-border-focus group relative">
       <div style={{ backgroundColor: playerColor }} className="h-1.5 w-full" />
-      <button
-        onClick={() => onRemove(player.id)}
-        className="absolute -top-2 -right-2 bg-bg-sidebar text-text-inverse w-6 h-6 text-[10px] flex items-center justify-center hover:bg-accent-danger transition-colors z-30 shadow-md"
-      >
-        ×
-      </button>
+      {!readOnly && onRemove && (
+        <button
+          onClick={() => onRemove(player.id)}
+          className="absolute -top-2 -right-2 bg-bg-sidebar text-text-inverse w-6 h-6 text-[10px] flex items-center justify-center hover:bg-accent-danger transition-colors z-30 shadow-md"
+        >
+          ×
+        </button>
+      )}
       <div className="p-4 flex flex-col items-center text-center gap-1">
         <span style={{ color: playerColor }} className="font-bold text-[9px] uppercase tracking-tighter">
           {player.team}
@@ -42,10 +45,10 @@ export default function FormationCard({
           {player.name.split(" ").pop()}
         </h3>
         <div className={`font-mono mt-1 text-xs ${pts > 0 ? "text-accent-success font-bold" : pts < 0 ? "text-accent-danger font-bold" : "text-text-muted-subtle"}`}>
-          {pts > 0 ? `+${displayPts}` : displayPts}
+          {displayPts > 0 ? `+${displayPts}` : displayPts}
           {isCaptain && <span className="text-[9px] ml-1 text-text-muted-subtle">(×1.3)</span>}
         </div>
-        {onSetCaptain && (
+        {!readOnly && onSetCaptain && (
           <button
             type="button"
             onClick={() => onSetCaptain(player.id)}
