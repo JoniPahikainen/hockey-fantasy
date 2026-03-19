@@ -2,16 +2,35 @@ import pool from "../db";
 
 export const createUser = async (username: string, email: string, passwordHash: string) => {
   const result = await pool.query(
-    `INSERT INTO users (username, email, password_hash)
-     VALUES ($1, $2, $3)
-     RETURNING user_id, username, email, role, created_at;`,
+    `WITH inserted_user AS (
+       INSERT INTO users (username, email, password_hash)
+       VALUES ($1, $2, $3)
+       RETURNING user_id, username, email, role, created_at
+     ),
+     inserted_settings AS (
+       INSERT INTO settings (user_id)
+       SELECT user_id FROM inserted_user
+       ON CONFLICT (user_id) DO NOTHING
+     )
+     SELECT user_id, username, email, role, created_at
+     FROM inserted_user;`,
     [username, email, passwordHash]
   );
   return result.rows[0];
 };
 
 export const findByEmail = async (email: string) => {
-  const result = await pool.query("SELECT * FROM users WHERE email = $1", [email]);
+  const result = await pool.query(
+    `
+    SELECT
+      u.*,
+      COALESCE(s.dark_mode, false) AS dark_mode
+    FROM users u
+    LEFT JOIN settings s ON s.user_id = u.user_id
+    WHERE u.email = $1
+    `,
+    [email]
+  );
   return result.rows[0];
 };
 
@@ -53,4 +72,36 @@ export const deleteById = async (id: number) => {
     "DELETE FROM users WHERE user_id = $1 RETURNING user_id",
     [id]
   );
+};
+
+export const getUserSettings = async (userId: number) => {
+  const result = await pool.query(
+    `
+    WITH upsert AS (
+      INSERT INTO settings (user_id)
+      VALUES ($1)
+      ON CONFLICT (user_id) DO NOTHING
+      RETURNING user_id
+    )
+    SELECT user_id, email_notifications, dark_mode
+    FROM settings
+    WHERE user_id = $1
+    `,
+    [userId]
+  );
+  return result.rows[0];
+};
+
+export const updateUserDarkMode = async (userId: number, darkMode: boolean) => {
+  const result = await pool.query(
+    `
+    INSERT INTO settings (user_id, dark_mode)
+    VALUES ($1, $2)
+    ON CONFLICT (user_id) DO UPDATE
+      SET dark_mode = EXCLUDED.dark_mode
+    RETURNING user_id, email_notifications, dark_mode
+    `,
+    [userId, darkMode]
+  );
+  return result.rows[0];
 };

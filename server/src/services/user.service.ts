@@ -28,7 +28,13 @@ export const login = async (email: string, password: string) => {
 
   return {
     token,
-    user: { id: user.user_id, username: user.username, email: user.email, role: user.role },
+    user: {
+      id: user.user_id,
+      username: user.username,
+      email: user.email,
+      role: user.role,
+      dark_mode: Boolean(user.dark_mode),
+    },
   };
 };
 
@@ -63,4 +69,16 @@ export const changePassword = async (
   const passwordHash = await bcrypt.hash(newPassword, saltRounds);
   await repo.updatePassword(userId, passwordHash);
   return true;
+};
+
+export const getSettings = async (userId: number) => {
+  const settings = await repo.getUserSettings(userId);
+  if (!settings) throw new ServiceError("Settings not found", 404);
+  return settings;
+};
+
+export const updateDarkMode = async (userId: number, darkMode: boolean) => {
+  const settings = await repo.updateUserDarkMode(userId, darkMode);
+  if (!settings) throw new ServiceError("Failed to update settings", 500);
+  return settings;
 };

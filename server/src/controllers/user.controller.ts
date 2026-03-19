@@ -97,3 +97,33 @@ export const updatePassword = async (req: AuthRequest, res: Response) => {
     return res.status(500).json({ ok: false, error: "Internal server error" });
   }
 };
+
+export const getSettings = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user!.userId;
+    const settings = await service.getSettings(userId);
+    return res.json({ ok: true, settings });
+  } catch (err: any) {
+    if (err instanceof ServiceError) {
+      return res.status(err.statusCode).json({ ok: false, error: err.message });
+    }
+    return res.status(500).json({ ok: false, error: "Internal server error" });
+  }
+};
+
+export const updateSettings = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user!.userId;
+    const { dark_mode } = req.body;
+    if (typeof dark_mode !== "boolean") {
+      return res.status(400).json({ ok: false, error: "dark_mode boolean is required" });
+    }
+    const settings = await service.updateDarkMode(userId, dark_mode);
+    return res.json({ ok: true, settings });
+  } catch (err: any) {
+    if (err instanceof ServiceError) {
+      return res.status(err.statusCode).json({ ok: false, error: err.message });
+    }
+    return res.status(500).json({ ok: false, error: "Internal server error" });
+  }
+};

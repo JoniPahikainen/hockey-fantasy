@@ -7,12 +7,17 @@ type UserInfo = {
   username: string;
   email: string;
   role?: string;
+  dark_mode?: boolean;
 };
 
 export default function SettingsPage() {
   const [user, setUser] = useState<UserInfo | null>(null);
 
-  const [theme, setTheme] = useState<"light" | "dark">("light");
+  const [theme, setTheme] = useState<"light" | "dark">(() => {
+    const saved = localStorage.getItem("theme");
+    if (saved === "dark" || saved === "light") return saved;
+    return document.documentElement.dataset.theme === "dark" ? "dark" : "light";
+  });
 
   const [usernameDraft, setUsernameDraft] = useState("");
   const [usernameSaving, setUsernameSaving] = useState(false);
@@ -24,17 +29,9 @@ export default function SettingsPage() {
   const [passwordSaving, setPasswordSaving] = useState(false);
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [passwordSuccess, setPasswordSuccess] = useState(false);
+  const [themeSaving, setThemeSaving] = useState(false);
 
   useEffect(() => {
-    const saved = localStorage.getItem("theme");
-    if (saved === "dark") {
-      setTheme("dark");
-      document.documentElement.dataset.theme = "dark";
-    } else {
-      setTheme("light");
-      document.documentElement.removeAttribute("data-theme");
-    }
-
     const userStr = localStorage.getItem("user");
     if (!userStr) return;
     try {
@@ -44,12 +41,27 @@ export default function SettingsPage() {
         username: parsed.username ?? "",
         email: parsed.email ?? "",
         role: parsed.role,
+        dark_mode: Boolean(parsed.dark_mode),
       };
       setUser(u);
       setUsernameDraft(u.username);
     } catch {
       setUser(null);
     }
+  }, []);
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const res = await api.get("/user/settings");
+        if (res.data?.ok && res.data.settings) {
+          setTheme(res.data.settings.dark_mode ? "dark" : "light");
+        }
+      } catch {
+        // ignore and use local fallback
+      }
+    };
+    fetchSettings();
   }, []);
 
   useEffect(() => {
@@ -72,6 +84,20 @@ export default function SettingsPage() {
       setUser((prev) => (prev ? { ...prev, ...updated } : null));
     } catch {
       // ignore
+    }
+  };
+
+  const handleThemeChange = async (nextTheme: "light" | "dark") => {
+    if (nextTheme === theme) return;
+    setTheme(nextTheme);
+    setThemeSaving(true);
+    try {
+      await api.patch("/user/settings", { dark_mode: nextTheme === "dark" });
+      syncUserToStorage({ dark_mode: nextTheme === "dark" });
+    } catch {
+      // keep UX responsive; local preference still applied
+    } finally {
+      setThemeSaving(false);
     }
   };
 
@@ -175,7 +201,8 @@ export default function SettingsPage() {
               <div className="inline-flex rounded-full border border-border-input bg-bg-secondary p-1">
                 <button
                   type="button"
-                  onClick={() => setTheme("light")}
+                  onClick={() => handleThemeChange("light")}
+                  disabled={themeSaving}
                   className={`px-3 py-1.5 text-xs font-semibold rounded-full ${
                     theme === "light"
                       ? "bg-bg-primary text-text-primary"
@@ -186,7 +213,8 @@ export default function SettingsPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setTheme("dark")}
+                  onClick={() => handleThemeChange("dark")}
+                  disabled={themeSaving}
                   className={`px-3 py-1.5 text-xs font-semibold rounded-full ${
                     theme === "dark"
                       ? "bg-bg-primary text-text-primary"

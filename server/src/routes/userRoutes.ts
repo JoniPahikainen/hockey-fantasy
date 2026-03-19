@@ -5,6 +5,8 @@ import {
   loginUser,
   updateProfile,
   updatePassword,
+  getSettings,
+  updateSettings,
 } from "../controllers/user.controller";
 import { authenticate } from "../middleware/auth";
 
@@ -16,6 +18,8 @@ router.delete("/user/:id", deleteUser);
 
 router.patch("/user/profile", authenticate, updateProfile);
 router.patch("/user/password", authenticate, updatePassword);
+router.get("/user/settings", authenticate, getSettings);
+router.patch("/user/settings", authenticate, updateSettings);
 
 export default router;
 
