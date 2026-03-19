@@ -462,7 +462,10 @@ export const getTeamLastNightPoints = (teamId: number) => {
   return pool.query(
     `
     WITH last_gameday AS (
-      SELECT MAX(scheduled_at)::date AS game_day
+      SELECT
+        date_trunc('day', MAX(scheduled_at) - INTERVAL '6 hours') + INTERVAL '6 hours' AS end_time,
+        date_trunc('day', MAX(scheduled_at) - INTERVAL '6 hours') + INTERVAL '6 hours' - INTERVAL '1 day' AS start_time,
+        date_trunc('day', MAX(scheduled_at) - INTERVAL '6 hours')::date AS game_day_date
       FROM matches
       WHERE is_processed = true
     ),
@@ -471,8 +474,8 @@ export const getTeamLastNightPoints = (teamId: number) => {
       FROM captain_history ch
       CROSS JOIN last_gameday lg
       WHERE ch.team_id = $1
-        AND ch.from_date <= lg.game_day
-        AND (ch.to_date IS NULL OR ch.to_date >= lg.game_day)
+        AND ch.from_date <= lg.game_day_date
+        AND (ch.to_date IS NULL OR ch.to_date >= lg.game_day_date)
       ORDER BY ch.from_date DESC
       LIMIT 1
     )
@@ -492,7 +495,8 @@ export const getTeamLastNightPoints = (teamId: number) => {
     JOIN matches m ON pgs.match_id = m.match_id
     WHERE r.team_id = $1
       AND r.removed_at IS NULL
-      AND m.scheduled_at::date = (SELECT game_day FROM last_gameday);
+      AND m.scheduled_at >= (SELECT start_time FROM last_gameday)
+      AND m.scheduled_at < (SELECT end_time FROM last_gameday);
     `,
     [teamId],
   );
@@ -559,7 +563,9 @@ export const getTeamPlayersAtTimestamp = (teamId: number, asOf: string) => {
       LIMIT 1
     ),
     last_gameday AS (
-      SELECT MAX(scheduled_at)::date AS game_day
+      SELECT
+        date_trunc('day', MAX(scheduled_at) - INTERVAL '6 hours') + INTERVAL '6 hours' AS end_time,
+        date_trunc('day', MAX(scheduled_at) - INTERVAL '6 hours') + INTERVAL '6 hours' - INTERVAL '1 day' AS start_time
       FROM matches
       WHERE is_processed = true
     )
@@ -574,7 +580,8 @@ export const getTeamPlayersAtTimestamp = (teamId: number, asOf: string) => {
       COALESCE(
         SUM(
           CASE
-            WHEN m.scheduled_at::date = last_gameday.game_day
+            WHEN m.scheduled_at >= last_gameday.start_time
+              AND m.scheduled_at < last_gameday.end_time
             THEN pgs.points_earned
             ELSE 0
           END
@@ -588,7 +595,7 @@ export const getTeamPlayersAtTimestamp = (teamId: number, asOf: string) => {
     CROSS JOIN last_gameday
     GROUP BY
       p.player_id, p.first_name, p.last_name, p.position,
-      p.team_abbrev, p.current_price, rt.primary_color, last_gameday.game_day
+      p.team_abbrev, p.current_price, rt.primary_color
     ORDER BY name;
     `,
     [teamId, asOf],
