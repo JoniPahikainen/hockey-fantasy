@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS players (
     team_abbrev VARCHAR(10) REFERENCES real_teams(abbreviation),
     current_price INT NOT NULL,
     start_price INT NOT NULL DEFAULT 0,
-    base_rating NUMERIC(6,2),
+    base_rating INT,
     is_injured BOOLEAN DEFAULT false
 );
 
@@ -41,7 +41,7 @@ CREATE TABLE IF NOT EXISTS fantasy_teams (
     team_name VARCHAR(50) NOT NULL,
     budget_remaining INT DEFAULT 2000000,
     trades_remaining INT DEFAULT 16,
-    total_points NUMERIC(10, 2) DEFAULT 0,
+    total_points INT DEFAULT 0,
     is_paid BOOLEAN DEFAULT false,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -90,7 +90,7 @@ CREATE TABLE IF NOT EXISTS player_game_stats (
     toi_seconds INT DEFAULT 0, -- Store "10:05" as 605 seconds
     
     -- System Columns
-    points_earned NUMERIC(6, 2) DEFAULT 0,
+    points_earned INT DEFAULT 0,
     is_win BOOLEAN DEFAULT false,
     is_processed BOOLEAN DEFAULT false,
     
@@ -152,9 +152,9 @@ CREATE TABLE IF NOT EXISTS scoring_periods (
 -- Scoring Rules
 CREATE TABLE IF NOT EXISTS scoring_rules (
     rule_key TEXT PRIMARY KEY,
-    goalie NUMERIC,
-    defense NUMERIC,
-    forward NUMERIC
+    goalie INT,
+    defense INT,
+    forward INT
 );
 
 -- Goalie Specific Scoring
@@ -174,7 +174,7 @@ CREATE TABLE IF NOT EXISTS goalie_goals_against_penalty (
 CREATE TABLE IF NOT EXISTS daily_player_points (
     day DATE,
     player_id INT REFERENCES players(player_id),
-    total_points_earned NUMERIC(10, 2),
+    total_points_earned INT,
     PRIMARY KEY (day, player_id)
 );
 
@@ -182,7 +182,7 @@ CREATE TABLE IF NOT EXISTS daily_player_points (
 CREATE TABLE IF NOT EXISTS daily_team_points (
     day DATE,
     team_id INT REFERENCES fantasy_teams(team_id),
-    points_earned NUMERIC(10, 2),
+    points_earned INT,
     PRIMARY KEY (day, team_id)
 );
 
@@ -207,7 +207,7 @@ INSERT INTO scoring_rules VALUES
 ('MAJOR_PENALTY', -15, -15, -15),
 ('GAME_MISCONDUCT', -30, -30, -30),
 
-('CAPTAIN_MULTIPLIER', 1.3, 1.3, 1.3);
+('CAPTAIN_MULTIPLIER', 130, 130, 130);
 
 INSERT INTO goalie_save_points VALUES
 (20,24,45),(25,29,55),(30,34,65),(35,39,80),

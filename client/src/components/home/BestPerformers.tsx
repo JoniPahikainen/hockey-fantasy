@@ -21,7 +21,7 @@ export default function BestPerformers({ team }: { team: any[] }) {
             Total FP
           </span>
           <span className="text-lg font-mono font-black text-text-inverse leading-none">
-            {totalPoints.toFixed(1)}
+            {totalPoints}
           </span>
         </div>
       </div>
@@ -146,7 +146,7 @@ function FormationCard({
         <div
           className={`font-mono mt-1 ${pts > 0 ? "text-accent-success" : "text-accent-danger"} font-bold`}
         >
-          {pts > 0 ? `+${pts.toFixed(1)}` : pts.toFixed(1)}
+          {pts > 0 ? `+${pts}` : pts}
         </div>
       </div>
     </div>

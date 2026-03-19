@@ -322,12 +322,17 @@ export const getDailyTeamPerformance = (team_id: number, period_id: number) => {
     )
     SELECT
       d.game_date,
-      ROUND(
-        COALESCE(SUM(
-          pgs.points_earned *
-          CASE WHEN r.player_id = cod.captain_player_id THEN 1.3 ELSE 1 END
-        ),0)::numeric
-      ,2) AS points,
+      COALESCE(SUM(
+        CASE
+          WHEN r.player_id = cod.captain_player_id
+          THEN (pgs.points_earned *
+                COALESCE(
+                  (SELECT forward FROM scoring_rules WHERE rule_key = 'CAPTAIN_MULTIPLIER'),
+                  100
+                ) / 100)
+          ELSE pgs.points_earned
+        END
+      ),0) AS points,
       COUNT(DISTINCT r.player_id) AS active_players_count
     FROM days d
     LEFT JOIN captain_on_day cod ON cod.game_date = d.game_date
@@ -366,7 +371,7 @@ function getDailyPlayerBreakdownSql(useCaptainHistory: boolean): string {
     )`
     : "";
   const captainExpr = useCaptainHistory
-    ? "CASE WHEN p.player_id = (SELECT captain_player_id FROM captain_on_date) THEN 1.3 ELSE 1 END"
+    ? "CASE WHEN p.player_id = (SELECT captain_player_id FROM captain_on_date) THEN COALESCE((SELECT forward FROM scoring_rules WHERE rule_key = 'CAPTAIN_MULTIPLIER'), 100)::numeric / 100 ELSE 1 END"
     : "1";
   return `
     WITH roster_on_day AS (
@@ -381,15 +386,29 @@ function getDailyPlayerBreakdownSql(useCaptainHistory: boolean): string {
       FROM matches m
       WHERE (m.scheduled_at - INTERVAL '6 hours')::date = $2::date
         AND m.is_processed = true
-    )${captainCte}
+    ),
+    captain_on_date AS (
+      SELECT player_id AS captain_player_id
+      FROM captain_history
+      WHERE team_id = $1
+        AND from_date <= $2::date
+        AND (to_date IS NULL OR to_date >= $2::date)
+      ORDER BY from_date DESC
+      LIMIT 1
+    )
     SELECT
       (p.first_name || ' ' || p.last_name) AS player_name,
-      ROUND(
-        (
-          COALESCE(SUM(pgs.points_earned), 0) * ${captainExpr}
-        )::numeric,
-        1
-      ) AS points
+      COALESCE(SUM(
+        CASE
+          WHEN p.player_id = (SELECT captain_player_id FROM captain_on_date)
+          THEN (pgs.points_earned *
+                COALESCE(
+                  (SELECT forward FROM scoring_rules WHERE rule_key = 'CAPTAIN_MULTIPLIER'),
+                  100
+                ) / 100)
+          ELSE pgs.points_earned
+        END
+      ),0) AS points
     FROM roster_on_day r
     JOIN players p ON p.player_id = r.player_id
     LEFT JOIN player_game_stats pgs
@@ -441,14 +460,22 @@ export const getTeamLastNightPoints = (teamId: number) => {
       LIMIT 1
     )
     SELECT COALESCE(SUM(
-      pgs.points_earned * CASE WHEN r.player_id = (SELECT captain_player_id FROM captain_last_night) THEN 1.3 ELSE 1 END
+      CASE
+        WHEN r.player_id = (SELECT captain_player_id FROM captain_last_night)
+        THEN (pgs.points_earned *
+              COALESCE(
+                (SELECT forward FROM scoring_rules WHERE rule_key = 'CAPTAIN_MULTIPLIER'),
+                100
+              ) / 100)
+        ELSE pgs.points_earned
+      END
     ), 0) AS last_night_points
     FROM fantasy_team_roster r
     JOIN player_game_stats pgs ON pgs.player_id = r.player_id
     JOIN matches m ON pgs.match_id = m.match_id
     WHERE r.team_id = $1
       AND r.removed_at IS NULL
-      AND m.scheduled_at::date = (SELECT game_day FROM last_gameday)
+      AND m.scheduled_at::date = (SELECT game_day FROM last_gameday);
     `,
     [teamId]
   );

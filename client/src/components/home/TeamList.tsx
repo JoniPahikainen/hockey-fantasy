@@ -71,7 +71,7 @@ export default function TeamList({ team }: { team: any[] }) {
               </div>
 
               <div className={`text-sm font-mono font-black ${pointsColor}`}>
-                {safePoints.toFixed(1)}
+                {safePoints}
               </div>
             </div>
           );

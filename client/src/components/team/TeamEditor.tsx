@@ -319,7 +319,7 @@ export default function TeamEditor({ userId }: { userId: number }) {
                       {player.team}
                     </td>
                     <td className="px-6 py-4 text-right font-mono text-xs font-bold">
-                      {Number(player.points).toFixed(1)}
+                      {Number(player.points)}
                     </td>
                     <td className="px-6 py-4 text-right font-mono text-xs font-bold text-text-primary">
                       ${formatSalary(player.salary)}

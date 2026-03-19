@@ -65,10 +65,10 @@ export default function MiniStandings({ leagueId, teamId }: { leagueId?: number,
   const leader = standings[0];
 
   const formatPoints = (points: number, lastNightPoints: number | null) => {
-    const total = Number(points).toFixed(1);
+    const total = Number(points);
     const lastNight =
       lastNightPoints != null && Number(lastNightPoints) > 0
-        ? Number(lastNightPoints).toFixed(1)
+        ? Number(lastNightPoints)
         : null;
     return lastNight !== null ? `${total} (${lastNight})` : `${total} (-)`;
   };

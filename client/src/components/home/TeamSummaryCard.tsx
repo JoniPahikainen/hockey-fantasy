@@ -31,7 +31,7 @@ export default function TeamSummaryCard({
               teamPoints > 0 ? "text-accent-success" : teamPoints < 0 ? "text-accent-danger" : "text-text-muted"
             }`}
           >
-            {teamPoints > 0 ? "+" : ""}{teamPoints.toFixed(1)}
+            {teamPoints > 0 ? "+" : ""}{teamPoints}
           </span>
         </div>
         <div className="flex gap-4 pt-2 border-t border-border-subtle">

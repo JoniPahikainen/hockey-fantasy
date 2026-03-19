@@ -208,7 +208,7 @@ export default function TeamPerformanceGraph({ teamId, periodId }: Props) {
                 >
                   <span className="text-text-secondary">{row.player_name}</span>
                   <span className="font-mono text-text-primary">
-                    {row.points.toFixed(1)}
+                    {row.points}
                   </span>
                 </li>
               ))}

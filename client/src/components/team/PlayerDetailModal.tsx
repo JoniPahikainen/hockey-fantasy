@@ -122,9 +122,7 @@ export default function PlayerDetailModal({
   }));
   const pointsPerGame = games.map((g) => Number(g.points_earned));
   const avgPts = pointsPerGame.length
-    ? (pointsPerGame.reduce((a, b) => a + b, 0) / pointsPerGame.length).toFixed(
-        2,
-      )
+    ? (pointsPerGame.reduce((a, b) => a + b, 0) / pointsPerGame.length)
     : "0";
   const expectedFromBase =
     detail.base_rating != null ? Number(detail.base_rating) : 0;
@@ -240,7 +238,7 @@ export default function PlayerDetailModal({
                 <p className="text-[10px] uppercase text-text-muted">
                   Avg Pts/Game
                 </p>
-                <p className="text-lg font-bold">{avgPts}</p>
+                <p className="text-lg font-bold">{Number(avgPts).toFixed(1)}</p>
               </div>
               <div className="bg-bg-secondary p-3 rounded-lg">
                 <p className="text-[10px] uppercase text-text-muted">
@@ -248,7 +246,7 @@ export default function PlayerDetailModal({
                 </p>
                 <p className="text-lg font-bold">
                   {expectedFromBase
-                    ? `${(Number(avgPts) - expectedFromBase).toFixed(2)} vs base`
+                    ? `${(Number(avgPts) - expectedFromBase).toFixed(0)} vs base`
                     : "—"}
                 </p>
               </div>
