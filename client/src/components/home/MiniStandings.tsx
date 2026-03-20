@@ -12,9 +12,12 @@ export default function MiniStandings({ leagueId, teamId }: { leagueId?: number,
 
     const fetchMiniStandings = async () => {
       try {
-        const res = await api.get(`/leagues/${leagueId}/standings/with-last-night`);
+        const periodRes = await api.get("/leagues/current-period");
+        if (!periodRes.data?.ok || !periodRes.data?.period?.period_id) return;
+
+        const periodId = Number(periodRes.data.period.period_id);
+        const res = await api.get(`/leagues/${leagueId}/standings/period/${periodId}`);
         if (res.data.ok) {
-          console.log("res.data.standings", res.data.standings);
           const mappedData = res.data.standings.map((t: any) => ({
             rank: parseInt(t.rank),
             name: t.team_name,
@@ -22,7 +25,6 @@ export default function MiniStandings({ leagueId, teamId }: { leagueId?: number,
             lastNightPoints: t.last_night_points,
             isUser: t.team_id === teamId,
           }));
-          console.log("mappedData", mappedData);
           setStandings(mappedData);
         }
         } catch (err) {

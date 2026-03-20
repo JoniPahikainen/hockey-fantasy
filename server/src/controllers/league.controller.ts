@@ -1,6 +1,5 @@
 import { Request, Response } from "express";
 import * as service from "../services/league.service";
-import * as fantasyTeamService from "../services/fantasyTeam.service";
 import { ServiceError } from "../utils/errors";
 
 // Create a new private league
@@ -96,19 +95,21 @@ export const getLeagueStandingsByPeriod = async (
         .status(400)
         .json({ ok: false, error: "League ID and Period ID are required" });
     }
+
+    const periodIdNum = Number(period_id);
+    if (!Number.isInteger(periodIdNum)) {
+      return res.status(400).json({ ok: false, error: "Invalid Period ID" });
+    }
+
+    const current = await service.getCurrentPeriod();
+    const isCurrentPeriod = Number(current.period_id) === periodIdNum;
+
     const standings = await service.getLeagueStandingsByPeriod(
       Number(league_id),
-      Number(period_id),
+      periodIdNum,
     );
-    const standingsWithLastNight = await Promise.all(
-      standings.map(async (row: { team_id: number; [key: string]: unknown }) => {
-        const lastNight = await fantasyTeamService.getTeamLastNightPoints(row.team_id);
-        const last_night_points =
-          lastNight?.last_night_points != null ? Number(lastNight.last_night_points) : 0;
-        return { ...row, last_night_points };
-      }),
-    );
-    return res.json({ ok: true, standings: standingsWithLastNight });
+
+    return res.json({ ok: true, standings, is_current_period: isCurrentPeriod });
   } catch (err) {
     if (err instanceof ServiceError) {
       return res.status(err.statusCode).json({ ok: false, error: err.message });
@@ -118,28 +119,6 @@ export const getLeagueStandingsByPeriod = async (
   }
 };
 
-// Get current period standings with last night points (for home page mini standings)
-export const getStandingsWithLastNight = async (
-  req: Request,
-  res: Response,
-) => {
-  try {
-    const { league_id } = req.params;
-    if (!league_id) {
-      return res
-        .status(400)
-        .json({ ok: false, error: "League ID is required" });
-    }
-    const standings = await service.getStandingsWithLastNight(Number(league_id));
-    return res.json({ ok: true, standings });
-  } catch (err) {
-    if (err instanceof ServiceError) {
-      return res.status(err.statusCode).json({ ok: false, error: err.message });
-    }
-    console.error("Error fetching standings with last night:", err);
-    return res.status(500).json({ ok: false, error: "Internal server error" });
-  }
-};
 
 // Get leagues by user ID
 export const getLeaguesByUserId = async (req: Request, res: Response) => {
@@ -203,7 +182,10 @@ export const getDailyPlayerBreakdown = async (req: Request, res: Response) => {
     if (!team_id || !date) {
       return res
         .status(400)
-        .json({ ok: false, error: "Team ID and date (YYYY-MM-DD) are required" });
+        .json({
+          ok: false,
+          error: "Team ID and date (YYYY-MM-DD) are required",
+        });
     }
     const breakdown = await service.getDailyPlayerBreakdown(
       Number(team_id),

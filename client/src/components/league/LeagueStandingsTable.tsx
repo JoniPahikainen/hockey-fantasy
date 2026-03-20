@@ -19,6 +19,7 @@ interface Props {
   expandedTeamId: number | null;
   activePeriod: number;
   isFullSeason: boolean;
+  showLastNightPoints?: boolean;
   onToggleTeam: (teamId: number) => void;
 }
 
@@ -33,6 +34,7 @@ export default function LeagueStandingsTable({
   expandedTeamId,
   activePeriod,
   isFullSeason,
+  showLastNightPoints = true,
   onToggleTeam,
 }: Props) {
   const navigate = useNavigate();
@@ -118,7 +120,7 @@ export default function LeagueStandingsTable({
                       <span className="font-mono font-black text-lg text-text-primary">
                         {Number(team.points || 0)}
                       </span>
-                    ) : (
+                    ) : showLastNightPoints ? (
                       <span className="inline-flex items-baseline justify-center gap-1">
                         <span className="font-mono font-black text-lg text-text-primary">
                           {Number(team.points ?? 0)}
@@ -126,6 +128,10 @@ export default function LeagueStandingsTable({
                         <span className="font-mono text-sm text-text-muted-subtle">
                           ({Number(team.lastNightPoints || 0)})
                         </span>
+                      </span>
+                    ) : (
+                      <span className="font-mono font-black text-lg text-text-primary">
+                        {Number(team.points ?? 0)}
                       </span>
                     )}
                   </td>
