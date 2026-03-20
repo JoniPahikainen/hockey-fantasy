@@ -200,3 +200,29 @@ export const getDailyPlayerBreakdown = async (req: Request, res: Response) => {
     return res.status(500).json({ ok: false, error: "Internal server error" });
   }
 };
+
+export const getLeagueRecords = async (req: Request, res: Response) => {
+  try {
+    const { league_id } = req.params;
+    const periodIdRaw = req.query.period_id as string | undefined;
+    if (!league_id) {
+      return res
+        .status(400)
+        .json({ ok: false, error: "League ID is required" });
+    }
+
+    const periodId = periodIdRaw ? Number(periodIdRaw) : null;
+    if (periodIdRaw && !Number.isInteger(periodId)) {
+      return res.status(400).json({ ok: false, error: "Invalid period_id" });
+    }
+
+    const rows = await service.getLeagueRecords(Number(league_id), periodId);
+    return res.json({ ok: true, records: rows });
+  } catch (err) {
+    if (err instanceof ServiceError) {
+      return res.status(err.statusCode).json({ ok: false, error: err.message });
+    }
+    console.error("Error fetching league records:", err);
+    return res.status(500).json({ ok: false, error: "Internal server error" });
+  }
+};

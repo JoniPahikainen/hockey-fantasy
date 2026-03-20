@@ -151,3 +151,122 @@ export const getCurrentPeriod = () => {
         LIMIT 1;`,
   );
 };
+
+export const getLeagueRecords = (league_id: number, period_id: number | null) => {
+  return pool.query(
+    `
+    WITH captain_multiplier AS (
+      SELECT COALESCE(
+        (SELECT forward FROM scoring_rules WHERE rule_key = 'CAPTAIN_MULTIPLIER'),
+        100
+      )::numeric / 100 AS mult
+    ),
+
+    team_base AS (
+      SELECT t.team_id, t.team_name
+      FROM league_members lm
+      JOIN fantasy_teams t ON t.team_id = lm.team_id
+      WHERE lm.league_id = $1
+    ),
+
+    period_window AS (
+      SELECT start_date, end_date
+      FROM scoring_periods
+      WHERE period_id = $2
+    ),
+
+    player_events AS (
+      SELECT
+        tb.team_id,
+        tb.team_name,
+        date_trunc('day', m.scheduled_at - INTERVAL '6 hours') + INTERVAL '6 hours' AS fantasy_day_start,
+        date_trunc('day', m.scheduled_at - INTERVAL '6 hours')::date AS fantasy_day_date,
+        pgs.goals,
+        pgs.assists,
+        pgs.pim,
+        pgs.points_earned,
+        CASE
+          WHEN EXISTS (
+            SELECT 1
+            FROM captain_history ch
+            WHERE ch.team_id = tb.team_id
+              AND ch.player_id = pgs.player_id
+              AND ch.from_date <= date_trunc('day', m.scheduled_at - INTERVAL '6 hours')::date
+              AND (ch.to_date IS NULL OR ch.to_date >= date_trunc('day', m.scheduled_at - INTERVAL '6 hours')::date)
+          )
+          THEN (SELECT mult FROM captain_multiplier)
+          ELSE 1
+        END AS captain_mult
+      FROM team_base tb
+      JOIN fantasy_team_roster r ON r.team_id = tb.team_id
+      JOIN player_game_stats pgs ON pgs.player_id = r.player_id
+      JOIN matches m ON m.match_id = pgs.match_id
+      WHERE m.is_processed = true
+        AND r.added_at <= m.scheduled_at
+        AND (r.removed_at IS NULL OR r.removed_at > m.scheduled_at)
+    ),
+
+    team_day_stats AS (
+      SELECT
+        team_id,
+        team_name,
+        fantasy_day_start,
+        fantasy_day_date,
+        SUM(goals) AS goals,
+        SUM(goals + assists) AS points,
+        SUM(pim) AS penalties,
+        ROUND(SUM(points_earned * captain_mult), 0) AS fantasy_points
+      FROM player_events
+      GROUP BY team_id, team_name, fantasy_day_start, fantasy_day_date
+    ),
+
+    last_day AS (
+      SELECT MAX(fantasy_day_start) AS day_start
+      FROM team_day_stats
+    ),
+
+    scoped_data AS (
+      SELECT 'last_night' AS scope, tds.*
+      FROM team_day_stats tds
+      JOIN last_day ld ON tds.fantasy_day_start = ld.day_start
+
+      UNION ALL
+
+      SELECT 'season' AS scope, tds.*
+      FROM team_day_stats tds
+
+      UNION ALL
+
+      SELECT 'period' AS scope, tds.*
+      FROM team_day_stats tds
+      JOIN period_window pw 
+        ON tds.fantasy_day_date BETWEEN pw.start_date AND pw.end_date
+    ),
+
+    unpivoted AS (
+      SELECT scope, team_name, 'goals' AS metric, goals::numeric AS value FROM scoped_data
+      UNION ALL
+      SELECT scope, team_name, 'points', points::numeric FROM scoped_data
+      UNION ALL
+      SELECT scope, team_name, 'penalties', penalties::numeric FROM scoped_data
+      UNION ALL
+      SELECT scope, team_name, 'fantasy_points', fantasy_points FROM scoped_data
+    ),
+
+    ranked AS (
+      SELECT *,
+        ROW_NUMBER() OVER (
+          PARTITION BY scope, metric
+          ORDER BY value DESC, team_name ASC
+        ) AS rn
+      FROM unpivoted
+    )
+
+    SELECT scope, metric, team_name, value
+    FROM ranked
+    WHERE rn = 1
+    ORDER BY scope, metric;
+    `,
+    [league_id, period_id],
+  );
+};

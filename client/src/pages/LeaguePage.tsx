@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import Sidebar from "../components/common/Sidebar";
 import api from "../lib/api";
-import { LEAGUE_RECORDS } from "../data/mockData";
 import LeagueSetupPage from "./LeagueSetupPage";
 import { useActiveTeam } from "../context/ActiveTeamContext";
 import LeaguePeriodTabs from "../components/league/LeaguePeriodTabs";
@@ -17,6 +16,13 @@ export default function LeagueStandingsPage() {
   const [currentPeriod, setCurrentPeriod] = useState<number | null>(null);
   const [hasCheckedLeague, setHasCheckedLeague] = useState(false);
   const [expandedTeamId, setExpandedTeamId] = useState<number | null>(null);
+  const [isCurrentPeriodView, setIsCurrentPeriodView] = useState(false);
+  const [matchdayBests, setMatchdayBests] = useState<
+    { label: string; team: string; value: number }[]
+  >([]);
+  const [scopeBests, setScopeBests] = useState<
+    { label: string; team: string; value: number }[]
+  >([]);
   const { activeTeamId } = useActiveTeam();
 
   const userStr = localStorage.getItem("user");
@@ -64,11 +70,13 @@ export default function LeagueStandingsPage() {
     if (!selectedLeagueId) return;
     const fetchStandings = async () => {
       try {
-        const endpoint = isFullSeason
-          ? `/leagues/${selectedLeagueId}/standings`
-          : `/leagues/${selectedLeagueId}/standings/period/${activePeriod}`;
-        const { data } = await api.get(endpoint);
+        const { data } = isFullSeason
+          ? await api.get(`/leagues/${selectedLeagueId}/standings`)
+          : await api.get(
+              `/leagues/${selectedLeagueId}/standings/period/${activePeriod}`,
+            );
         if (data.ok) {
+          setIsCurrentPeriodView(Boolean(data.is_current_period));
           const mappedData: StandingsRow[] = data.standings.map((s: any) => ({
             teamId: s.team_id,
             rank: parseInt(s.rank),
@@ -89,6 +97,43 @@ export default function LeagueStandingsPage() {
     };
     fetchStandings();
   }, [activePeriod, isFullSeason, selectedLeagueId]);
+
+  useEffect(() => {
+    if (!selectedLeagueId) return;
+    const fetchRecords = async () => {
+      try {
+        const { data } = await api.get(`/leagues/${selectedLeagueId}/records`, {
+          params: { period_id: activePeriod },
+        });
+        if (!data.ok || !Array.isArray(data.records)) return;
+
+        const labelByMetric: Record<string, string> = {
+          goals: "Goals",
+          points: "Points (G+A)",
+          penalties: "Penalties (PIM)",
+          fantasy_points: "Fantasy Points",
+        };
+
+        const rowsByScope = (scope: "last_night" | "period" | "season") =>
+          Object.keys(labelByMetric).map((metric) => {
+            const rec = data.records.find(
+              (r: any) => r.scope === scope && r.metric === metric,
+            );
+            return {
+              label: labelByMetric[metric],
+              team: rec?.team_name ? String(rec.team_name).toUpperCase() : "—",
+              value: rec?.value != null ? Math.round(Number(rec.value)) : 0,
+            };
+          });
+
+        setMatchdayBests(rowsByScope("last_night"));
+        setScopeBests(rowsByScope(isFullSeason ? "season" : "period"));
+      } catch (err) {
+        console.error("Failed to fetch league records:", err);
+      }
+    };
+    fetchRecords();
+  }, [selectedLeagueId, activePeriod, isFullSeason]);
 
   if (!hasCheckedLeague) {
     return (
@@ -136,7 +181,9 @@ export default function LeagueStandingsPage() {
                 {selectedLeague?.name || "League"} Standings
               </h1>
               <p className="text-text-muted font-medium tracking-tight uppercase text-xs">
-                {isFullSeason ? "Overall Rankings" : `Period ${activePeriod}`}
+                {isFullSeason
+                  ? "Overall Rankings"
+                  : `Period ${activePeriod}${isCurrentPeriodView ? " (Current)" : " (Archived)"}`}
               </p>
             </div>
             {userLeagues.length > 1 && (
@@ -182,6 +229,7 @@ export default function LeagueStandingsPage() {
             expandedTeamId={expandedTeamId}
             activePeriod={activePeriod}
             isFullSeason={isFullSeason}
+            showLastNightPoints={isCurrentPeriodView}
             onToggleTeam={(teamId) =>
               setExpandedTeamId((prev) => (prev === teamId ? null : teamId))
             }
@@ -189,12 +237,12 @@ export default function LeagueStandingsPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <RecordTable
               title="Matchday Bests"
-              data={LEAGUE_RECORDS.lastNight}
+              data={matchdayBests}
               accent="text-accent-primary"
             />
             <RecordTable
-              title="Season Records"
-              data={LEAGUE_RECORDS.seasonBest}
+              title={isFullSeason ? "Season Best Day" : `Period ${activePeriod} Best Day`}
+              data={scopeBests}
               accent="text-accent-warning"
             />
           </div>

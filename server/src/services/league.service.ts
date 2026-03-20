@@ -105,3 +105,11 @@ export const getDailyPlayerBreakdown = async (
     const result = await fetchDailyPlayerBreakdown(team_id, game_date);
     return result.rows;
 };
+
+export const getLeagueRecords = async (
+  league_id: number,
+  period_id: number | null,
+) => {
+  const result = await repo.getLeagueRecords(league_id, period_id);
+  return result.rows;
+};
