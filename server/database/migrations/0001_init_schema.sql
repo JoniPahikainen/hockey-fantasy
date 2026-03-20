@@ -39,7 +39,7 @@ CREATE TABLE IF NOT EXISTS fantasy_teams (
     team_id SERIAL PRIMARY KEY,
     user_id INT REFERENCES users(user_id) ON DELETE CASCADE,
     team_name VARCHAR(50) NOT NULL,
-    budget_remaining INT DEFAULT 2000000,
+    budget_remaining INT DEFAULT 10000000,
     trades_remaining INT DEFAULT 16,
     total_points INT DEFAULT 0,
     is_paid BOOLEAN DEFAULT false,
