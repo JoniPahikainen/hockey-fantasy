@@ -505,11 +505,23 @@ export const getTeamLastNightPoints = (teamId: number) => {
 export const getTradeLockConfig = () => {
   return pool.query(
     `
-    SELECT id, is_enabled, lock_window_minutes, manual_lock, manual_unlock_until
+    SELECT id, is_enabled, lock_window_minutes, manual_lock, manual_unlock_until, last_lock_at
     FROM trade_lock_config
     WHERE id = 1
     LIMIT 1
     `,
+  );
+};
+
+export const setTradeLockLastLockAt = (lockAt: string) => {
+  return pool.query(
+    `
+    UPDATE trade_lock_config
+    SET last_lock_at = $1,
+        updated_at = CURRENT_TIMESTAMP
+    WHERE id = 1
+    `,
+    [lockAt],
   );
 };
 

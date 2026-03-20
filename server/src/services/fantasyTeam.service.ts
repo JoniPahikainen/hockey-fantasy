@@ -8,6 +8,7 @@ type TradeLockStatus = {
   lock_window_minutes: number;
   next_match_at: string | null;
   lock_starts_at: string | null;
+  last_lock_at: string | null;
   manual_unlock_until: string | null;
 };
 
@@ -59,12 +60,18 @@ export const getTeamPlayersAtLastTradeLock = async (teamId: number) => {
   }
 
   const status = await getTradeLockStatus();
-  if (!status.lock_starts_at) {
+  if (status.locked) {
     const current = await repo.getTeamPlayers(teamId);
     return current.rows;
   }
 
-  const result = await repo.getTeamPlayersAtTimestamp(teamId, status.lock_starts_at);
+  const snapshotAt = status.last_lock_at;
+  if (!snapshotAt) {
+    const current = await repo.getTeamPlayers(teamId);
+    return current.rows;
+  }
+
+  const result = await repo.getTeamPlayersAtTimestamp(teamId, snapshotAt);
   return result.rows;
 };
 
@@ -149,6 +156,7 @@ export const getTradeLockStatus = async (): Promise<TradeLockStatus> => {
     lock_window_minutes: 60,
     manual_lock: false,
     manual_unlock_until: null,
+    last_lock_at: null,
   };
 
   const now = new Date();
@@ -169,17 +177,23 @@ export const getTradeLockStatus = async (): Promise<TradeLockStatus> => {
       lock_window_minutes: Number(cfg.lock_window_minutes || 60),
       next_match_at: nextMatchAt ? nextMatchAt.toISOString() : null,
       lock_starts_at: lockStartsAt ? lockStartsAt.toISOString() : null,
+      last_lock_at: cfg.last_lock_at ? new Date(cfg.last_lock_at).toISOString() : null,
       manual_unlock_until: manualUnlockUntil ? manualUnlockUntil.toISOString() : null,
     };
   }
 
   if (cfg.manual_lock) {
+    if (!cfg.last_lock_at) {
+      await repo.setTradeLockLastLockAt(new Date().toISOString());
+      cfg.last_lock_at = new Date().toISOString();
+    }
     return {
       locked: true,
       reason: "manual_lock",
       lock_window_minutes: Number(cfg.lock_window_minutes || 60),
       next_match_at: nextMatchAt ? nextMatchAt.toISOString() : null,
       lock_starts_at: lockStartsAt ? lockStartsAt.toISOString() : null,
+      last_lock_at: cfg.last_lock_at ? new Date(cfg.last_lock_at).toISOString() : null,
       manual_unlock_until: manualUnlockUntil ? manualUnlockUntil.toISOString() : null,
     };
   }
@@ -191,6 +205,7 @@ export const getTradeLockStatus = async (): Promise<TradeLockStatus> => {
       lock_window_minutes: Number(cfg.lock_window_minutes || 60),
       next_match_at: nextMatchAt ? nextMatchAt.toISOString() : null,
       lock_starts_at: lockStartsAt ? lockStartsAt.toISOString() : null,
+      last_lock_at: cfg.last_lock_at ? new Date(cfg.last_lock_at).toISOString() : null,
       manual_unlock_until: manualUnlockUntil.toISOString(),
     };
   }
@@ -202,17 +217,30 @@ export const getTradeLockStatus = async (): Promise<TradeLockStatus> => {
       lock_window_minutes: Number(cfg.lock_window_minutes || 60),
       next_match_at: null,
       lock_starts_at: null,
+      last_lock_at: cfg.last_lock_at ? new Date(cfg.last_lock_at).toISOString() : null,
       manual_unlock_until: manualUnlockUntil ? manualUnlockUntil.toISOString() : null,
     };
   }
 
   const locked = now >= lockStartsAt;
+
+  // Persist the most recent lock start so we can serve "last trade lock roster" snapshots.
+  if (locked && lockStartsAt) {
+    const stored = cfg.last_lock_at ? new Date(cfg.last_lock_at).getTime() : null;
+    const incoming = lockStartsAt.getTime();
+    if (stored == null || stored < incoming) {
+      await repo.setTradeLockLastLockAt(lockStartsAt.toISOString());
+      cfg.last_lock_at = lockStartsAt.toISOString();
+    }
+  }
+
   return {
     locked,
     reason: locked ? "pregame_lock" : "open",
     lock_window_minutes: Number(cfg.lock_window_minutes || 60),
     next_match_at: nextMatchAt.toISOString(),
     lock_starts_at: lockStartsAt.toISOString(),
+    last_lock_at: cfg.last_lock_at ? new Date(cfg.last_lock_at).toISOString() : lockStartsAt.toISOString(),
     manual_unlock_until: manualUnlockUntil ? manualUnlockUntil.toISOString() : null,
   };
 };

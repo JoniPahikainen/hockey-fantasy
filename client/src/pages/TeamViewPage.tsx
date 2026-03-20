@@ -12,6 +12,7 @@ export default function TeamViewPage() {
   const [lineup, setLineup] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [tradeLockMeta, setTradeLockMeta] = useState<string | null>(null);
 
   const teamName = state?.teamName ?? "Team";
   const manager = state?.manager ?? "—";
@@ -28,6 +29,14 @@ export default function TeamViewPage() {
       try {
         const lockRes = await api.get("/fantasy-teams/trade-lock/status");
         const isLocked = Boolean(lockRes.data?.status?.locked);
+        const lastLockAt = lockRes.data?.status?.last_lock_at as string | null;
+        setTradeLockMeta(
+          isLocked
+            ? `Live roster (trading locked: ${lockRes.data?.status?.reason ?? "locked"})`
+            : lastLockAt
+              ? `Snapshot from last trade lock: ${new Date(lastLockAt).toLocaleString()}`
+              : `Snapshot from last trade lock: n/a`,
+        );
         const rosterEndpoint = isLocked
           ? `/fantasy-teams/${id}/players`
           : `/fantasy-teams/${id}/players/last-trade-lock`;
@@ -83,6 +92,13 @@ export default function TeamViewPage() {
             <h1 className="text-3xl font-black uppercase tracking-tighter italic text-text-primary leading-none">
               Team View
             </h1>
+            {tradeLockMeta && (
+              <div className="text-right">
+                <p className="text-[10px] font-black uppercase tracking-wider text-text-muted-subtle">
+                  {tradeLockMeta}
+                </p>
+              </div>
+            )}
             <Link
               to="/league"
               className="text-[10px] font-black uppercase tracking-[0.2em] text-text-muted-subtle hover:text-accent-primary transition-colors"
