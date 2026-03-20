@@ -152,6 +152,25 @@ export const getCurrentPeriod = () => {
   );
 };
 
+export const getScoringPeriods = () => {
+  return pool.query(
+    `
+    SELECT
+      period_id,
+      period_name,
+      start_date,
+      end_date,
+      CASE
+        WHEN CURRENT_DATE < start_date THEN 'locked'
+        WHEN CURRENT_DATE > end_date THEN 'past'
+        ELSE 'current'
+      END AS status
+    FROM scoring_periods
+    ORDER BY start_date ASC;
+    `,
+  );
+};
+
 export const getLeagueRecords = (league_id: number, period_id: number | null) => {
   return pool.query(
     `

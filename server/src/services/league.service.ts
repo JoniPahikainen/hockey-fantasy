@@ -90,6 +90,11 @@ export const getCurrentPeriod = async () => {
     return result.rows[0];
 };
 
+export const getScoringPeriods = async () => {
+  const result = await repo.getScoringPeriods();
+  return result.rows;
+};
+
 export const getDailyTeamPerformance = async (
   team_id: number,
   period_id: number,

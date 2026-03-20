@@ -152,6 +152,21 @@ export const getCurrentPeriod = async (req: Request, res: Response) => {
   }
 };
 
+export const getScoringPeriods = async (_req: Request, res: Response) => {
+  try {
+    const periods = await service.getScoringPeriods();
+    return res.json({ ok: true, periods });
+  } catch (err) {
+    if (err instanceof ServiceError) {
+      return res.status(err.statusCode).json({ ok: false, error: err.message });
+    }
+    console.error("Error fetching scoring periods:", err);
+    return res
+      .status(500)
+      .json({ ok: false, error: "Internal server error" });
+  }
+};
+
 // Get daily team performance for graphing
 export const getDailyTeamPerformance = async (req: Request, res: Response) => {
   try {
