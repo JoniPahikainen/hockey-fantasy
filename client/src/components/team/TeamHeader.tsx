@@ -4,6 +4,7 @@ interface TeamHeaderProps {
   totalSalary: number;
   isDirty: boolean;
   isSaving: boolean;
+  tradingLocked?: boolean;
   onSave: () => void;
 }
 
@@ -13,6 +14,7 @@ export default function TeamHeader({
   totalSalary,
   isDirty,
   isSaving,
+  tradingLocked = false,
   onSave,
 }: TeamHeaderProps) {
 
@@ -25,17 +27,25 @@ export default function TeamHeader({
 
         <button
           onClick={onSave}
-          disabled={!isDirty || isSaving}
+          disabled={!isDirty || isSaving || tradingLocked}
           className={`px-6 py-2 text-[10px] font-black uppercase tracking-[0.2em] transition-all
             ${
-              isDirty
+              !isDirty || tradingLocked
+                ? "bg-bg-tertiary text-text-muted-subtle cursor-not-allowed"
+                : isDirty
                 ? "bg-bg-sidebar text-text-inverse hover:bg-bg-sidebar-hover"
                 : "bg-bg-tertiary text-text-muted-subtle cursor-not-allowed"
             }
             ${isSaving ? "opacity-50" : ""}
           `}
         >
-          {isSaving ? "Syncing..." : isDirty ? "Save Changes" : "Lineup Locked"}
+          {isSaving
+            ? "Syncing..."
+            : tradingLocked
+              ? "Trading Locked"
+              : isDirty
+                ? "Save Changes"
+                : "Lineup Locked"}
         </button>
       </div>
 

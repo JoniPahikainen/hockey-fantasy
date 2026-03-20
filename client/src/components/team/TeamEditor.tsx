@@ -15,11 +15,14 @@ export default function TeamEditor({ userId }: { userId: number }) {
   const [captainId, setCaptainId] = useState<number | null>(null);
   const [detailPlayerId, setDetailPlayerId] = useState<number | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [tradeLockAlert, setTradeLockAlert] = useState<string | null>(null);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [posFilter, setPosFilter] = useState("FORWARDS");
   const [teamFilter, setTeamFilter] = useState("ALL");
   const { activeTeamId, activeTeamName } = useActiveTeam();
+  const [tradeLocked, setTradeLocked] = useState(false);
+  const [tradeLockReason, setTradeLockReason] = useState<string | null>(null);
 
   useEffect(() => {
     const initPage = async () => {
@@ -32,6 +35,28 @@ export default function TeamEditor({ userId }: { userId: number }) {
     };
     initPage();
   }, [userId]);
+
+  useEffect(() => {
+    const fetchLockStatus = async () => {
+      try {
+        const lockRes = await api.get("/fantasy-teams/trade-lock/status");
+        const status = lockRes.data?.status;
+        const locked = Boolean(status?.locked);
+        setTradeLocked(locked);
+        if (locked) {
+          const msg = `Trading is locked (${status.reason}).`;
+          setTradeLockReason(msg);
+          setTradeLockAlert(msg);
+        } else {
+          setTradeLockReason(null);
+          setTradeLockAlert(null);
+        }
+      } catch {
+        // If lock check fails, fall back to previous behavior (allow trading).
+      }
+    };
+    fetchLockStatus();
+  }, []);
 
   useEffect(() => {
     if (activeTeamId) {
@@ -72,8 +97,18 @@ export default function TeamEditor({ userId }: { userId: number }) {
   );
 
   const saveLineup = async () => {
-    setIsSaving(true);
+    setTradeLockAlert(null);
+    if (selectedTeamId == null) return;
     try {
+      if (tradeLocked) {
+        const msg =
+          tradeLockReason ||
+          "Trading is locked. Next match: n/a";
+        window.alert(msg);
+        setTradeLockAlert(msg);
+        return;
+      }
+      setIsSaving(true);
       const res = await api.post("/fantasy-teams/save-lineup", {
         team_id: selectedTeamId,
         playerIds: lineup.map((p) => p.id),
@@ -82,6 +117,16 @@ export default function TeamEditor({ userId }: { userId: number }) {
         setSavedLineupIds(lineup.map((p) => p.id));
       }
     } catch (err) {
+      const statusCode = (err as any)?.response?.status;
+      const serverMsg =
+        (err as any)?.response?.data?.error ||
+        (err as any)?.response?.data?.message;
+
+      if (statusCode === 423) {
+        window.alert(serverMsg || "Trading is locked.");
+        setTradeLockAlert(serverMsg || "Trading is locked.");
+        return;
+      }
       console.error(err);
     }
     setIsSaving(false);
@@ -93,6 +138,7 @@ export default function TeamEditor({ userId }: { userId: number }) {
   };
 
   const addToLineup = (player: any) => {
+    if (tradeLocked) return;
     if (lineup.find((p) => p.id === player.id)) return;
     const limits = { F: 3, D: 2, G: 1 };
     if (
@@ -106,12 +152,30 @@ export default function TeamEditor({ userId }: { userId: number }) {
   const setCaptain = async (playerId: number) => {
     const newId = captainId === playerId ? null : playerId;
     if (selectedTeamId == null) return;
+    setTradeLockAlert(null);
     try {
+      if (tradeLocked) {
+        const msg =
+          tradeLockReason ||
+          "Trading is locked. Next match: n/a";
+        window.alert(msg);
+        setTradeLockAlert(msg);
+        return;
+      }
       await api.patch(`/fantasy-teams/${selectedTeamId}/captain`, {
         player_id: newId,
       });
       setCaptainId(newId);
     } catch (err) {
+      const statusCode = (err as any)?.response?.status;
+      const serverMsg =
+        (err as any)?.response?.data?.error ||
+        (err as any)?.response?.data?.message;
+      if (statusCode === 423) {
+        window.alert(serverMsg || "Trading is locked.");
+        setTradeLockAlert(serverMsg || "Trading is locked.");
+        return;
+      }
       console.error(err);
     }
   };
@@ -181,8 +245,17 @@ export default function TeamEditor({ userId }: { userId: number }) {
         totalSalary={totalSalary}
         isDirty={isDirty}
         isSaving={isSaving}
+        tradingLocked={tradeLocked}
         onSave={saveLineup}
       />
+
+      {tradeLockAlert && (
+        <div className="px-6 pb-4">
+          <div className="bg-accent-danger-muted border border-accent-danger-muted text-accent-danger text-[10px] font-black uppercase tracking-[0.2em] px-4 py-3 rounded-lg">
+            {tradeLockAlert}
+          </div>
+        </div>
+      )}
 
       {/* FORMATION AREA */}
       <div className="p-8 bg-bg-tertiary border-b border-border-input">
@@ -196,6 +269,7 @@ export default function TeamEditor({ userId }: { userId: number }) {
                 onSetCaptain={setCaptain}
                 isCaptain={lineup.filter((p) => p.pos === "F")[i]?.id === captainId}
                 player={lineup.filter((p) => p.pos === "F")[i]}
+                readOnly={tradeLocked}
               />
             ))}
           </div>
@@ -208,6 +282,7 @@ export default function TeamEditor({ userId }: { userId: number }) {
                 onSetCaptain={setCaptain}
                 isCaptain={lineup.filter((p) => p.pos === "D")[i]?.id === captainId}
                 player={lineup.filter((p) => p.pos === "D")[i]}
+                readOnly={tradeLocked}
               />
             ))}
           </div>
@@ -219,6 +294,7 @@ export default function TeamEditor({ userId }: { userId: number }) {
               onSetCaptain={setCaptain}
               isCaptain={lineup.find((p) => p.pos === "G")?.id === captainId}
               player={lineup.find((p) => p.pos === "G")}
+              readOnly={tradeLocked}
             />
           </div>
         </div>
@@ -335,7 +411,7 @@ export default function TeamEditor({ userId }: { userId: number }) {
                         </button>
                         <button
                           onClick={() => addToLineup(player)}
-                          disabled={isSelected}
+                          disabled={isSelected || tradeLocked}
                           className="text-[9px] font-black uppercase px-6 py-2 border border-border-strong hover:bg-bg-sidebar hover:text-text-inverse disabled:opacity-0 transition-all"
                         >
                           Select
