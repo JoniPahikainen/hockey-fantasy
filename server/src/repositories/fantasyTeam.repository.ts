@@ -243,15 +243,23 @@ export const getTeamBudgetSpent = async (client: any, teamId: number) => {
   const result = await client.query(
     `
     SELECT COALESCE(SUM(p.current_price),0) AS total_spent
-    FROM fantasy_team_players ftp
-    JOIN players p ON p.player_id = ftp.player_id
-    WHERE ftp.team_id = $1
-    AND ftp.is_active = true
+    FROM fantasy_team_roster r
+    JOIN players p ON p.player_id = r.player_id
+    WHERE r.team_id = $1
+      AND r.removed_at IS NULL
     `,
     [teamId],
   );
 
   return Number(result.rows[0].total_spent);
+};
+
+export const getTeamBudgetRemaining = async (teamId: number) => {
+  const result = await pool.query(
+    `SELECT budget_remaining FROM fantasy_teams WHERE team_id = $1`,
+    [teamId],
+  );
+  return result.rows[0]?.budget_remaining ?? 0;
 };
 
 export const getRankedLineup = async (order: "DESC" | "ASC") => {

@@ -24,6 +24,8 @@ export default function TeamEditor({ userId }: { userId: number }) {
   const [tradeLocked, setTradeLocked] = useState(false);
   const [tradeLockReason, setTradeLockReason] = useState<string | null>(null);
 
+  const [budgetTotal, setBudgetTotal] = useState<number | null>(null);
+  
   useEffect(() => {
     const initPage = async () => {
       try {
@@ -72,6 +74,12 @@ export default function TeamEditor({ userId }: { userId: number }) {
       const res = await api.get(`/fantasy-teams/${selectedTeamId}/players`);
       if (res.data.ok) {
         const p = res.data.players.map((x: any) => ({ ...x, id: x.player_id }));
+        const initialSpent = p.reduce(
+          (sum: number, row: any) => sum + (Number(row.salary) || 0),
+          0,
+        );
+        const initialBudgetRemaining = Number(res.data.budget_remaining ?? 0);
+        setBudgetTotal(initialBudgetRemaining + initialSpent);
         setLineup(p);
         setSavedLineupIds(p.map((x: any) => x.id));
         const cap = p.find((x: any) => x.is_captain);
@@ -96,6 +104,9 @@ export default function TeamEditor({ userId }: { userId: number }) {
     [lineup]
   );
 
+  const availableCash =
+    budgetTotal == null ? null : budgetTotal - totalSalary;
+
   const saveLineup = async () => {
     setTradeLockAlert(null);
     if (selectedTeamId == null) return;
@@ -115,6 +126,13 @@ export default function TeamEditor({ userId }: { userId: number }) {
       });
       if (res.data.ok) {
         setSavedLineupIds(lineup.map((p) => p.id));
+        if (typeof res.data.budget_remaining === "number") {
+          const spent = lineup.reduce(
+            (sum: number, p: any) => sum + (Number(p.salary) || 0),
+            0,
+          );
+          setBudgetTotal(Number(res.data.budget_remaining) + spent);
+        }
       }
     } catch (err) {
       const statusCode = (err as any)?.response?.status;
@@ -145,6 +163,10 @@ export default function TeamEditor({ userId }: { userId: number }) {
       lineup.filter((p) => p.pos === player.pos).length <
       limits[player.pos as keyof typeof limits]
     ) {
+      if (availableCash != null) {
+        const cost = Number(player.salary) || 0;
+        if (cost > availableCash) return;
+      }
       setLineup([...lineup, player]);
     }
   };
@@ -243,6 +265,7 @@ export default function TeamEditor({ userId }: { userId: number }) {
         activeTeamName={activeTeamName || "—"}
         lineupCount={lineup.length}
         totalSalary={totalSalary}
+        budgetRemaining={availableCash ?? 0}
         isDirty={isDirty}
         isSaving={isSaving}
         tradingLocked={tradeLocked}
@@ -376,6 +399,11 @@ export default function TeamEditor({ userId }: { userId: number }) {
               {processedPool.map((player) => {
                 const playerId = player.player_id || player.id;
                 const isSelected = lineup.find((p) => (p.player_id || p.id) === playerId);
+                const limits = { F: 3, D: 2, G: 1 };
+                const posCount = lineup.filter((p) => p.pos === player.pos).length;
+                const isSlotFull = !isSelected && posCount >= limits[player.pos as keyof typeof limits];
+                const cost = Number(player.salary) || 0;
+                const canAfford = availableCash == null || cost <= availableCash;
                 return (
                   <tr
                     key={player.id}
@@ -411,7 +439,7 @@ export default function TeamEditor({ userId }: { userId: number }) {
                         </button>
                         <button
                           onClick={() => addToLineup(player)}
-                          disabled={isSelected || tradeLocked}
+                          disabled={isSelected || tradeLocked || isSlotFull || !canAfford}
                           className="text-[9px] font-black uppercase px-6 py-2 border border-border-strong hover:bg-bg-sidebar hover:text-text-inverse disabled:opacity-0 transition-all"
                         >
                           Select

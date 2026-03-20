@@ -2,6 +2,7 @@ interface TeamHeaderProps {
   activeTeamName: string;
   lineupCount: number;
   totalSalary: number;
+  budgetRemaining?: number | null;
   isDirty: boolean;
   isSaving: boolean;
   tradingLocked?: boolean;
@@ -12,6 +13,7 @@ export default function TeamHeader({
   activeTeamName,
   lineupCount,
   totalSalary,
+  budgetRemaining,
   isDirty,
   isSaving,
   tradingLocked = false,
@@ -67,6 +69,17 @@ export default function TeamHeader({
           </span>
           <span className="font-mono font-black text-lg text-text-primary">
             ${Number(totalSalary || 0).toLocaleString()}
+          </span>
+        </div>
+
+        <div className="w-px h-8 bg-bg-tertiary"></div>
+
+        <div className="flex flex-col text-right">
+          <span className="text-[9px] font-black text-text-muted-subtle uppercase tracking-widest">
+            Budget Remaining
+          </span>
+          <span className="font-mono font-black text-lg text-text-primary">
+            ${Number(budgetRemaining ?? 0).toLocaleString()}
           </span>
         </div>
 

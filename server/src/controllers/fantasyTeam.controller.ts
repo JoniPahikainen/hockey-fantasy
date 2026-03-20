@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import * as service from "../services/fantasyTeam.service";
+import * as repo from "../repositories/fantasyTeam.repository";
 import { ServiceError } from "../utils/errors";
 
 export const createTeam = async (req: Request, res: Response) => {
@@ -68,7 +69,8 @@ export const getTeamPlayers = async (req: Request, res: Response) => {
     }
 
     const players = await service.getTeamPlayers(teamId);
-    return res.json({ ok: true, players });
+    const budgetRemaining = await repo.getTeamBudgetRemaining(teamId);
+    return res.json({ ok: true, players, budget_remaining: budgetRemaining });
 
   } catch (err: any) {
     if (err instanceof ServiceError) {

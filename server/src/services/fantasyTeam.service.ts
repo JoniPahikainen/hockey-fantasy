@@ -86,12 +86,30 @@ export const updateLineupProcess = async (teamId: number, playerIds: number[]) =
   try {
     await client.query("BEGIN");
 
+    const oldBudgetRes = await client.query(
+      "SELECT budget_remaining FROM fantasy_teams WHERE team_id = $1 FOR UPDATE",
+      [teamId],
+    );
+    const oldBudgetRemaining = Number(oldBudgetRes.rows[0]?.budget_remaining ?? 0);
+    const oldSpent = await repo.getTeamBudgetSpent(client, teamId);
+
     await repo.markRemovedPlayers(client, teamId, playerIds);
     await repo.insertOrReactivatePlayers(client, teamId, playerIds);
-    const totalSpent = await repo.getTeamBudgetSpent(client, teamId);
+
+    const newSpent = await repo.getTeamBudgetSpent(client, teamId);
+    const newBudgetRemaining = oldBudgetRemaining + oldSpent - newSpent;
+
+    if (newBudgetRemaining < 0) {
+      throw new ServiceError("Not enough budget for this lineup", 400);
+    }
+
+    await client.query(
+      "UPDATE fantasy_teams SET budget_remaining = $1 WHERE team_id = $2",
+      [newBudgetRemaining, teamId],
+    );
 
     await client.query("COMMIT");
-    return totalSpent;
+    return newBudgetRemaining;
   } catch (err) {
     await client.query("ROLLBACK");
     throw err;
