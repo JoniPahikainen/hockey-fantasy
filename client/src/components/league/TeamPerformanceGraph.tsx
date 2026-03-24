@@ -18,6 +18,7 @@ interface Props {
 }
 
 interface BreakdownRow {
+  player_id?: number;
   player_name: string;
   points: number;
 }
@@ -73,6 +74,8 @@ export default function TeamPerformanceGraph({ teamId, periodId }: Props) {
       if (res.ok && Array.isArray(res.breakdown)) {
         setBreakdown(
           res.breakdown.map((r: any) => ({
+            player_id:
+              r.player_id != null ? Number(r.player_id) : undefined,
             player_name: r.player_name,
             points: Number(r.points),
           }))
@@ -203,7 +206,7 @@ export default function TeamPerformanceGraph({ teamId, periodId }: Props) {
             <ul className="space-y-1">
               {breakdown.map((row, i) => (
                 <li
-                  key={i}
+                  key={row.player_id ?? i}
                   className="flex justify-between items-baseline text-xs font-bold uppercase"
                 >
                   <span className="text-text-secondary">{row.player_name}</span>

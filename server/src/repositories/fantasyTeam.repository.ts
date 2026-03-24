@@ -38,11 +38,9 @@ export const getTeamPlayers = (teamId: number) => {
   return pool.query(
     `
     WITH active_roster AS (
-      SELECT DISTINCT ON (player_id)
-        roster_id, player_id, is_captain
-      FROM fantasy_team_roster
-      WHERE team_id = $1 AND removed_at IS NULL
-      ORDER BY player_id, roster_id DESC
+      SELECT player_id, is_captain
+      FROM fantasy_team_players
+      WHERE team_id = $1 AND COALESCE(is_active, true)
     ),
 
     last_gameday AS (
@@ -115,26 +113,12 @@ export const insertOrReactivatePlayers = async (
   if (playerIds.length === 0) return;
 
   for (const pid of playerIds) {
-    const res = await client.query(
-      `
-      UPDATE fantasy_team_roster SET removed_at = NULL
-      WHERE team_id = $1 AND player_id = $2 AND removed_at IS NOT NULL
-      RETURNING roster_id
-      `,
+    await client.query(
+      `INSERT INTO fantasy_team_players (team_id, player_id, is_captain, added_at, is_active)
+       VALUES ($1, $2, false, NOW(), true)
+       ON CONFLICT (team_id, player_id) DO UPDATE SET is_active = true`,
       [teamId, pid],
     );
-
-    if (res.rowCount === 0) {
-      await client.query(
-        `INSERT INTO fantasy_team_roster (team_id, player_id, added_at)
-         SELECT $1, $2, NOW()
-         WHERE NOT EXISTS (
-           SELECT 1 FROM fantasy_team_roster
-           WHERE team_id = $1 AND player_id = $2 AND removed_at IS NULL
-         )`,
-        [teamId, pid],
-      );
-    }
   }
 };
 
@@ -143,15 +127,13 @@ export const markRemovedPlayers = async (
   teamId: number,
   playerIds: number[],
 ) => {
+  if (playerIds.length === 0) {
+    await client.query(`DELETE FROM fantasy_team_players WHERE team_id = $1`, [teamId]);
+    return;
+  }
   await client.query(
-    `
-    UPDATE fantasy_team_roster
-    SET removed_at = CURRENT_TIMESTAMP
-    WHERE team_id = $1
-      AND player_id NOT IN (${playerIds.length > 0 ? playerIds.join(",") : "NULL"})
-      AND removed_at IS NULL
-    `,
-    [teamId],
+    `DELETE FROM fantasy_team_players WHERE team_id = $1 AND player_id <> ALL($2::int[])`,
+    [teamId, playerIds],
   );
 };
 
@@ -160,19 +142,14 @@ export const setTeamCaptain = async (
   teamId: number,
   playerId: number | null,
 ) => {
+  await client.query(`UPDATE fantasy_team_players SET is_captain = false WHERE team_id = $1`, [
+    teamId,
+  ]);
   if (playerId == null) {
-    await client.query(
-      `UPDATE fantasy_team_roster SET is_captain = false WHERE team_id = $1 AND removed_at IS NULL`,
-      [teamId],
-    );
     return;
   }
   await client.query(
-    `
-    UPDATE fantasy_team_roster
-    SET is_captain = (player_id = $2)
-    WHERE team_id = $1 AND removed_at IS NULL
-    `,
+    `UPDATE fantasy_team_players SET is_captain = (player_id = $2) WHERE team_id = $1`,
     [teamId, playerId],
   );
 };
@@ -183,22 +160,17 @@ export const setTeamCaptainStandalone = async (
 ) => {
   await pool.query("BEGIN");
   try {
+    await pool.query(`UPDATE fantasy_team_players SET is_captain = false WHERE team_id = $1`, [
+      teamId,
+    ]);
     if (playerId == null) {
-      await pool.query(
-        `UPDATE fantasy_team_roster SET is_captain = false WHERE team_id = $1 AND removed_at IS NULL`,
-        [teamId],
-      );
       await pool.query(
         `UPDATE captain_history SET to_date = CURRENT_DATE WHERE team_id = $1 AND to_date IS NULL`,
         [teamId],
       );
     } else {
       await pool.query(
-        `
-        UPDATE fantasy_team_roster
-        SET is_captain = (player_id = $2)
-        WHERE team_id = $1 AND removed_at IS NULL
-        `,
+        `UPDATE fantasy_team_players SET is_captain = (player_id = $2) WHERE team_id = $1`,
         [teamId, playerId],
       );
       await pool.query(
@@ -243,10 +215,10 @@ export const getTeamBudgetSpent = async (client: any, teamId: number) => {
   const result = await client.query(
     `
     SELECT COALESCE(SUM(p.current_price),0) AS total_spent
-    FROM fantasy_team_roster r
-    JOIN players p ON p.player_id = r.player_id
-    WHERE r.team_id = $1
-      AND r.removed_at IS NULL
+    FROM fantasy_team_players ftp
+    JOIN players p ON p.player_id = ftp.player_id
+    WHERE ftp.team_id = $1
+      AND COALESCE(ftp.is_active, true)
     `,
     [teamId],
   );
@@ -317,52 +289,71 @@ export const getRankedLineup = async (order: "DESC" | "ASC") => {
 export const getDailyTeamPerformance = (team_id: number, period_id: number) => {
   return pool.query(
     `
-    WITH current_period AS (
-      SELECT start_date, end_date
+    WITH days AS (
+      SELECT generate_series(
+        start_date,
+        LEAST(end_date, CURRENT_DATE),
+        '1 day'
+      )::date AS game_date
       FROM scoring_periods
       WHERE period_id = $2
-      LIMIT 1
     ),
-    days AS (
-      SELECT generate_series(start_date, LEAST(end_date, CURRENT_DATE), '1 day')::date AS game_date
-      FROM current_period
-    ),
+
     captain_on_day AS (
-      SELECT DISTINCT ON (d.game_date) d.game_date, ch.player_id AS captain_player_id
+      SELECT DISTINCT ON (d.game_date)
+        d.game_date,
+        ch.player_id AS captain_player_id
       FROM days d
-      LEFT JOIN captain_history ch ON ch.team_id = $1
+      LEFT JOIN captain_history ch
+        ON ch.team_id = $1
         AND ch.from_date <= d.game_date
         AND (ch.to_date IS NULL OR ch.to_date >= d.game_date)
       ORDER BY d.game_date, ch.from_date DESC NULLS LAST
+    ),
+
+    active_players AS (
+      SELECT
+        d.game_date,
+        r.player_id
+      FROM days d
+      JOIN fantasy_team_roster r
+        ON r.team_id = $1
+        AND r.added_at::date <= d.game_date
+        AND (r.removed_at IS NULL OR r.removed_at::date > d.game_date)
+    ),
+
+    player_daily_points AS (
+      SELECT
+        ap.game_date,
+        ap.player_id,
+        COALESCE(SUM(pgs.points_earned), 0) AS points
+      FROM active_players ap
+      LEFT JOIN matches m
+        ON (m.scheduled_at - INTERVAL '6 hours')::date = ap.game_date
+        AND m.is_processed = true
+      LEFT JOIN player_game_stats pgs
+        ON pgs.match_id = m.match_id
+        AND pgs.player_id = ap.player_id
+      GROUP BY ap.game_date, ap.player_id
     )
+
     SELECT
-      d.game_date,
-      COALESCE(SUM(
+      pdp.game_date,
+      SUM(
         CASE
-          WHEN r.player_id = cod.captain_player_id
-          THEN (pgs.points_earned *
-                COALESCE(
-                  (SELECT forward FROM scoring_rules WHERE rule_key = 'CAPTAIN_MULTIPLIER'),
-                  100
-                ) / 100)
-          ELSE pgs.points_earned
+          WHEN pdp.player_id = cod.captain_player_id
+          THEN pdp.points * COALESCE(
+            (SELECT forward FROM scoring_rules WHERE rule_key = 'CAPTAIN_MULTIPLIER'),
+            100
+          )::numeric / 100
+          ELSE pdp.points
         END
-      ),0) AS points,
-      COUNT(DISTINCT r.player_id) AS active_players_count
-    FROM days d
-    LEFT JOIN captain_on_day cod ON cod.game_date = d.game_date
-    LEFT JOIN fantasy_team_roster r
-      ON r.team_id = $1
-      AND r.added_at::date <= d.game_date
-      AND (r.removed_at IS NULL OR r.removed_at::date > d.game_date)
-    LEFT JOIN matches m
-      ON (m.scheduled_at - INTERVAL '6 hours')::date = d.game_date
-      AND m.is_processed = true
-    LEFT JOIN player_game_stats pgs
-      ON pgs.match_id = m.match_id
-      AND pgs.player_id = r.player_id
-    GROUP BY d.game_date
-    ORDER BY d.game_date;
+      ) AS points,
+      COUNT(*) AS active_players_count
+    FROM player_daily_points pdp
+    LEFT JOIN captain_on_day cod ON cod.game_date = pdp.game_date
+    GROUP BY pdp.game_date
+    ORDER BY pdp.game_date;
     `,
     [team_id, period_id],
   );
@@ -376,6 +367,18 @@ export const deleteTeam = (teamId: number) => {
 };
 
 function getDailyPlayerBreakdownSql(useCaptainHistory: boolean): string {
+  const captainCase = useCaptainHistory
+    ? `CASE
+          WHEN p.player_id = (SELECT captain_player_id FROM captain_on_date)
+          THEN (pgs.points_earned *
+                COALESCE(
+                  (SELECT forward FROM scoring_rules WHERE rule_key = 'CAPTAIN_MULTIPLIER'),
+                  100
+                ) / 100)
+          ELSE pgs.points_earned
+        END`
+    : `pgs.points_earned`;
+
   const captainCte = useCaptainHistory
     ? `,
     captain_on_date AS (
@@ -388,9 +391,7 @@ function getDailyPlayerBreakdownSql(useCaptainHistory: boolean): string {
       LIMIT 1
     )`
     : "";
-  const captainExpr = useCaptainHistory
-    ? "CASE WHEN p.player_id = (SELECT captain_player_id FROM captain_on_date) THEN COALESCE((SELECT forward FROM scoring_rules WHERE rule_key = 'CAPTAIN_MULTIPLIER'), 100)::numeric / 100 ELSE 1 END"
-    : "1";
+
   return `
     WITH roster_on_day AS (
       SELECT DISTINCT r.player_id
@@ -404,29 +405,11 @@ function getDailyPlayerBreakdownSql(useCaptainHistory: boolean): string {
       FROM matches m
       WHERE (m.scheduled_at - INTERVAL '6 hours')::date = $2::date
         AND m.is_processed = true
-    ),
-    captain_on_date AS (
-      SELECT player_id AS captain_player_id
-      FROM captain_history
-      WHERE team_id = $1
-        AND from_date <= $2::date
-        AND (to_date IS NULL OR to_date >= $2::date)
-      ORDER BY from_date DESC
-      LIMIT 1
-    )
+    )${captainCte}
     SELECT
+      p.player_id,
       (p.first_name || ' ' || p.last_name) AS player_name,
-      COALESCE(SUM(
-        CASE
-          WHEN p.player_id = (SELECT captain_player_id FROM captain_on_date)
-          THEN (pgs.points_earned *
-                COALESCE(
-                  (SELECT forward FROM scoring_rules WHERE rule_key = 'CAPTAIN_MULTIPLIER'),
-                  100
-                ) / 100)
-          ELSE pgs.points_earned
-        END
-      ),0) AS points
+      COALESCE(SUM(${captainCase}),0) AS points
     FROM roster_on_day r
     JOIN players p ON p.player_id = r.player_id
     LEFT JOIN player_game_stats pgs

@@ -29,13 +29,18 @@ export async function seedDailyPoints() {
       SELECT
         ld.day,
         ld.team_id,
-        ROUND(SUM(dpp.total_points_earned *
-            CASE WHEN ld.is_captain_on_day THEN 1.3 ELSE 1 END)::numeric,2)
+        ROUND(SUM(
+          dpp.total_points_earned *
+          CASE
+            WHEN ld.is_captain_on_day THEN COALESCE((SELECT forward FROM scoring_rules WHERE rule_key = 'CAPTAIN_MULTIPLIER'), 100)::numeric / 100
+            ELSE 1
+          END
+        )::numeric,2)
       FROM (
-        SELECT
+        SELECT DISTINCT ON (d.day, r.team_id, r.player_id)
+          d.day,
           r.team_id,
           r.player_id,
-          d.day,
           EXISTS (
             SELECT 1 FROM captain_history ch
             WHERE ch.team_id = r.team_id AND ch.player_id = r.player_id
@@ -50,6 +55,7 @@ export async function seedDailyPoints() {
         ) d
         ON d.day >= r.added_at::date
         AND (r.removed_at IS NULL OR d.day < r.removed_at::date)
+        ORDER BY d.day, r.team_id, r.player_id, r.roster_id DESC
       ) ld
       JOIN daily_player_points dpp
         ON dpp.day = ld.day
