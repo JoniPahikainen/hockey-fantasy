@@ -50,7 +50,7 @@ CREATE TABLE IF NOT EXISTS fantasy_teams (
 CREATE TABLE IF NOT EXISTS matches (
     api_id INT UNIQUE,
     match_id SERIAL PRIMARY KEY,
-    scheduled_at TIMESTAMP,
+    scheduled_at TIMESTAMPTZ,
     home_team_abbrev VARCHAR(10) REFERENCES real_teams(abbreviation),
     away_team_abbrev VARCHAR(10) REFERENCES real_teams(abbreviation),
     home_score INT DEFAULT 0,

@@ -237,7 +237,10 @@ export const getTeamBudgetRemaining = async (teamId: number) => {
 export const getRankedLineup = async (order: "DESC" | "ASC") => {
   const sql = `
     WITH last_match_info AS (
-      SELECT (MAX(scheduled_at)::date) as last_gameday FROM matches WHERE is_processed = true
+      SELECT 
+        MAX((scheduled_at AT TIME ZONE 'Europe/Helsinki')::date) AS last_gameday
+      FROM matches
+      WHERE is_processed = true
     ),
     target_window AS (
       SELECT 
