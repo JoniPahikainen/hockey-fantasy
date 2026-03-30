@@ -1,4 +1,5 @@
 import * as repo from "../repositories/admin.repository";
+import * as fantasyTeamService from "./fantasyTeam.service";
 
 export const getMarketOverview = (scope?: "current" | "all" | "period") =>
   repo.findAllPlayersForMarket(scope ?? "all");
@@ -25,3 +26,9 @@ export const updatePlayerMarket = async (
 };
 
 export const getScoringRules = () => repo.getScoringRules();
+
+export const getTradeLockStatus = () => fantasyTeamService.getTradeLockStatus();
+
+export const lockTrading = () => fantasyTeamService.setTradeLockState(true);
+
+export const openTrading = () => fantasyTeamService.setTradeLockState(false);

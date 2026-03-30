@@ -4,6 +4,9 @@ import {
   getMarketOverview,
   getScoringRules,
   updatePlayer,
+  getAdminTradeLockStatus,
+  lockTrading,
+  openTrading,
 } from "../controllers/admin.controller";
 import {
   actionRegenerateStartPrices,
@@ -26,5 +29,8 @@ router.post("/admin/economy/reset-season-prices", actionResetSeasonPrices);
 router.post("/admin/economy/process-period-prices", actionProcessPeriodPriceUpdate);
 
 router.post("/admin/economy/recalculate-base-ratings", recalculateBaseRatings);
+router.get("/admin/trade-lock/status", getAdminTradeLockStatus);
+router.post("/admin/trade-lock/lock", lockTrading);
+router.post("/admin/trade-lock/open", openTrading);
 
 export default router;

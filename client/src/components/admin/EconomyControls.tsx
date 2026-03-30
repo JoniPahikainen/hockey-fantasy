@@ -1,12 +1,26 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import api from "../../lib/api";
 
 export default function EconomyControls() {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [tradeLocked, setTradeLocked] = useState<boolean | null>(null);
   const [message, setMessage] = useState<{
     type: "ok" | "err";
     text: string;
   } | null>(null);
+
+  const loadTradeLockStatus = async () => {
+    try {
+      const res = await api.get("/admin/trade-lock/status");
+      setTradeLocked(Boolean(res.data?.status?.locked));
+    } catch {
+      setTradeLocked(null);
+    }
+  };
+
+  useEffect(() => {
+    loadTradeLockStatus();
+  }, []);
 
   const runAction = async (endpoint: string, actionName: string) => {
     setActionLoading(actionName);
@@ -18,6 +32,31 @@ export default function EconomyControls() {
           type: "ok",
           text: res.data.message || `${actionName} completed.`,
         });
+      } else {
+        setMessage({ type: "err", text: res.data.error || "Action failed" });
+      }
+    } catch (e: unknown) {
+      const err = e as { response?: { data?: { error?: string } } };
+      setMessage({
+        type: "err",
+        text: err.response?.data?.error || "Request failed",
+      });
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const runTradeLockAction = async (endpoint: string, actionName: string) => {
+    setActionLoading(actionName);
+    setMessage(null);
+    try {
+      const res = await api.post(endpoint);
+      if (res.data.ok) {
+        setMessage({
+          type: "ok",
+          text: res.data.message || `${actionName} completed.`,
+        });
+        await loadTradeLockStatus();
       } else {
         setMessage({ type: "err", text: res.data.error || "Action failed" });
       }
@@ -109,6 +148,35 @@ export default function EconomyControls() {
             {message.text}
           </p>
         )}
+      </section>
+
+      <section className="rounded-xl border border-border-default bg-bg-primary p-6 shadow-sm">
+        <h2 className="mb-1 text-sm font-semibold uppercase tracking-wider text-text-secondary">
+          Trade Lock
+        </h2>
+        <p className="mb-5 text-sm text-text-secondary">
+          Trading is now controlled manually by admin buttons only.
+        </p>
+        <p className="mb-4 text-xs font-bold uppercase tracking-wider text-text-muted-subtle">
+          Status:{" "}
+          {tradeLocked == null ? "Unknown" : tradeLocked ? "Locked" : "Open"}
+        </p>
+        <div className="flex flex-wrap gap-3">
+          <button
+            onClick={() => runTradeLockAction("/admin/trade-lock/lock", "Lock trading")}
+            disabled={!!actionLoading || tradeLocked === true}
+            className="rounded-lg bg-bg-sidebar-active px-4 py-2.5 text-xs font-semibold uppercase tracking-wider text-text-inverse shadow-sm transition hover:bg-accent-danger-hover disabled:opacity-50"
+          >
+            {actionLoading === "Lock trading" ? "Running…" : "Lock"}
+          </button>
+          <button
+            onClick={() => runTradeLockAction("/admin/trade-lock/open", "Open trading")}
+            disabled={!!actionLoading || tradeLocked === false}
+            className="rounded-lg bg-bg-sidebar-active px-4 py-2.5 text-xs font-semibold uppercase tracking-wider text-text-inverse shadow-sm transition hover:bg-accent-success-hover disabled:opacity-50"
+          >
+            {actionLoading === "Open trading" ? "Running…" : "Open"}
+          </button>
+        </div>
       </section>
 
       {/* How calculations work */}

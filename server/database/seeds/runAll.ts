@@ -6,7 +6,6 @@ import { seedPoints } from "./seedPoints";
 import { seedDailyPoints } from "./seedDailyPoints";
 import { Logger } from "../../src/utils/logger";
 import { processPeriodPriceUpdate } from "../../src/services/price.service";
-import { openTradeLockAfterSeed } from "../../src/services/fantasyTeam.service";
 
 async function runAll() {
   const masterTracker = new Logger("MASTER_SYNC");
@@ -20,7 +19,6 @@ async function runAll() {
     { name: "POINTS", fn: seedPoints },
     { name: "DAILY_POINTS", fn: seedDailyPoints },
     { name: "PROCESS_PERIOD_PRICES", fn: async () => await processPeriodPriceUpdate(0) },
-    { name: "OPEN_TRADE_LOCK", fn: openTradeLockAfterSeed },
   ];
 
   try {

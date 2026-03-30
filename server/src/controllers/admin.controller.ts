@@ -60,3 +60,33 @@ export const updatePlayer = async (req: AuthRequest, res: Response) => {
       .json({ ok: false, error: "Failed to update player" });
   }
 };
+
+export const getAdminTradeLockStatus = async (_req: AuthRequest, res: Response) => {
+  try {
+    const status = await service.getTradeLockStatus();
+    return res.json({ ok: true, status });
+  } catch (err) {
+    console.error("Admin getAdminTradeLockStatus:", err);
+    return res.status(500).json({ ok: false, error: "Failed to load trade lock status" });
+  }
+};
+
+export const lockTrading = async (_req: AuthRequest, res: Response) => {
+  try {
+    const status = await service.lockTrading();
+    return res.json({ ok: true, message: "Trading locked.", status });
+  } catch (err) {
+    console.error("Admin lockTrading:", err);
+    return res.status(500).json({ ok: false, error: "Failed to lock trading" });
+  }
+};
+
+export const openTrading = async (_req: AuthRequest, res: Response) => {
+  try {
+    const status = await service.openTrading();
+    return res.json({ ok: true, message: "Trading opened.", status });
+  } catch (err) {
+    console.error("Admin openTrading:", err);
+    return res.status(500).json({ ok: false, error: "Failed to open trading" });
+  }
+};

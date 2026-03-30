@@ -519,32 +519,129 @@ export const setTradeLockLastLockAt = (lockAt: string) => {
   );
 };
 
-export const getFirstUnprocessedMatchTime = () => {
+export const setTradeLockState = (locked: boolean, lockAt: string | null = null) => {
   return pool.query(
     `
-    SELECT MIN(scheduled_at) AS next_match_at
-    FROM matches
-    WHERE is_processed = false
+    UPDATE trade_lock_config
+    SET
+      manual_lock = $1,
+      manual_unlock_until = NULL,
+      last_lock_at = CASE
+        WHEN $1 = true THEN COALESCE($2::timestamptz, NOW())
+        ELSE last_lock_at
+      END,
+      updated_at = CURRENT_TIMESTAMP
+    WHERE id = 1
     `,
+    [locked, lockAt],
   );
 };
 
-export const markTradeOpenAfterSeed = () => {
+export const setTradeLockStateWithClient = (
+  client: any,
+  locked: boolean,
+  lockAt: string | null = null,
+) => {
+  return client.query(
+    `
+    UPDATE trade_lock_config
+    SET
+      manual_lock = $1,
+      manual_unlock_until = NULL,
+      last_lock_at = CASE
+        WHEN $1 = true THEN COALESCE($2::timestamptz, NOW())
+        ELSE last_lock_at
+      END,
+      updated_at = CURRENT_TIMESTAMP
+    WHERE id = 1
+    `,
+    [locked, lockAt],
+  );
+};
+
+export const syncRosterHistoryFromCurrentPlayers = async (client: any, asOf: string) => {
+  await client.query(
+    `
+    WITH current_players AS (
+      SELECT ftp.team_id, ftp.player_id
+      FROM fantasy_team_players ftp
+      WHERE COALESCE(ftp.is_active, true)
+    ),
+    active_history AS (
+      SELECT r.team_id, r.player_id
+      FROM fantasy_team_roster r
+      WHERE r.removed_at IS NULL
+    ),
+    to_remove AS (
+      SELECT ah.team_id, ah.player_id
+      FROM active_history ah
+      LEFT JOIN current_players cp
+        ON cp.team_id = ah.team_id AND cp.player_id = ah.player_id
+      WHERE cp.player_id IS NULL
+    )
+    UPDATE fantasy_team_roster r
+    SET removed_at = $1::timestamptz
+    WHERE r.removed_at IS NULL
+      AND EXISTS (
+        SELECT 1
+        FROM to_remove tr
+        WHERE tr.team_id = r.team_id
+          AND tr.player_id = r.player_id
+      )
+    `,
+    [asOf],
+  );
+
+  await client.query(
+    `
+    WITH current_players AS (
+      SELECT ftp.team_id, ftp.player_id
+      FROM fantasy_team_players ftp
+      WHERE COALESCE(ftp.is_active, true)
+    ),
+    active_history AS (
+      SELECT r.team_id, r.player_id
+      FROM fantasy_team_roster r
+      WHERE r.removed_at IS NULL
+    ),
+    to_add AS (
+      SELECT cp.team_id, cp.player_id
+      FROM current_players cp
+      LEFT JOIN active_history ah
+        ON ah.team_id = cp.team_id AND ah.player_id = cp.player_id
+      WHERE ah.player_id IS NULL
+    )
+    INSERT INTO fantasy_team_roster (team_id, player_id, added_at, removed_at, is_captain)
+    SELECT ta.team_id, ta.player_id, $1::timestamptz, NULL, false
+    FROM to_add ta
+    `,
+    [asOf],
+  );
+};
+
+export const getLastProcessedTradeLockSnapshotAt = (lockWindowMinutes: number) => {
   return pool.query(
     `
-    UPDATE trade_lock_config c
-    SET
-      manual_lock = false,
-      manual_unlock_until = (
-        SELECT m.scheduled_at - make_interval(mins => c.lock_window_minutes)
-        FROM matches m
-        WHERE m.is_processed = false
-        ORDER BY m.scheduled_at
-        LIMIT 1
-      ),
-      updated_at = CURRENT_TIMESTAMP
-    WHERE c.id = 1
+    WITH last_gameday AS (
+      SELECT date_trunc('day', MAX(m.scheduled_at) - INTERVAL '6 hours')::date AS game_day_date
+      FROM matches m
+      WHERE m.is_processed = true
+    ),
+    first_match AS (
+      SELECT MIN(m.scheduled_at) AS first_match_at
+      FROM matches m
+      CROSS JOIN last_gameday lg
+      WHERE m.is_processed = true
+        AND (m.scheduled_at - INTERVAL '6 hours')::date = lg.game_day_date
+    )
+    SELECT
+      CASE
+        WHEN first_match_at IS NULL THEN NULL
+        ELSE first_match_at - make_interval(mins => $1::int)
+      END AS snapshot_at
+    FROM first_match
     `,
+    [lockWindowMinutes],
   );
 };
 
@@ -563,17 +660,26 @@ export const getTeamPlayersAtTimestamp = (teamId: number, asOf: string) => {
       SELECT ch.player_id AS captain_player_id
       FROM captain_history ch
       WHERE ch.team_id = $1
-        AND ch.from_date <= ($2::timestamptz)::date
-        AND (ch.to_date IS NULL OR ch.to_date >= ($2::timestamptz)::date)
+        AND ch.from_date <= (($2::timestamptz - INTERVAL '6 hours')::date)
+        AND (ch.to_date IS NULL OR ch.to_date >= (($2::timestamptz - INTERVAL '6 hours')::date))
       ORDER BY ch.from_date DESC
       LIMIT 1
     ),
     last_gameday AS (
       SELECT
-        date_trunc('day', MAX(scheduled_at) - INTERVAL '6 hours') + INTERVAL '6 hours' AS end_time,
-        date_trunc('day', MAX(scheduled_at) - INTERVAL '6 hours') + INTERVAL '6 hours' - INTERVAL '1 day' AS start_time
-      FROM matches
-      WHERE is_processed = true
+        date_trunc('day', NOW() - INTERVAL '6 hours') + INTERVAL '6 hours' AS end_time,
+        date_trunc('day', NOW() - INTERVAL '6 hours') + INTERVAL '6 hours' - INTERVAL '1 day' AS start_time
+    ),
+    filtered_stats AS (
+      SELECT
+        pgs.player_id,
+        pgs.points_earned
+      FROM player_game_stats pgs
+      JOIN matches m ON m.match_id = pgs.match_id
+      CROSS JOIN last_gameday
+      WHERE m.is_processed = true
+        AND m.scheduled_at >= last_gameday.start_time
+        AND m.scheduled_at < last_gameday.end_time
     )
     SELECT
       p.player_id,
@@ -583,22 +689,11 @@ export const getTeamPlayersAtTimestamp = (teamId: number, asOf: string) => {
       p.current_price AS salary,
       rt.primary_color AS color,
       (p.player_id = (SELECT captain_player_id FROM captain_on_day)) AS is_captain,
-      COALESCE(
-        SUM(
-          CASE
-            WHEN m.scheduled_at >= last_gameday.start_time
-              AND m.scheduled_at < last_gameday.end_time
-            THEN pgs.points_earned
-            ELSE 0
-          END
-        ),0
-      ) AS points
+      COALESCE(SUM(fs.points_earned), 0) AS points
     FROM roster_at_time r
     JOIN players p ON p.player_id = r.player_id
     JOIN real_teams rt ON p.team_abbrev = rt.abbreviation
-    LEFT JOIN player_game_stats pgs ON p.player_id = pgs.player_id
-    LEFT JOIN matches m ON pgs.match_id = m.match_id
-    CROSS JOIN last_gameday
+    LEFT JOIN filtered_stats fs ON fs.player_id = p.player_id
     GROUP BY
       p.player_id, p.first_name, p.last_name, p.position,
       p.team_abbrev, p.current_price, rt.primary_color
