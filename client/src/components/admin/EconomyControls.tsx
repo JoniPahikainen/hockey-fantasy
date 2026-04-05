@@ -80,7 +80,7 @@ export default function EconomyControls() {
         </h2>
         <p className="mb-5 text-sm text-text-secondary">
           Recalculate base ratings, regenerate start prices, reset prices to
-          start, or process period price update.
+          start, or rebuild daily price history for the current scoring period.
         </p>
         <div className="flex flex-wrap gap-3">
           <button
@@ -129,15 +129,15 @@ export default function EconomyControls() {
             onClick={() =>
               runAction(
                 "/admin/economy/process-period-prices",
-                "Process period prices",
+                "Rebuild daily price history",
               )
             }
             disabled={!!actionLoading}
             className="rounded-lg bg-bg-sidebar-active px-4 py-2.5 text-xs font-semibold uppercase tracking-wider text-text-inverse shadow-sm transition hover:bg-bg-sidebar-hover disabled:opacity-50"
           >
-            {actionLoading === "Process period prices"
+            {actionLoading === "Rebuild daily price history"
               ? "Running…"
-              : "Process period prices"}
+              : "Rebuild daily price history"}
           </button>
         </div>
         {message && (
@@ -218,11 +218,13 @@ export default function EconomyControls() {
                 Current price
               </h3>
               <p className="text-text-secondary leading-relaxed">
-                As players earn fantasy points in the current period, their
-                price goes up; if they don’t perform, it can go down. “Process
-                period prices” applies those changes (with caps so nothing
-                swings too wildly). “Reset season prices” just sets everyone
-                back to their start price.
+                Each calendar day, fantasy points from that day’s games move
+                prices (same caps as before). “Rebuild daily price history”
+                walks from the start of the current scoring period through today
+                and stores one closing price per player per day, then updates
+                current prices. Full seed skips this step if today’s prices are
+                already written. “Reset season prices” sets everyone back to
+                their start price.
               </p>
             </div>
             <p className="text-xs text-text-muted pt-1">

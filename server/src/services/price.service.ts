@@ -28,9 +28,15 @@ export const resetSeasonPrices = async (userId: number) => {
   await repo.resetSeasonPrices();
 };
 
-export const processPeriodPriceUpdate = async (userId: number) => {
-  const periodId = await repo.getCurrentPeriodId();
-  await repo.processPeriodPriceUpdate(0.15, 0.1, periodId);
+export const processPeriodPriceUpdate = async (_userId: number) => {
+  await repo.rebuildDailyPriceHistoryForCurrentPeriod(0.15, 0.1);
+};
+
+export const processPeriodPriceUpdateForSeed = async (_userId: number) => {
+  const skip = await repo.shouldSkipDailyRebuildToday();
+  if (skip) return { skipped: true as const };
+  await repo.rebuildDailyPriceHistoryForCurrentPeriod(0.15, 0.1);
+  return { skipped: false as const };
 };
 
 const DEFAULT_STRUCTURE: PricingStructure = {

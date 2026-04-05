@@ -117,7 +117,10 @@ export const getPlayerDetail = async (
     pool.query(gameStatsQuery, [playerId]),
     pool.query(periodQuery, [playerId]),
     pool.query(
-      `SELECT history_id, recorded_at, price, period_id FROM price_history WHERE player_id = $1 ORDER BY recorded_at ASC`,
+      `SELECT history_id, recorded_at, price, period_id
+         FROM price_history
+         WHERE player_id = $1
+         ORDER BY recorded_at ASC`,
       [playerId],
     ),
   ]);

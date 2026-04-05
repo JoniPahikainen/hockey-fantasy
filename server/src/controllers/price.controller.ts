@@ -41,11 +41,15 @@ export const actionProcessPeriodPriceUpdate = async (
 ) => {
   try {
     await service.processPeriodPriceUpdate(req.user!.userId);
-    return res.json({ ok: true, message: "Period price update processed" });
+    return res.json({
+      ok: true,
+      message:
+        "Daily price history rebuilt for the current scoring period (one closing price per player per day, through today).",
+    });
   } catch (err) {
     console.error("Admin processPeriodPriceUpdate:", err);
     return res
       .status(500)
-      .json({ ok: false, error: "Failed to process period price update" });
+      .json({ ok: false, error: "Failed to rebuild daily price history" });
   }
 };

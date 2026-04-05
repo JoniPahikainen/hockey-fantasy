@@ -312,10 +312,13 @@ export default function PlayerDetailModal({
                     />
                     <YAxis fontSize={10} tick={{ fill: "#64748b" }} unit="M" />
                     <Tooltip
-                      formatter={(v: number | undefined) => [
-                        `${v ?? 0}M`,
-                        "Price",
-                      ]}
+                      formatter={(v: number | undefined) => {
+                        const value = Math.round((v ?? 0) * 1_000_000);
+                        return [
+                          value.toLocaleString("fi-FI"),
+                          "Price",
+                        ];
+                      }}
                     />
                     <Line
                       type="monotone"

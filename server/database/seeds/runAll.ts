@@ -5,7 +5,7 @@ import { seedRawStats } from "./seedScores";
 import { seedPoints } from "./seedPoints";
 import { seedDailyPoints } from "./seedDailyPoints";
 import { Logger } from "../../src/utils/logger";
-import { processPeriodPriceUpdate } from "../../src/services/price.service";
+import { processPeriodPriceUpdateForSeed } from "../../src/services/price.service";
 
 async function runAll() {
   const masterTracker = new Logger("MASTER_SYNC");
@@ -18,7 +18,18 @@ async function runAll() {
     { name: "SCORES", fn: seedRawStats },
     { name: "POINTS", fn: seedPoints },
     { name: "DAILY_POINTS", fn: seedDailyPoints },
-    { name: "PROCESS_PERIOD_PRICES", fn: async () => await processPeriodPriceUpdate(0) },
+    {
+      name: "PROCESS_PERIOD_PRICES",
+      fn: async () => {
+        const r = await processPeriodPriceUpdateForSeed(0);
+        if (r.skipped) {
+          masterTracker.log(
+            "INFO",
+            "PROCESS_PERIOD_PRICES skipped — daily prices already recorded for today.",
+          );
+        }
+      },
+    },
   ];
 
   try {
