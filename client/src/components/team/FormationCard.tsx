@@ -41,9 +41,23 @@ export default function FormationCard({
         <span style={{ color: playerColor }} className="font-bold text-[9px] uppercase tracking-tighter">
           {player.team}
         </span>
-        <h3 className={`font-black text-text-secondary uppercase leading-tight ${isGoalie ? "text-base" : "text-[12px]"}`}>
-          {player.name.split(" ").pop()}
-        </h3>
+        <div className="flex items-center justify-center gap-1.5 flex-wrap">
+          <h3
+            className={`font-black uppercase leading-tight ${
+              readOnly && isCaptain ? "text-accent-primary" : "text-text-secondary"
+            } ${isGoalie ? "text-base" : "text-[12px]"}`}
+          >
+            {player.name.split(" ").pop()}
+          </h3>
+          {readOnly && isCaptain && (
+            <span
+              className="text-[8px] font-black uppercase tracking-wider bg-accent-primary text-text-inverse px-1.5 py-0.5 rounded-sm shrink-0"
+              title="Captain (1.3× points)"
+            >
+              C
+            </span>
+          )}
+        </div>
         <div className={`font-mono mt-1 text-xs ${pts > 0 ? "text-accent-success font-bold" : pts < 0 ? "text-accent-danger font-bold" : "text-text-muted-subtle"}`}>
           {displayPts > 0 ? `+${displayPts}` : displayPts}
           {isCaptain && <span className="text-[9px] ml-1 text-text-muted-subtle">(×1.3)</span>}

@@ -65,12 +65,16 @@ export const getTeamPlayersAtLastTradeLock = async (teamId: number) => {
     return current.rows;
   }
 
-  const effectiveLockWindowMinutes = Number(status.lock_window_minutes || 60);
-  const snapshotRes = await repo.getLastProcessedTradeLockSnapshotAt(effectiveLockWindowMinutes);
-  const snapshotAt =
-    snapshotRes.rows[0]?.snapshot_at != null
-      ? new Date(snapshotRes.rows[0].snapshot_at).toISOString()
-      : status.last_lock_at;
+  let snapshotAt = status.last_lock_at;
+  if (!snapshotAt) {
+    const effectiveLockWindowMinutes = Number(status.lock_window_minutes || 60);
+    const snapshotRes = await repo.getLastProcessedTradeLockSnapshotAt(
+      effectiveLockWindowMinutes,
+    );
+    const derived = snapshotRes.rows[0]?.snapshot_at;
+    snapshotAt =
+      derived != null ? new Date(derived).toISOString() : null;
+  }
   if (!snapshotAt) {
     const current = await repo.getTeamPlayers(teamId);
     return current.rows;

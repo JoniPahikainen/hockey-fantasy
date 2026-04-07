@@ -40,11 +40,13 @@ export default function TeamList({ team }: { team: any[] }) {
       </div>
       <div className="flex flex-col divide-y divide-border-default">
         {sortedTeam.map((player) => {
-          const safePoints = Number(player.points || 0);
+          const isCaptain = Boolean(player.is_captain);
+          const rawPoints = Number(player.points || 0);
+          const displayPoints = Math.round(isCaptain ? rawPoints * 1.3 : rawPoints);
           const pointsColor =
-            safePoints < 0
+            displayPoints < 0
               ? "text-accent-danger"
-              : safePoints > 0
+              : displayPoints > 0
                 ? "text-accent-success"
                 : "text-text-muted";
 
@@ -60,18 +62,37 @@ export default function TeamList({ team }: { team: any[] }) {
                 >
                   {player.abbrev}
                 </div>
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-xs font-black text-text-muted-subtle w-4">
                     {player.pos}
                   </span>
-                  <span className="text-sm font-bold text-text-secondary uppercase">
+                  <span
+                    className={`text-sm font-bold uppercase ${
+                      isCaptain ? "text-accent-primary" : "text-text-secondary"
+                    }`}
+                  >
                     {player.name}
                   </span>
+                  {isCaptain && (
+                    <span
+                      className="text-[8px] font-black uppercase tracking-wider bg-accent-primary text-text-inverse px-1.5 py-0.5 rounded-sm"
+                      title="Captain (1.3× points)"
+                    >
+                      C
+                    </span>
+                  )}
                 </div>
               </div>
 
-              <div className={`text-sm font-mono font-black ${pointsColor}`}>
-                {safePoints}
+              <div className="flex flex-col items-end gap-0.5">
+                <div className={`text-sm font-mono font-black ${pointsColor}`}>
+                  {displayPoints > 0 ? `+${displayPoints}` : displayPoints}
+                </div>
+                {isCaptain && (
+                  <span className="text-[8px] font-bold text-text-muted-subtle uppercase tracking-tighter">
+                    ×1.3
+                  </span>
+                )}
               </div>
             </div>
           );

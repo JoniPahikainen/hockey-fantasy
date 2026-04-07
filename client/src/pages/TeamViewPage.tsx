@@ -13,6 +13,9 @@ export default function TeamViewPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [tradeLockMeta, setTradeLockMeta] = useState<string | null>(null);
+  /** Locked = current captain on live roster; open = captain on last-trade-lock snapshot (same rules as league). */
+  const [captainHighlightId, setCaptainHighlightId] = useState<number | null>(null);
+  const [captainMode, setCaptainMode] = useState<"current" | "last_lock">("current");
 
   const teamName = state?.teamName ?? "Team";
   const manager = state?.manager ?? "—";
@@ -49,6 +52,12 @@ export default function TeamViewPage() {
 
         const p = res.data.players.map((x: any) => ({ ...x, id: x.player_id }));
         setLineup(p);
+
+        setCaptainMode(isLocked ? "current" : "last_lock");
+        const cap = p.find((x: any) => x.is_captain);
+        setCaptainHighlightId(
+          cap ? Number(cap.player_id ?? cap.id) : null,
+        );
       } catch {
         setError("Failed to load team");
       } finally {
@@ -59,7 +68,9 @@ export default function TeamViewPage() {
   }, [teamId]);
 
   const totalSalary = lineup.reduce((s, p) => s + (Number(p.salary) || 0), 0);
-  const captainId = lineup.find((p: any) => p.is_captain)?.id ?? null;
+  const captainHighlightPlayer = lineup.find(
+    (p: any) => Number(p.player_id ?? p.id) === captainHighlightId,
+  );
 
   if (loading) {
     return (
@@ -128,6 +139,21 @@ export default function TeamViewPage() {
               <span className="text-[9px] font-black text-text-muted-subtle uppercase tracking-widest">Slots</span>
               <span className="font-mono font-black text-lg text-text-primary">{lineup.length} / 6</span>
             </div>
+            {captainHighlightPlayer && (
+              <>
+                <div className="w-px h-8 bg-bg-tertiary" />
+                <div className="flex flex-col">
+                  <span className="text-[9px] font-black text-text-muted-subtle uppercase tracking-widest">
+                    {captainMode === "last_lock"
+                      ? "Captain (last lock)"
+                      : "Captain"}
+                  </span>
+                  <span className="font-black text-sm text-accent-primary uppercase tracking-tight">
+                    {captainHighlightPlayer.name}
+                  </span>
+                </div>
+              </>
+            )}
           </div>
         </div>
 
@@ -140,7 +166,9 @@ export default function TeamViewPage() {
                   key={`f-${i}`}
                   label="FWD"
                   readOnly
-                  isCaptain={lineup.filter((p) => p.pos === "F")[i]?.id === captainId}
+                  isCaptain={
+                    lineup.filter((p) => p.pos === "F")[i]?.id === captainHighlightId
+                  }
                   player={lineup.filter((p) => p.pos === "F")[i]}
                 />
               ))}
@@ -151,7 +179,9 @@ export default function TeamViewPage() {
                   key={`d-${i}`}
                   label="DEF"
                   readOnly
-                  isCaptain={lineup.filter((p) => p.pos === "D")[i]?.id === captainId}
+                  isCaptain={
+                    lineup.filter((p) => p.pos === "D")[i]?.id === captainHighlightId
+                  }
                   player={lineup.filter((p) => p.pos === "D")[i]}
                 />
               ))}
@@ -161,7 +191,9 @@ export default function TeamViewPage() {
                 label="GOALIE"
                 isGoalie
                 readOnly
-                isCaptain={lineup.find((p) => p.pos === "G")?.id === captainId}
+                isCaptain={
+                  lineup.find((p) => p.pos === "G")?.id === captainHighlightId
+                }
                 player={lineup.find((p) => p.pos === "G")}
               />
             </div>

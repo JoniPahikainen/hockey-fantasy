@@ -563,7 +563,7 @@ export const syncRosterHistoryFromCurrentPlayers = async (client: any, asOf: str
   await client.query(
     `
     WITH current_players AS (
-      SELECT ftp.team_id, ftp.player_id
+      SELECT ftp.team_id, ftp.player_id, COALESCE(ftp.is_captain, false) AS is_captain
       FROM fantasy_team_players ftp
       WHERE COALESCE(ftp.is_active, true)
     ),
@@ -595,7 +595,7 @@ export const syncRosterHistoryFromCurrentPlayers = async (client: any, asOf: str
   await client.query(
     `
     WITH current_players AS (
-      SELECT ftp.team_id, ftp.player_id
+      SELECT ftp.team_id, ftp.player_id, COALESCE(ftp.is_captain, false) AS is_captain
       FROM fantasy_team_players ftp
       WHERE COALESCE(ftp.is_active, true)
     ),
@@ -605,17 +605,29 @@ export const syncRosterHistoryFromCurrentPlayers = async (client: any, asOf: str
       WHERE r.removed_at IS NULL
     ),
     to_add AS (
-      SELECT cp.team_id, cp.player_id
+      SELECT cp.team_id, cp.player_id, cp.is_captain
       FROM current_players cp
       LEFT JOIN active_history ah
         ON ah.team_id = cp.team_id AND ah.player_id = cp.player_id
       WHERE ah.player_id IS NULL
     )
     INSERT INTO fantasy_team_roster (team_id, player_id, added_at, removed_at, is_captain)
-    SELECT ta.team_id, ta.player_id, $1::timestamptz, NULL, false
+    SELECT ta.team_id, ta.player_id, $1::timestamptz, NULL, ta.is_captain
     FROM to_add ta
     `,
     [asOf],
+  );
+
+  await client.query(
+    `
+    UPDATE fantasy_team_roster r
+    SET is_captain = COALESCE(ftp.is_captain, false)
+    FROM fantasy_team_players ftp
+    WHERE r.team_id = ftp.team_id
+      AND r.player_id = ftp.player_id
+      AND r.removed_at IS NULL
+      AND COALESCE(ftp.is_active, true)
+    `,
   );
 };
 
@@ -649,21 +661,12 @@ export const getTeamPlayersAtTimestamp = (teamId: number, asOf: string) => {
   return pool.query(
     `
     WITH roster_at_time AS (
-      SELECT DISTINCT ON (player_id) roster_id, player_id
+      SELECT DISTINCT ON (player_id) roster_id, player_id, is_captain
       FROM fantasy_team_roster
       WHERE team_id = $1
         AND added_at <= $2::timestamptz
         AND (removed_at IS NULL OR removed_at > $2::timestamptz)
       ORDER BY player_id, roster_id DESC
-    ),
-    captain_on_day AS (
-      SELECT ch.player_id AS captain_player_id
-      FROM captain_history ch
-      WHERE ch.team_id = $1
-        AND ch.from_date <= (($2::timestamptz - INTERVAL '6 hours')::date)
-        AND (ch.to_date IS NULL OR ch.to_date >= (($2::timestamptz - INTERVAL '6 hours')::date))
-      ORDER BY ch.from_date DESC
-      LIMIT 1
     ),
     last_gameday AS (
       SELECT
@@ -688,7 +691,7 @@ export const getTeamPlayersAtTimestamp = (teamId: number, asOf: string) => {
       p.team_abbrev AS team,
       p.current_price AS salary,
       rt.primary_color AS color,
-      (p.player_id = (SELECT captain_player_id FROM captain_on_day)) AS is_captain,
+      COALESCE(r.is_captain, false) AS is_captain,
       COALESCE(SUM(fs.points_earned), 0) AS points
     FROM roster_at_time r
     JOIN players p ON p.player_id = r.player_id
@@ -696,7 +699,8 @@ export const getTeamPlayersAtTimestamp = (teamId: number, asOf: string) => {
     LEFT JOIN filtered_stats fs ON fs.player_id = p.player_id
     GROUP BY
       p.player_id, p.first_name, p.last_name, p.position,
-      p.team_abbrev, p.current_price, rt.primary_color
+      p.team_abbrev, p.current_price, rt.primary_color,
+      r.is_captain
     ORDER BY name;
     `,
     [teamId, asOf],
