@@ -32,18 +32,35 @@ async function runAll() {
     },
   ];
 
+  const stepTimings: { name: string; seconds: number }[] = [];
+
   try {
     for (const step of sequence) {
       const stepStartTime = Date.now();
-      masterTracker.log('INFO', `Beginning Step: ${step.name}`);
-      
+      masterTracker.log("INFO", `Beginning Step: ${step.name}`);
+
       await step.fn();
-      
-      const duration = ((Date.now() - stepStartTime) / 1000).toFixed(2);
-      masterTracker.log('INFO', `Finished Step: ${step.name} | Duration: ${duration}s`);
+
+      const seconds = (Date.now() - stepStartTime) / 1000;
+      stepTimings.push({ name: step.name, seconds });
+      masterTracker.log(
+        "INFO",
+        `Finished Step: ${step.name} | Duration: ${seconds.toFixed(2)}s`,
+      );
     }
 
-    masterTracker.log('INFO', "Full Synchronization Sequence completed successfully.");
+    const totalSeconds = stepTimings.reduce((a, s) => a + s.seconds, 0);
+    masterTracker.log("INFO", "--- Seed section timings ---");
+    for (const { name, seconds } of stepTimings) {
+      masterTracker.log("INFO", `  ${name}: ${seconds.toFixed(2)}s`);
+    }
+    masterTracker.log(
+      "INFO",
+      `  TOTAL: ${totalSeconds.toFixed(2)}s`,
+    );
+    masterTracker.log("INFO", "----------------------------");
+
+    masterTracker.log("INFO", "Full Synchronization Sequence completed successfully.");
     masterTracker.finish();
     process.exit(0);
   } catch (err) {
