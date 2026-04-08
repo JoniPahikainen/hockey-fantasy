@@ -19,7 +19,9 @@ export default function TeamEditor({ userId }: { userId: number }) {
 
   const [searchTerm, setSearchTerm] = useState("");
   const [posFilter, setPosFilter] = useState("FORWARDS");
-  const [teamFilter, setTeamFilter] = useState("ALL");
+  const [teamFilters, setTeamFilters] = useState<string[]>([]);
+  const [nextNightTeams, setNextNightTeams] = useState<string[]>([]);
+  const [teamFilterOpen, setTeamFilterOpen] = useState(false);
   const { activeTeamId, activeTeamName } = useActiveTeam();
   const [tradeLocked, setTradeLocked] = useState(false);
   const [tradeLockReason, setTradeLockReason] = useState<string | null>(null);
@@ -37,6 +39,35 @@ export default function TeamEditor({ userId }: { userId: number }) {
     };
     initPage();
   }, [userId]);
+
+  useEffect(() => {
+    const fetchNextNightTeams = async () => {
+      const todayStr = new Date().toISOString().split("T")[0];
+      const maxDaysToCheck = 60;
+      for (let offset = 0; offset <= maxDaysToCheck; offset++) {
+        const next = new Date(todayStr);
+        next.setDate(next.getDate() + offset);
+        const nextStr = next.toISOString().split("T")[0];
+        try {
+          const res = await api.get(`/matches/${nextStr}`);
+          if (res.data.ok && Array.isArray(res.data.matches) && res.data.matches.length > 0) {
+            const teams = new Set<string>();
+            for (const match of res.data.matches) {
+              if (match.home_team_abbrev) teams.add(String(match.home_team_abbrev).toUpperCase());
+              if (match.away_team_abbrev) teams.add(String(match.away_team_abbrev).toUpperCase());
+            }
+            setNextNightTeams([...teams].sort());
+            return;
+          }
+        } catch {
+          // continue searching the next day
+        }
+      }
+      setNextNightTeams([]);
+    };
+
+    fetchNextNightTeams();
+  }, []);
 
   useEffect(() => {
     const fetchLockStatus = async () => {
@@ -214,9 +245,30 @@ export default function TeamEditor({ userId }: { userId: number }) {
     (Math.floor(Number(num) / 1000) * 1000).toLocaleString("en-US").replace(/,/g, " ");
 
   const teamsList = useMemo(
-    () => ["ALL", ...new Set(playerPool.map((p) => p.team))].sort(),
+    () => [...new Set(playerPool.map((p) => String(p.team).toUpperCase()))].sort(),
     [playerPool]
   );
+
+  const toggleTeamSelection = (value: string) => {
+    setTeamFilters((prev) => {
+      if (value === "PLAYING_NEXT_NIGHT") {
+        return prev.includes("PLAYING_NEXT_NIGHT") ? [] : ["PLAYING_NEXT_NIGHT"];
+      }
+
+      const base = prev.filter((x) => x !== "PLAYING_NEXT_NIGHT");
+      if (base.includes(value)) {
+        return base.filter((x) => x !== value);
+      }
+      return [...base, value];
+    });
+  };
+
+  const teamFilterSummary = useMemo(() => {
+    if (teamFilters.length === 0) return "ALL";
+    if (teamFilters.includes("PLAYING_NEXT_NIGHT")) return "PLAYING NEXT NIGHT";
+    const text = teamFilters.join(", ");
+    return text.length > 28 ? `${text.slice(0, 28).trimEnd()}, ...` : text;
+  }, [teamFilters]);
 
   const requestSort = (key: SortKey) => {
     setSortConfig((prev) => ({
@@ -233,7 +285,12 @@ export default function TeamEditor({ userId }: { userId: number }) {
       const matchesPos =
         posFilter === "ALL" ||
         (posFilter === "FORWARDS" ? p.pos === "F" : p.pos === posFilter);
-      const matchesTeam = teamFilter === "ALL" || p.team === teamFilter;
+      const normalizedTeam = String(p.team).toUpperCase();
+      const matchesTeam =
+        teamFilters.length === 0 ||
+        (teamFilters.includes("PLAYING_NEXT_NIGHT")
+          ? nextNightTeams.includes(normalizedTeam)
+          : teamFilters.includes(normalizedTeam));
       return matchesSearch && matchesPos && matchesTeam;
     });
 
@@ -255,7 +312,7 @@ export default function TeamEditor({ userId }: { userId: number }) {
       return 0;
     });
     return result;
-  }, [playerPool, searchTerm, posFilter, teamFilter, sortConfig]);
+  }, [playerPool, searchTerm, posFilter, teamFilters, nextNightTeams, sortConfig]);
 
   return (
 
@@ -350,20 +407,58 @@ export default function TeamEditor({ userId }: { userId: number }) {
               <option value="G">GOALIE</option>
             </select>
           </div>
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-1 relative">
             <span className="text-[9px] font-black text-text-muted-subtle uppercase">
               Team
             </span>
-            <select
-              className="bg-bg-secondary border border-border-default text-[10px] py-2.5 px-4 font-bold uppercase outline-none min-w-[120px]"
-              onChange={(e) => setTeamFilter(e.target.value)}
+            <button
+              type="button"
+              onClick={() => setTeamFilterOpen((v) => !v)}
+              className="bg-bg-secondary border border-border-default text-[10px] py-2.5 px-4 font-bold uppercase outline-none min-w-[170px] text-left flex items-center justify-between gap-3"
             >
-              {teamsList.map((team) => (
-                <option key={team} value={team}>
-                  {team}
-                </option>
-              ))}
-            </select>
+              <span className="truncate">{teamFilterSummary}</span>
+              <span>{teamFilterOpen ? "▲" : "▼"}</span>
+            </button>
+
+            {teamFilterOpen && (
+              <div className="absolute top-[56px] left-0 z-30 bg-bg-secondary border border-border-default min-w-[220px] max-h-64 overflow-auto shadow-lg p-2">
+                <button
+                  type="button"
+                  onClick={() => toggleTeamSelection("PLAYING_NEXT_NIGHT")}
+                  className={`w-full flex items-center justify-between text-[10px] font-bold uppercase px-2 py-1.5 hover:bg-bg-tertiary ${
+                    teamFilters.includes("PLAYING_NEXT_NIGHT") ? "text-accent-primary" : ""
+                  }`}
+                >
+                  <span>PLAYING NEXT NIGHT</span>
+                  <input
+                    type="checkbox"
+                    checked={teamFilters.includes("PLAYING_NEXT_NIGHT")}
+                    readOnly
+                    className="h-3.5 w-3.5 accent-accent-primary pointer-events-none"
+                  />
+                </button>
+                <div className="my-1 border-t border-border-subtle" />
+                {teamsList.map((team) => (
+                  <button
+                    key={team}
+                    type="button"
+                    onClick={() => toggleTeamSelection(team)}
+                    className={`w-full flex items-center justify-between text-[10px] font-bold uppercase px-2 py-1.5 hover:bg-bg-tertiary disabled:opacity-50 ${
+                      teamFilters.includes(team) ? "text-accent-primary" : ""
+                    }`}
+                    disabled={teamFilters.includes("PLAYING_NEXT_NIGHT")}
+                  >
+                    <span>{team}</span>
+                    <input
+                      type="checkbox"
+                      checked={teamFilters.includes(team)}
+                      readOnly
+                      className="h-3.5 w-3.5 accent-accent-primary pointer-events-none"
+                    />
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
