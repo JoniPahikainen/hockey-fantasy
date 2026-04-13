@@ -1,4 +1,5 @@
 import pool from "../db";
+import { ServiceError } from "../utils/errors";
 
 export const createTeam = (teamName: string, userId: number) => {
   return pool.query(
@@ -140,54 +141,97 @@ export const markRemovedPlayers = async (
 export const setTeamCaptain = async (
   client: any,
   teamId: number,
-  playerId: number | null,
+  playerId: number,
 ) => {
+  const onTeam = await client.query(
+    `SELECT 1 FROM fantasy_team_players
+     WHERE team_id = $1 AND player_id = $2 AND COALESCE(is_active, true)`,
+    [teamId, playerId],
+  );
+  if (!onTeam.rows?.length) {
+    throw new ServiceError("Player is not on this team", 400);
+  }
   await client.query(`UPDATE fantasy_team_players SET is_captain = false WHERE team_id = $1`, [
     teamId,
   ]);
-  if (playerId == null) {
-    return;
-  }
   await client.query(
-    `UPDATE fantasy_team_players SET is_captain = (player_id = $2) WHERE team_id = $1`,
+    `UPDATE fantasy_team_players SET is_captain = true WHERE team_id = $1 AND player_id = $2`,
     [teamId, playerId],
   );
 };
 
-export const setTeamCaptainStandalone = async (
-  teamId: number,
-  playerId: number | null,
-) => {
+/** Current captain only (fantasy_team_players). No captain_history writes — that happens on trade lock. */
+export const setTeamCaptainStandalone = async (teamId: number, playerId: number) => {
   await pool.query("BEGIN");
   try {
+    const onTeam = await pool.query(
+      `SELECT 1 FROM fantasy_team_players
+       WHERE team_id = $1 AND player_id = $2 AND COALESCE(is_active, true)`,
+      [teamId, playerId],
+    );
+    if (!onTeam.rows?.length) {
+      throw new ServiceError("Player is not on this team", 400);
+    }
     await pool.query(`UPDATE fantasy_team_players SET is_captain = false WHERE team_id = $1`, [
       teamId,
     ]);
-    if (playerId == null) {
-      await pool.query(
-        `UPDATE captain_history SET to_date = CURRENT_DATE WHERE team_id = $1 AND to_date IS NULL`,
-        [teamId],
-      );
-    } else {
-      await pool.query(
-        `UPDATE fantasy_team_players SET is_captain = (player_id = $2) WHERE team_id = $1`,
-        [teamId, playerId],
-      );
-      await pool.query(
-        `UPDATE captain_history SET to_date = CURRENT_DATE WHERE team_id = $1 AND to_date IS NULL`,
-        [teamId],
-      );
-      await pool.query(
-        `INSERT INTO captain_history (team_id, player_id, from_date, to_date)
-         VALUES ($1, $2, CURRENT_DATE, NULL)`,
-        [teamId, playerId],
-      );
-    }
+    await pool.query(
+      `UPDATE fantasy_team_players SET is_captain = true WHERE team_id = $1 AND player_id = $2`,
+      [teamId, playerId],
+    );
     await pool.query("COMMIT");
   } catch (e) {
     await pool.query("ROLLBACK");
     throw e;
   }
+};
+
+/** Teams with at least one active player but not exactly one captain (cannot lock trading). */
+export const getTeamIdsWithInvalidCaptainCount = (client: any) => {
+  return client.query(
+    `
+    SELECT team_id
+    FROM fantasy_team_players
+    WHERE COALESCE(is_active, true)
+    GROUP BY team_id
+    HAVING COUNT(*) > 0 AND SUM(CASE WHEN is_captain THEN 1 ELSE 0 END) != 1
+    `,
+  );
+};
+
+export const wouldRemoveCaptainWithOthersRemaining = async (
+  teamId: number,
+  playerId: number,
+) => {
+  const r = await pool.query(
+    `
+    SELECT
+      COUNT(*)::int AS cnt,
+      BOOL_OR(player_id = $2 AND is_captain) AS removing_captain
+    FROM fantasy_team_players
+    WHERE team_id = $1 AND COALESCE(is_active, true)
+    `,
+    [teamId, playerId],
+  );
+  const row = r.rows[0];
+  return Number(row.cnt) > 1 && Boolean(row.removing_captain);
+};
+
+/** Close open segments and snapshot current fantasy_team_players captain per team (call inside lock transaction). */
+export const syncCaptainHistoryFromLock = async (client: any, asOf: string) => {
+  await client.query(
+    `UPDATE captain_history SET to_date = $1::timestamptz WHERE to_date IS NULL`,
+    [asOf],
+  );
+  await client.query(
+    `
+    INSERT INTO captain_history (team_id, player_id, from_date, to_date)
+    SELECT ftp.team_id, ftp.player_id, $1::timestamptz, NULL
+    FROM fantasy_team_players ftp
+    WHERE COALESCE(ftp.is_active, true) AND ftp.is_captain = true
+    `,
+    [asOf],
+  );
 };
 
 /** Returns the player_id who was captain for this team on the given date, or null. */
@@ -197,13 +241,27 @@ export const getCaptainForDate = async (
 ): Promise<number | null> => {
   const result = await pool.query(
     `
-    SELECT player_id
-    FROM captain_history
-    WHERE team_id = $1
-      AND from_date <= $2::date
-      AND (to_date IS NULL OR to_date >= $2::date)
-    ORDER BY from_date DESC
-    LIMIT 1
+    SELECT COALESCE(
+      (
+        SELECT player_id
+        FROM captain_history
+        WHERE team_id = $1
+          AND from_date::date <= $2::date
+          AND (to_date IS NULL OR to_date::date >= $2::date)
+        ORDER BY from_date DESC
+        LIMIT 1
+      ),
+      CASE
+        WHEN NOT EXISTS (SELECT 1 FROM captain_history WHERE team_id = $1)
+        THEN (
+          SELECT player_id
+          FROM fantasy_team_players
+          WHERE team_id = $1 AND COALESCE(is_active, true) AND is_captain
+          LIMIT 1
+        )
+        ELSE NULL
+      END
+    ) AS player_id
     `,
     [teamId, gameDate],
   );
@@ -303,15 +361,30 @@ export const getDailyTeamPerformance = (team_id: number, period_id: number) => {
     ),
 
     captain_on_day AS (
-      SELECT DISTINCT ON (d.game_date)
+      SELECT
         d.game_date,
-        ch.player_id AS captain_player_id
+        COALESCE(
+          (
+            SELECT ch.player_id
+            FROM captain_history ch
+            WHERE ch.team_id = $1
+              AND ch.from_date::date <= d.game_date
+              AND (ch.to_date IS NULL OR ch.to_date::date >= d.game_date)
+            ORDER BY ch.from_date DESC
+            LIMIT 1
+          ),
+          CASE
+            WHEN NOT EXISTS (SELECT 1 FROM captain_history WHERE team_id = $1)
+            THEN (
+              SELECT player_id
+              FROM fantasy_team_players
+              WHERE team_id = $1 AND COALESCE(is_active, true) AND is_captain
+              LIMIT 1
+            )
+            ELSE NULL
+          END
+        ) AS captain_player_id
       FROM days d
-      LEFT JOIN captain_history ch
-        ON ch.team_id = $1
-        AND ch.from_date <= d.game_date
-        AND (ch.to_date IS NULL OR ch.to_date >= d.game_date)
-      ORDER BY d.game_date, ch.from_date DESC NULLS LAST
     ),
 
     active_players AS (
@@ -385,13 +458,27 @@ function getDailyPlayerBreakdownSql(useCaptainHistory: boolean): string {
   const captainCte = useCaptainHistory
     ? `,
     captain_on_date AS (
-      SELECT player_id AS captain_player_id
-      FROM captain_history
-      WHERE team_id = $1
-        AND from_date <= $2::date
-        AND (to_date IS NULL OR to_date >= $2::date)
-      ORDER BY from_date DESC
-      LIMIT 1
+      SELECT COALESCE(
+        (
+          SELECT player_id
+          FROM captain_history
+          WHERE team_id = $1
+            AND from_date::date <= $2::date
+            AND (to_date IS NULL OR to_date::date >= $2::date)
+          ORDER BY from_date DESC
+          LIMIT 1
+        ),
+        CASE
+          WHEN NOT EXISTS (SELECT 1 FROM captain_history WHERE team_id = $1)
+          THEN (
+            SELECT player_id
+            FROM fantasy_team_players
+            WHERE team_id = $1 AND COALESCE(is_active, true) AND is_captain
+            LIMIT 1
+          )
+          ELSE NULL
+        END
+      ) AS captain_player_id
     )`
     : "";
 
@@ -464,14 +551,29 @@ export const getTeamLastNightPoints = (teamId: number) => {
       WHERE is_processed = true
     ),
     captain_last_night AS (
-      SELECT ch.player_id AS captain_player_id
-      FROM captain_history ch
-      CROSS JOIN last_gameday lg
-      WHERE ch.team_id = $1
-        AND ch.from_date <= lg.game_day_date
-        AND (ch.to_date IS NULL OR ch.to_date >= lg.game_day_date)
-      ORDER BY ch.from_date DESC
-      LIMIT 1
+      SELECT COALESCE(
+        (
+          SELECT ch.player_id
+          FROM captain_history ch
+          CROSS JOIN last_gameday lg
+          WHERE ch.team_id = $1
+            AND ch.from_date::date <= lg.game_day_date
+            AND (ch.to_date IS NULL OR ch.to_date::date >= lg.game_day_date)
+          ORDER BY ch.from_date DESC
+          LIMIT 1
+        ),
+        CASE
+          WHEN NOT EXISTS (SELECT 1 FROM captain_history WHERE team_id = $1)
+          THEN (
+            SELECT player_id
+            FROM fantasy_team_players
+            WHERE team_id = $1 AND COALESCE(is_active, true) AND is_captain
+            LIMIT 1
+          )
+          ELSE NULL
+        END
+      ) AS captain_player_id
+      FROM last_gameday
     )
     SELECT COALESCE(SUM(
       CASE

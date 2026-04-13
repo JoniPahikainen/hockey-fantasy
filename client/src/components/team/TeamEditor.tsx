@@ -182,6 +182,10 @@ export default function TeamEditor({ userId }: { userId: number }) {
   };
 
   const removeFromLineup = (id: number) => {
+    if (captainId === id && lineup.length > 1) {
+      window.alert("Select a different captain before removing this player.");
+      return;
+    }
     setLineup((prev) => prev.filter((p) => p.id !== id));
     if (captainId === id) setCaptainId(null);
   };
@@ -203,8 +207,8 @@ export default function TeamEditor({ userId }: { userId: number }) {
   };
 
   const setCaptain = async (playerId: number) => {
-    const newId = captainId === playerId ? null : playerId;
     if (selectedTeamId == null) return;
+    if (captainId === playerId) return;
     setTradeLockAlert(null);
     try {
       if (tradeLocked) {
@@ -216,9 +220,9 @@ export default function TeamEditor({ userId }: { userId: number }) {
         return;
       }
       await api.patch(`/fantasy-teams/${selectedTeamId}/captain`, {
-        player_id: newId,
+        player_id: playerId,
       });
-      setCaptainId(newId);
+      setCaptainId(playerId);
     } catch (err) {
       const statusCode = (err as any)?.response?.status;
       const serverMsg =

@@ -1,5 +1,6 @@
 import pool from "../../src/db";
 import { Logger } from "../../src/utils/logger";
+import { seedDailyPoints } from "./seedDailyPoints";
 
 export async function seedPoints() {
   const client = await pool.connect();
@@ -111,11 +112,28 @@ export async function seedPoints() {
           r.team_id,
           SUM(
             pgs.points_earned *
-            CASE WHEN EXISTS (
-              SELECT 1 FROM captain_history ch
-              WHERE ch.team_id = r.team_id AND ch.player_id = r.player_id
-                AND ch.from_date <= m.scheduled_at::date
-                AND (ch.to_date IS NULL OR ch.to_date >= m.scheduled_at::date)
+            CASE WHEN (
+              EXISTS (
+                SELECT 1 FROM captain_history ch
+                WHERE ch.team_id = r.team_id AND ch.player_id = r.player_id
+                  AND ch.from_date::date <= (m.scheduled_at - INTERVAL '6 hours')::date
+                  AND (ch.to_date IS NULL OR ch.to_date::date >= (m.scheduled_at - INTERVAL '6 hours')::date)
+              )
+              OR (
+                NOT EXISTS (
+                  SELECT 1 FROM captain_history ch
+                  WHERE ch.team_id = r.team_id
+                    AND ch.from_date::date <= (m.scheduled_at - INTERVAL '6 hours')::date
+                    AND (ch.to_date IS NULL OR ch.to_date::date >= (m.scheduled_at - INTERVAL '6 hours')::date)
+                )
+                AND EXISTS (
+                  SELECT 1 FROM fantasy_team_players ftp
+                  WHERE ftp.team_id = r.team_id
+                    AND ftp.player_id = r.player_id
+                    AND ftp.is_captain
+                    AND COALESCE(ftp.is_active, true)
+                )
+              )
             ) THEN 1.3 ELSE 1 END
           ) AS total_earned
         FROM fantasy_team_roster r
@@ -127,6 +145,12 @@ export async function seedPoints() {
       ) sub
       WHERE ft.team_id = sub.team_id;
     `);
+
+    tracker.log(
+      "INFO",
+      "Step 3: Refreshing daily_player_points and daily_team_points to keep last-night views in sync...",
+    );
+    await seedDailyPoints();
 
     tracker.finish();
   } catch (error) {

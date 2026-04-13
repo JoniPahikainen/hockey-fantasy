@@ -34,6 +34,13 @@ export const removePlayerFromTeam = async (
   playerId: number,
 ) => {
   await assertTradingOpen();
+  const wouldBlock = await repo.wouldRemoveCaptainWithOthersRemaining(teamId, playerId);
+  if (wouldBlock) {
+    throw new ServiceError(
+      "Select a different captain before removing this player.",
+      400,
+    );
+  }
   const result = await repo.removePlayerFromTeam(teamId, playerId);
   if (result.rowCount === 0) {
     throw new ServiceError("Player not in team", 404);
@@ -117,6 +124,23 @@ export const updateLineupProcess = async (teamId: number, playerIds: number[]) =
       [newBudgetRemaining, teamId],
     );
 
+    const capCheck = await client.query(
+      `
+      SELECT COUNT(*)::int AS c,
+             COALESCE(SUM(CASE WHEN is_captain THEN 1 ELSE 0 END), 0)::int AS cap
+      FROM fantasy_team_players
+      WHERE team_id = $1 AND COALESCE(is_active, true)
+      `,
+      [teamId],
+    );
+    const { c, cap } = capCheck.rows[0];
+    if (Number(c) > 0 && Number(cap) !== 1) {
+      throw new ServiceError(
+        "Your lineup must include exactly one captain. Choose a captain before saving.",
+        400,
+      );
+    }
+
     await client.query("COMMIT");
     return newBudgetRemaining;
   } catch (err) {
@@ -127,14 +151,14 @@ export const updateLineupProcess = async (teamId: number, playerIds: number[]) =
   }
 };
 
-export const setCaptain = async (
-  teamId: number,
-  playerId: number | null,
-) => {
+export const setCaptain = async (teamId: number, playerId: number) => {
   await assertTradingOpen();
   const teamCheck = await repo.teamExists(teamId);
   if (teamCheck.rowCount === 0) {
     throw new ServiceError("Team not found", 404);
+  }
+  if (!Number.isInteger(playerId)) {
+    throw new ServiceError("Captain is required: choose a player on your roster.", 400);
   }
   await repo.setTeamCaptainStandalone(teamId, playerId);
 };
@@ -226,7 +250,15 @@ export const setTradeLockState = async (locked: boolean) => {
     const client = await pool.connect();
     try {
       await client.query("BEGIN");
+      const invalid = await repo.getTeamIdsWithInvalidCaptainCount(client);
+      if (invalid.rows.length > 0) {
+        throw new ServiceError(
+          "Cannot lock trading: every team with a roster must have exactly one captain.",
+          400,
+        );
+      }
       await repo.syncRosterHistoryFromCurrentPlayers(client, lockAt);
+      await repo.syncCaptainHistoryFromLock(client, lockAt);
       await repo.setTradeLockStateWithClient(client, true, lockAt);
       await client.query("COMMIT");
     } catch (err) {

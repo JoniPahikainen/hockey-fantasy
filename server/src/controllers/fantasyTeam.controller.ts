@@ -199,9 +199,12 @@ export const getTeamLastNightPoints = async (req: Request, res: Response) => {
 export const setCaptain = async (req: Request, res: Response) => {
   try {
     const teamId = Number(req.params.team_id);
-    const playerId = req.body.player_id != null ? Number(req.body.player_id) : null;
+    const playerId = Number(req.body.player_id);
     if (!Number.isInteger(teamId)) {
       return res.status(400).json({ ok: false, error: "Invalid team id" });
+    }
+    if (!Number.isInteger(playerId)) {
+      return res.status(400).json({ ok: false, error: "player_id is required (roster player)" });
     }
     await service.setCaptain(teamId, playerId);
     return res.json({ ok: true });

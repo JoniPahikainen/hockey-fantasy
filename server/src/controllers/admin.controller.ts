@@ -1,6 +1,7 @@
 import { Response } from "express";
 import * as service from "../services/admin.service";
 import { AuthRequest } from "../middleware/auth";
+import { ServiceError } from "../utils/errors";
 
 export const getMarketOverview = async (req: AuthRequest, res: Response) => {
   try {
@@ -76,6 +77,9 @@ export const lockTrading = async (_req: AuthRequest, res: Response) => {
     const status = await service.lockTrading();
     return res.json({ ok: true, message: "Trading locked.", status });
   } catch (err) {
+    if (err instanceof ServiceError) {
+      return res.status(err.statusCode).json({ ok: false, error: err.message });
+    }
     console.error("Admin lockTrading:", err);
     return res.status(500).json({ ok: false, error: "Failed to lock trading" });
   }

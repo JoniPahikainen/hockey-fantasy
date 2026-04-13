@@ -210,8 +210,24 @@ export const getLeagueRecords = (league_id: number, period_id: number | null) =>
             FROM captain_history ch
             WHERE ch.team_id = tb.team_id
               AND ch.player_id = pgs.player_id
-              AND ch.from_date <= date_trunc('day', m.scheduled_at - INTERVAL '6 hours')::date
-              AND (ch.to_date IS NULL OR ch.to_date >= date_trunc('day', m.scheduled_at - INTERVAL '6 hours')::date)
+              AND ch.from_date::date <= date_trunc('day', m.scheduled_at - INTERVAL '6 hours')::date
+              AND (ch.to_date IS NULL OR ch.to_date::date >= date_trunc('day', m.scheduled_at - INTERVAL '6 hours')::date)
+          )
+          THEN (SELECT mult FROM captain_multiplier)
+          WHEN NOT EXISTS (
+            SELECT 1
+            FROM captain_history ch
+            WHERE ch.team_id = tb.team_id
+              AND ch.from_date::date <= date_trunc('day', m.scheduled_at - INTERVAL '6 hours')::date
+              AND (ch.to_date IS NULL OR ch.to_date::date >= date_trunc('day', m.scheduled_at - INTERVAL '6 hours')::date)
+          )
+               AND EXISTS (
+            SELECT 1
+            FROM fantasy_team_players ftp
+            WHERE ftp.team_id = tb.team_id
+              AND ftp.player_id = pgs.player_id
+              AND ftp.is_captain
+              AND COALESCE(ftp.is_active, true)
           )
           THEN (SELECT mult FROM captain_multiplier)
           ELSE 1

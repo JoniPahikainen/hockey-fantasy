@@ -41,11 +41,28 @@ export async function seedDailyPoints() {
           d.day,
           r.team_id,
           r.player_id,
-          EXISTS (
-            SELECT 1 FROM captain_history ch
-            WHERE ch.team_id = r.team_id AND ch.player_id = r.player_id
-              AND ch.from_date <= d.day
-              AND (ch.to_date IS NULL OR ch.to_date >= d.day)
+          (
+            EXISTS (
+              SELECT 1 FROM captain_history ch
+              WHERE ch.team_id = r.team_id AND ch.player_id = r.player_id
+                AND ch.from_date::date <= d.day
+                AND (ch.to_date IS NULL OR ch.to_date::date >= d.day)
+            )
+            OR (
+              NOT EXISTS (
+                SELECT 1 FROM captain_history ch
+                WHERE ch.team_id = r.team_id
+                  AND ch.from_date::date <= d.day
+                  AND (ch.to_date IS NULL OR ch.to_date::date >= d.day)
+              )
+              AND EXISTS (
+                SELECT 1 FROM fantasy_team_players ftp
+                WHERE ftp.team_id = r.team_id
+                  AND ftp.player_id = r.player_id
+                  AND ftp.is_captain
+                  AND COALESCE(ftp.is_active, true)
+              )
+            )
           ) AS is_captain_on_day
         FROM fantasy_team_roster r
         JOIN (
