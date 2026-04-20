@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import {
-  LineChart,
   Line,
   XAxis,
   YAxis,
@@ -22,6 +21,15 @@ interface BreakdownRow {
   player_name: string;
   points: number;
 }
+
+const toWholeNumber = (value: unknown): number => {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return 0;
+  return Math.round(parsed);
+};
+
+const formatWholeNumber = (value: unknown): string =>
+  String(toWholeNumber(value));
 
 export default function TeamPerformanceGraph({ teamId, periodId }: Props) {
   const [data, setData] = useState<any[]>([]);
@@ -121,6 +129,8 @@ export default function TeamPerformanceGraph({ teamId, periodId }: Props) {
             />
             <YAxis
               yAxisId="left"
+              allowDecimals={false}
+              tickFormatter={formatWholeNumber}
               fontSize={9}
               fontWeight="bold"
               tick={{ fill: "#64748b" }}
@@ -129,6 +139,8 @@ export default function TeamPerformanceGraph({ teamId, periodId }: Props) {
             <YAxis
               yAxisId="right"
               orientation="right"
+              allowDecimals={false}
+              tickFormatter={formatWholeNumber}
               fontSize={9}
               fontWeight="bold"
               tick={{ fill: "#818cf8" }}
@@ -146,6 +158,9 @@ export default function TeamPerformanceGraph({ teamId, periodId }: Props) {
                 fontWeight: "bold",
                 textTransform: "uppercase",
               }}
+              formatter={(value: number | undefined) =>
+                formatWholeNumber(value)
+              }
             />
             <Bar
               yAxisId="right"
@@ -211,7 +226,7 @@ export default function TeamPerformanceGraph({ teamId, periodId }: Props) {
                 >
                   <span className="text-text-secondary">{row.player_name}</span>
                   <span className="font-mono text-text-primary">
-                    {row.points}
+                    {toWholeNumber(row.points)}
                   </span>
                 </li>
               ))}

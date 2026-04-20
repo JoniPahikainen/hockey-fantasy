@@ -23,6 +23,12 @@ interface Props {
   onToggleTeam: (teamId: number) => void;
 }
 
+const toWholeNumber = (value: unknown): number => {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return 0;
+  return Math.round(parsed);
+};
+
 function getMovement(curr: number, prev: number) {
   if (curr < prev) return <span className="text-accent-success">▲</span>;
   if (curr > prev) return <span className="text-accent-danger">▼</span>;
@@ -118,20 +124,20 @@ export default function LeagueStandingsTable({
                   <td className="px-6 py-4 w-28 text-center">
                     {isFullSeason ? (
                       <span className="font-mono font-black text-lg text-text-primary">
-                        {Number(team.points || 0)}
+                        {toWholeNumber(team.points)}
                       </span>
                     ) : showLastNightPoints ? (
                       <span className="inline-flex items-baseline justify-center gap-1">
                         <span className="font-mono font-black text-lg text-text-primary">
-                          {Number(team.points ?? 0)}
+                          {toWholeNumber(team.points)}
                         </span>
                         <span className="font-mono text-sm text-text-muted-subtle">
-                          ({Number(team.lastNightPoints || 0)})
+                          ({toWholeNumber(team.lastNightPoints)})
                         </span>
                       </span>
                     ) : (
                       <span className="font-mono font-black text-lg text-text-primary">
-                        {Number(team.points ?? 0)}
+                        {toWholeNumber(team.points)}
                       </span>
                     )}
                   </td>
