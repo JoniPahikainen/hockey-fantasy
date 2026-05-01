@@ -5,6 +5,7 @@ import TeamList from "../components/home/TeamList";
 import UpcomingMatches, { type UpcomingMatchesProps } from "../components/home/UpcomingMatches";
 import MiniStandings from "../components/home/MiniStandings";
 import BestPerformers from "../components/home/BestPerformers";
+import PlayoffBracket from "../components/home/PlayoffBracket";
 import TeamSummaryCard from "../components/home/TeamSummaryCard";
 import api from "../lib/api";
 import { useActiveTeam } from "../context/ActiveTeamContext";
@@ -139,6 +140,7 @@ export default function HomePage() {
           {/* LEFT */}
           <div className="lg:col-span-4 flex flex-col gap-8">
             <BestPerformers team={optimalLineup} />
+            <PlayoffBracket />
             <MiniStandings leagueId={teamInfo.leagueId} teamId={teamInfo.teamId} />
             
           </div>

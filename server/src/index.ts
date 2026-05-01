@@ -10,6 +10,7 @@ import playerRouter from "./routes/nhlPlayerRoutes";
 import fantasyTeamRouter from "./routes/fantasyTeamRoutes";
 import leagueRouter from "./routes/leagueRoutes";
 import adminRouter from "./routes/adminRoutes";
+import nhlBracketRouter from "./routes/nhlBracketRoutes";
 import morgan from "morgan";
 
 const app = express();
@@ -27,6 +28,7 @@ app.use("/api", playerRouter);
 app.use("/api", fantasyTeamRouter);
 app.use("/api", leagueRouter);
 app.use("/api", adminRouter);
+app.use("/api", nhlBracketRouter);
 
 const port = process.env.PORT ? Number(process.env.PORT) : 4000;
 
